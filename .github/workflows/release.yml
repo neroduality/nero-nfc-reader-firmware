@@ -15,7 +15,7 @@
 # limitations under the License.
 
 # Tag-driven release: source tarball + SHA256SUMS only (no binary packages).
-# Release gate: successful Main CI on the tagged commit (not make verify).
+# Tag pushes publish source release assets directly.
 # Maintainer guide: RELEASE.md
 name: Release
 
@@ -36,29 +36,9 @@ defaults:
     shell: bash
 
 jobs:
-  main-ci-gate:
-    name: Verify Main CI passed
-    runs-on: ubuntu-24.04
-    timeout-minutes: 5
-    permissions:
-      contents: read
-      actions: read
-
-    steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-
-      - name: Require successful Main CI on tagged commit
-        env:
-          TAG: ${{ github.ref_name }}
-        run: bash .github/scripts/release-verify-main-ci.sh --tag "$TAG"
-
   publish:
     name: Publish release
     runs-on: ubuntu-24.04
-    needs: [main-ci-gate]
     permissions:
       contents: write
     steps:

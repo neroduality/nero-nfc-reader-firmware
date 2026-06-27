@@ -17,8 +17,7 @@ limitations under the License.
 
 # nero-nfc-reader-firmware @TAG@
 
-NFC reader/writer and USB CCID firmware for supported Arduino and Nucleo boards,
-plus Linux host CLIs for PC/SC and CDC serial workflows.
+Open Desktop NFC Reader: firmware and Linux host CLI tools for turning a supported MCU board with an ST25R3916B RF reader frontend into an NFC reader/writer / USB CCID smart-card reader.
 
 ## Changelog
 

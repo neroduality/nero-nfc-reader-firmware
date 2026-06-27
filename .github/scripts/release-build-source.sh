@@ -111,7 +111,9 @@ if ! (cd "${OUTPUT_DIR}" && sha256sum -c SHA256SUMS >/dev/null); then
 fi
 
 mapfile -t output_files < <(find "${OUTPUT_DIR}" -maxdepth 1 -type f -printf '%f\n' | LC_ALL=C sort)
-if ((${#output_files[@]} != 2)) || [[ ${output_files[0]} != "${archive_name}" || ${output_files[1]} != SHA256SUMS ]]; then
+if ((${#output_files[@]} != 2)) ||
+  [[ ! -f ${archive_path} ]] ||
+  [[ ! -f ${checksum_path} ]]; then
   printf 'error: expected exactly %s and SHA256SUMS in %s\n' "${archive_name}" "${OUTPUT_DIR}" >&2
   printf 'found:\n' >&2
   printf '  %s\n' "${output_files[@]:-<none>}" >&2
