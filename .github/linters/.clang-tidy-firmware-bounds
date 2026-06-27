@@ -1,0 +1,131 @@
+---
+# Clang-Tidy overlay for security-critical firmware TUs (see nero_lint_policy.FIRMWARE_BOUNDS_TU_PREFIXES).
+#
+# Root .clang-tidy disables cppcoreguidelines-pro-bounds-* tree-wide because Arduino/C-interop
+# and CBOR/NDEF glue code produce thousands of false positives on intentional stack buffers.
+# This overlay re-enables narrow bounds checks only on wire parsers, CCID/ISO-DEP relay paths,
+# and shared nfc_core/common codecs — the same tradeoff as .clang-tidy-userspace, inverted for MCU.
+#
+# Still disabled: pro-bounds-array-to-pointer-decay (C array decay at HAL/API seams).
+#
+# ci-lint.sh passes this file via -config-file= for firmware-bounds TUs only.
+
+Checks: >
+  clang-diagnostic-*,
+  clang-analyzer-*,
+  bugprone-*,
+  cert-*,
+  concurrency-*,
+  cppcoreguidelines-*,
+  modernize-*,
+  performance-*,
+  portability-*,
+  readability-*,
+  google-explicit-constructor,
+  -modernize-use-trailing-return-type,
+  -modernize-use-std-print,
+  -readability-magic-numbers,
+  -readability-identifier-length,
+  -bugprone-easily-swappable-parameters,
+  -bugprone-exception-escape,
+  -readability-uppercase-literal-suffix,
+  -modernize-avoid-c-arrays,
+  -modernize-macro-to-enum,
+  -performance-enum-size,
+  -readability-use-concise-preprocessor-directives,
+  -readability-function-cognitive-complexity,
+  -bugprone-not-null-terminated-result,
+  -cppcoreguidelines-avoid-magic-numbers,
+  -cppcoreguidelines-avoid-c-arrays,
+  -cppcoreguidelines-pro-type-reinterpret-cast,
+  -cppcoreguidelines-pro-type-vararg,
+  -cppcoreguidelines-avoid-non-const-global-variables,
+  -cppcoreguidelines-owning-memory,
+  -cppcoreguidelines-pro-type-cstyle-cast,
+  -cppcoreguidelines-pro-type-union-access,
+  -cppcoreguidelines-no-malloc,
+  -cppcoreguidelines-avoid-goto,
+  -cppcoreguidelines-init-variables,
+  -cppcoreguidelines-pro-type-member-init,
+  -cppcoreguidelines-pro-bounds-array-to-pointer-decay,
+  -cppcoreguidelines-use-enum-class,
+  -cppcoreguidelines-macro-to-enum,
+  -cppcoreguidelines-macro-usage,
+  -cert-err33-c,
+  -concurrency-mt-unsafe,
+  -portability-avoid-pragma-once
+
+WarningsAsErrors: "readability-identifier-naming"
+
+HeaderFilterRegex: ".*/(firmware/nfc_core/common|firmware/reader/src/reader_(iso_dep|security_key_(ccid|iso_dep))_|firmware/reader/src/reader_ccid_(protocol|bulk_codec)|firmware/reader/src/reader_security_key_ccid_codec)\\.[^/]+$"
+
+# clang-tidy >= 21 (ExcludeHeaderFilterRegex + overlay check names).
+ExcludeHeaderFilterRegex: ".*/(_deps/.*|libcbor.*|/usr/include/.*|/usr/local/include/.*|.*/openssl/.*|tests/.*)"
+
+CheckOptions:
+  - key: bugprone-unsafe-functions.ReportMoreUnsafeFunctions
+    value: 'false'
+  - key: bugprone-unsafe-functions.ReportDefaultFunctions
+    value: 'true'
+  - key: readability-identifier-naming.NamespaceCase
+    value: lower_case
+  - key: readability-identifier-naming.ClassCase
+    value: CamelCase
+  - key: readability-identifier-naming.StructCase
+    value: CamelCase
+  - key: readability-identifier-naming.UnionCase
+    value: CamelCase
+  - key: readability-identifier-naming.EnumCase
+    value: CamelCase
+  - key: readability-identifier-naming.EnumConstantCase
+    value: CamelCase
+  - key: readability-identifier-naming.EnumConstantIgnoredRegexp
+    value: '^(k[A-Z][a-zA-Z0-9]*(_[0-9]+)*|[A-Z][A-Z0-9_]*)$'
+  - key: readability-identifier-naming.FunctionCase
+    value: lower_case
+  - key: readability-identifier-naming.MethodCase
+    value: camelBack
+  - key: readability-identifier-naming.VirtualMethodCase
+    value: camelBack
+  - key: readability-identifier-naming.ParameterCase
+    value: lower_case
+  - key: readability-identifier-naming.VariableCase
+    value: lower_case
+  - key: readability-identifier-naming.MemberCase
+    value: lower_case
+  - key: readability-identifier-naming.PrivateMemberSuffix
+    value: '_'
+  - key: readability-identifier-naming.LocalConstantCase
+    value: lower_case
+  - key: readability-identifier-naming.GlobalConstantCase
+    value: CamelCase
+  - key: readability-identifier-naming.GlobalConstantPrefix
+    value: k
+  - key: readability-identifier-naming.StaticConstantCase
+    value: CamelCase
+  - key: readability-identifier-naming.StaticConstantPrefix
+    value: k
+  - key: readability-identifier-naming.StaticConstantIgnoredRegexp
+    value: '^([A-Z][A-Z0-9_]*|k[A-Z][a-zA-Z0-9]*(_[0-9]+)*)$'
+  - key: readability-identifier-naming.GlobalConstantIgnoredRegexp
+    value: '^[A-Z][A-Z0-9_]*$'
+  - key: readability-identifier-naming.ConstantCase
+    value: aNy_CasE
+  - key: readability-identifier-naming.ConstexprVariableCase
+    value: CamelCase
+  - key: readability-identifier-naming.ConstexprVariablePrefix
+    value: k
+  - key: readability-identifier-naming.MacroDefinitionCase
+    value: UPPER_CASE
+  - key: readability-identifier-naming.MacroDefinitionIgnoredRegexp
+    value: '^g_.*$'
+  - key: readability-identifier-naming.TemplateParameterCase
+    value: CamelCase
+  - key: readability-identifier-naming.TemplateParameterIgnoredRegexp
+    value: '^[A-Z]$'
+  - key: readability-identifier-naming.ConceptCase
+    value: CamelCase
+  - key: readability-identifier-naming.StructIgnoredRegexp
+    value: '.*_t$'
+  - key: readability-identifier-naming.EnumIgnoredRegexp
+    value: '.*_t$'

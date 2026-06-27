@@ -1,0 +1,83 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (C) 2026 Nero Duality, LLC.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Tag-driven release: source tarball + SHA256SUMS only (no binary packages).
+# Release gate: successful Main CI on the tagged commit (not make verify).
+# Maintainer guide: RELEASE.md
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  main-ci-gate:
+    name: Verify Main CI passed
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Require successful Main CI on tagged commit
+        env:
+          TAG: ${{ github.ref_name }}
+        run: bash .github/scripts/release-verify-main-ci.sh --tag "$TAG"
+
+  publish:
+    name: Publish release
+    runs-on: ubuntu-24.04
+    needs: [main-ci-gate]
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Build source release assets
+        env:
+          TAG: ${{ github.ref_name }}
+        run: bash .github/scripts/release-build-source.sh --tag "$TAG"
+
+      - name: Publish release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          bash .github/scripts/release-render-notes.sh .github/release-notes.md >release-notes.md
+          gh release view "$TAG" >/dev/null 2>&1 || \
+            gh release create "$TAG" --title "$TAG" --notes-file release-notes.md
+          gh release upload "$TAG" dist/* --clobber

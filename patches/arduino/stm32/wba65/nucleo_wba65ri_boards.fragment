@@ -1,0 +1,13 @@
+# Repo patch — NUCLEO-WBA65RI (upstream stm32duino boards.txt gap, Jun 2026).
+# Appended by scripts/stm32-sync-wba65-board.sh when pnum is missing.
+
+Nucleo_64.menu.pnum.NUCLEO_WBA65RI=Nucleo WBA65RI
+Nucleo_64.menu.pnum.NUCLEO_WBA65RI.upload.maximum_size=2097152
+Nucleo_64.menu.pnum.NUCLEO_WBA65RI.upload.maximum_data_size=524288
+Nucleo_64.menu.pnum.NUCLEO_WBA65RI.build.mcu=cortex-m33
+Nucleo_64.menu.pnum.NUCLEO_WBA65RI.build.fpu=-mfpu=fpv5-sp-d16
+Nucleo_64.menu.pnum.NUCLEO_WBA65RI.build.float-abi=-mfloat-abi=hard
+Nucleo_64.menu.pnum.NUCLEO_WBA65RI.build.board=NUCLEO_WBA65RI
+Nucleo_64.menu.pnum.NUCLEO_WBA65RI.build.series=STM32WBAxx
+Nucleo_64.menu.pnum.NUCLEO_WBA65RI.build.product_line=STM32WBA65xx
+Nucleo_64.menu.pnum.NUCLEO_WBA65RI.build.variant=STM32WBAxx/WBA65R(G-I)V

@@ -1,0 +1,33 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (C) 2026 Nero Duality, LLC.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Linux udev snippet for MCU board CDC serial interfaces.
+# UNO R PIDs come from ArduinoCore-renesas boards.txt (Arduino SA).
+
+ACTION=="remove", GOTO="nero_nfc_mm_end"
+
+# UNO R4 WiFi sketch CDC (boards.txt pid.1)
+# MM_DEVICE_IGNORE + ID_MM_DEVICE_IGNORE: Fedora/ModemManager may probe ttyACM
+# before DTR/1200-bps bootloader touch; both tags maximize “leave this port alone”.
+SUBSYSTEM=="tty", KERNEL=="ttyACM*", ATTRS{idVendor}=="2341", ATTRS{idProduct}=="006d", MODE="0600", TAG+="uaccess", ENV{MM_DEVICE_IGNORE}="1", ENV{ID_MM_DEVICE_IGNORE}="1"
+
+# UNO R4 Minima
+SUBSYSTEM=="tty", KERNEL=="ttyACM*", ATTRS{idVendor}=="2341", ATTRS{idProduct}=="0069", MODE="0600", TAG+="uaccess", ENV{MM_DEVICE_IGNORE}="1", ENV{ID_MM_DEVICE_IGNORE}="1"
+
+# Alternate Minima bootloader route
+SUBSYSTEM=="tty", KERNEL=="ttyACM*", ATTRS{idVendor}=="2341", ATTRS{idProduct}=="0369", MODE="0600", TAG+="uaccess", ENV{MM_DEVICE_IGNORE}="1", ENV{ID_MM_DEVICE_IGNORE}="1"
+
+LABEL="nero_nfc_mm_end"

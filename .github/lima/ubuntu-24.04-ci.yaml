@@ -1,0 +1,126 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (C) 2026 Nero Duality, LLC.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Lima template: Ubuntu 24.04 VM for local Main CI (mirrors GitHub ubuntu-24.04).
+# Used by: bash .github/scripts/run-ci-locally-lima.sh (via make ci-local CI_LOCAL_FLAGS=--lima)
+#
+# Docker setup follows Lima template:docker-rootful (SocketUser, no reboot, no usermod):
+#   https://github.com/lima-vm/lima/blob/master/templates/docker-rootful.yaml
+#
+# Boot (limactl start):
+#   1. Install Docker if missing
+#   2. SocketUser={{.User}} on docker.socket (lima can use /var/run/docker.sock)
+#   3. daemon-reload + restart docker.socket/docker.service (no VM reboot)
+#   4. Probe: docker CLI + dockerd only (fast; no image pull)
+#
+# After boot: run-ci-locally-lima-guest.sh runs docker run smoke + full Main CI.
+#
+# Repo bind-mount: /src (param repoRoot). Override sizing: limactl create --cpus 8 --memory 8GiB
+minimumLimaVersion: 2.0.0
+
+user:
+  name: lima
+
+base:
+  - template:ubuntu-24.04
+
+containerd:
+  system: false
+  user: false
+
+param:
+  repoRoot: ""
+
+mounts:
+  - location: "{{.Param.repoRoot}}"
+    mountPoint: /src
+    writable: true
+
+# Conservative defaults (override at create time on larger hosts).
+cpus: 4
+memory: 8GiB
+disk: 32GiB
+
+provision:
+  - mode: system
+    script: |
+      #!/bin/bash
+      set -eux -o pipefail
+      export DEBIAN_FRONTEND=noninteractive
+      apt-get update
+      apt-get install -y --no-install-recommends ca-certificates curl gnupg software-properties-common
+      add-apt-repository -y universe
+      apt-get update
+
+  - mode: system
+    script: |
+      #!/bin/bash
+      set -eux -o pipefail
+      export DEBIAN_FRONTEND=noninteractive
+      if command -v docker >/dev/null 2>&1; then
+        echo "── Lima provision: docker CLI already installed ──"
+        exit 0
+      fi
+      apt-get update
+      apt-get install -y --no-install-recommends curl ca-certificates
+      curl -fsSL https://get.docker.com -o /tmp/get-docker.sh
+      sh /tmp/get-docker.sh > /tmp/nero-docker-install.log 2>&1
+      tail -n 3 /tmp/nero-docker-install.log || true
+
+  # mode: system only — Lima boot.sh runs provision.yq before provision.system, so yq
+  # would create docker.socket.d/override.conf before Docker exists and can hang on chmod.
+  - mode: system
+    script: |
+      #!/bin/bash
+      set -eux -o pipefail
+      install -d -m 0755 /etc/systemd/system/docker.socket.d
+      printf '%s\n' '[Socket]' 'SocketUser={{.User}}' \
+        >/etc/systemd/system/docker.socket.d/override.conf
+      chmod 0644 /etc/systemd/system/docker.socket.d/override.conf
+
+  - mode: system
+    script: |
+      #!/bin/bash
+      set -eux -o pipefail
+      systemctl daemon-reload
+      systemctl restart docker.socket docker.service
+      systemctl is-active --quiet docker.service
+      echo "── Lima provision: Docker ready for user {{.User}} (SocketUser, no reboot) ──"
+
+probes:
+  # Match Lima docker-rootful: root checks CLI + daemon only (no user/group smoke here).
+  - script: |
+      #!/bin/bash
+      set -eux -o pipefail
+      if ! timeout 30s bash -c 'until command -v docker >/dev/null 2>&1; do sleep 3; done'; then
+        echo >&2 "docker CLI not installed yet"
+        exit 1
+      fi
+      if ! timeout 30s bash -c 'until pgrep dockerd >/dev/null; do sleep 3; done'; then
+        echo >&2 "dockerd is not running yet"
+        exit 1
+      fi
+    hint: See "/var/log/cloud-init-output.log" and "journalctl -u docker.service" in the guest.
+
+hostResolver:
+  hosts:
+    host.docker.internal: host.lima.internal
+
+message: |
+  nero-nfc Main CI Lima VM (ubuntu-24.04).
+  Repo mount: /src
+  Boot: Docker (SocketUser) → guest smoke + CI via run-ci-locally-lima-guest.sh.
+  Each `make ci-local CI_LOCAL_FLAGS=--lima` destroys and recreates this instance.

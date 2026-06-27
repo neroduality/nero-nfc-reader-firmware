@@ -1,0 +1,363 @@
+// SPDX-License-Identifier: Apache-2.0
+//
+// Copyright (C) 2026 Nero Duality, LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#include "nero_nfc_null.h"
+/*
+ * Combined reader+writer HAL for firmware/nfc (single SPI / UART stack).
+ */
+
+#include <Arduino.h>
+#include <SPI.h>
+
+#if defined(NERO_CCID_USB_BUILD)
+#include "tusb.h"
+#endif
+#include <cstdint>
+
+#include "nfc_board_defaults.h"
+#include "nfc_combined_shell.h"
+
+#include "nfc_runtime_mode_poll.h"
+
+#include "reader_hal.h"
+#include "writer_hal.h"
+
+#if defined(NERO_CCID_USB_BUILD) && defined(NERO_CCID_STM32_USB_BUILD)
+extern "C" void reader_hal_ccid_usb_begin(void);
+#endif
+
+void nfc_hal_usb_begin(void) {
+#if defined(NERO_CCID_USB_BUILD) && defined(NERO_CCID_STM32_USB_BUILD)
+  reader_hal_ccid_usb_begin();
+#endif
+}
+
+/* ── Ring buffer ─────────────────────────────────────────────────────────── */
+
+#if !defined(NERO_CCID_ONLY_BUILD)
+/* Pushback buffer for mode command scanning; override per board when SRAM allows it.
+ * Nucleo-WBA65RI sets NFC_HAL_RXBUF_CAP via BOARD_CDC_BUILD_EXTRA_FLAGS. */
+#ifndef NFC_HAL_RXBUF_CAP
+#define NFC_HAL_RXBUF_CAP 128u
+#endif
+
+static uint8_t g_rxbuf[NFC_HAL_RXBUF_CAP];
+static uint16_t g_rxbuf_head = 0u;
+static uint16_t g_rxbuf_tail = 0u;
+
+static uint16_t rxbuf_count(void) {
+  return (g_rxbuf_tail - g_rxbuf_head + NFC_HAL_RXBUF_CAP) % NFC_HAL_RXBUF_CAP;
+}
+
+static uint16_t rxbuf_free(void) {
+  return NFC_HAL_RXBUF_CAP - 1u - rxbuf_count();
+}
+
+static void rxbuf_push_tail(uint8_t b) {
+  g_rxbuf[g_rxbuf_tail] = b;
+  g_rxbuf_tail = (g_rxbuf_tail + 1u) % NFC_HAL_RXBUF_CAP;
+}
+
+static uint8_t rxbuf_pop_head(void) {
+  uint8_t b = g_rxbuf[g_rxbuf_head];
+  g_rxbuf_head = (g_rxbuf_head + 1u) % NFC_HAL_RXBUF_CAP;
+  return b;
+}
+
+static void rxbuf_prepend_head(uint8_t b) {
+  g_rxbuf_head = (g_rxbuf_head + NFC_HAL_RXBUF_CAP - 1u) % NFC_HAL_RXBUF_CAP;
+  g_rxbuf[g_rxbuf_head] = b;
+}
+
+void nfc_hal_preload_serial(void) {
+  while (Serial.available() > 0 && rxbuf_free() > 0u) {
+    rxbuf_push_tail(static_cast<uint8_t>(Serial.read()));
+  }
+}
+
+int nfc_hal_pushback_available(void) {
+  return static_cast<int>(rxbuf_count());
+}
+
+int nfc_hal_pushback_read(void) {
+  if (rxbuf_count() == 0u) {
+    return -1;
+  }
+  return static_cast<int>(rxbuf_pop_head());
+}
+
+void nfc_hal_pushback_return(const uint8_t *bytes, uint16_t len) {
+  if ((bytes == NERO_NFC_NULL) || (len == 0u) || (len > rxbuf_free())) {
+    return;
+  }
+  for (uint16_t i = len; i > 0u; i--) {
+    rxbuf_prepend_head(bytes[i - 1u]);
+  }
+}
+#else
+void nfc_hal_preload_serial(void) {}
+
+int nfc_hal_pushback_available(void) {
+  return 0;
+}
+
+int nfc_hal_pushback_read(void) {
+  return -1;
+}
+
+void nfc_hal_pushback_return(const uint8_t *bytes, uint16_t len) {
+  (void)bytes;
+  (void)len;
+}
+#endif
+
+static SPISettings g_nfc_spi_settings(NFC_BOARD_SPI_CLOCK_HZ, MSBFIRST, SPI_MODE1);
+
+void reader_hal_serial_begin(unsigned long baud) {
+#if !defined(NERO_CCID_ONLY_BUILD)
+  Serial.begin(baud);
+#else
+  (void)baud;
+#endif
+}
+
+bool reader_hal_serial_ready(void) {
+#if !defined(NERO_CCID_ONLY_BUILD)
+  return static_cast<bool>(Serial);
+#else
+  return false;
+#endif
+}
+
+void reader_hal_serial_write_char(char c) {
+#if !defined(NERO_CCID_ONLY_BUILD)
+  Serial.write(static_cast<uint8_t>(c));
+#else
+  (void)c;
+#endif
+}
+
+int reader_hal_serial_available(void) {
+#if !defined(NERO_CCID_ONLY_BUILD)
+  nfc_hal_preload_serial();
+  /* Mode scan runs in reader_hal_serial_read_byte only — avoid calling
+   * reader/writer setup from a pure "how much RX?" probe. */
+  return static_cast<int>(rxbuf_count()) + Serial.available();
+#else
+  return 0;
+#endif
+}
+
+int reader_hal_serial_read_byte(void) {
+#if !defined(NERO_CCID_ONLY_BUILD)
+  nfc_hal_preload_serial();
+  if (nfc_app_scan_mode_uart()) {
+    return -1;
+  }
+  if (rxbuf_count() > 0u) {
+    return static_cast<int>(rxbuf_pop_head());
+  }
+  return Serial.read();
+#else
+  return -1;
+#endif
+}
+
+void reader_hal_delay_ms(uint32_t ms) {
+#if defined(NERO_CCID_USB_BUILD)
+  while (ms-- > 0u) {
+    reader_hal_service();
+    delay(1u);
+  }
+#else
+  delay(ms);
+#endif
+}
+
+void reader_hal_service(void) {
+#if defined(NERO_CCID_USB_BUILD)
+  tud_task();
+#endif
+}
+
+void reader_hal_delay_us(uint32_t us) {
+  delayMicroseconds(us);
+}
+
+uint32_t reader_hal_millis(void) {
+  return millis();
+}
+
+uint32_t reader_hal_micros(void) {
+  return micros();
+}
+
+void reader_hal_pin_mode(uint8_t pin, uint8_t mode) {
+  pinMode(pin, mode == READER_HAL_PIN_OUTPUT ? OUTPUT : INPUT);
+}
+
+void reader_hal_digital_write(uint8_t pin, uint8_t value) {
+  digitalWrite(pin, value ? HIGH : LOW);
+}
+
+int reader_hal_digital_read(uint8_t pin) {
+  return digitalRead(pin);
+}
+
+void reader_hal_spi_begin(void) {
+  SPI.begin();
+}
+
+void reader_hal_spi_begin_transaction(void) {
+  SPI.beginTransaction(g_nfc_spi_settings);
+}
+
+void reader_hal_spi_end_transaction(void) {
+  SPI.endTransaction();
+}
+
+uint8_t reader_hal_spi_transfer(uint8_t data) {
+  return SPI.transfer(data);
+}
+
+void writer_hal_serial_begin(unsigned long baud) {
+#if !defined(NERO_CCID_ONLY_BUILD)
+  if (!Serial) {
+    Serial.begin(baud);
+  }
+#else
+  (void)baud;
+#endif
+}
+
+bool writer_hal_serial_ready(void) {
+#if !defined(NERO_CCID_ONLY_BUILD)
+  return static_cast<bool>(Serial);
+#else
+  return false;
+#endif
+}
+
+void writer_hal_serial_write_char(char c) {
+#if !defined(NERO_CCID_ONLY_BUILD)
+  Serial.write(static_cast<uint8_t>(c));
+#else
+  (void)c;
+#endif
+}
+
+extern "C" void nero_nfc_log_putc(char c) {
+  reader_hal_serial_write_char(c);
+}
+
+bool writer_hal_serial_available(void) {
+#if !defined(NERO_CCID_ONLY_BUILD)
+  nfc_hal_preload_serial();
+  return rxbuf_count() > 0u || Serial.available() > 0;
+#else
+  return false;
+#endif
+}
+
+int writer_hal_serial_read_byte(void) {
+#if !defined(NERO_CCID_ONLY_BUILD)
+  nfc_hal_preload_serial();
+  if (nfc_app_scan_mode_uart()) {
+    return -1;
+  }
+  if (rxbuf_count() > 0u) {
+    return static_cast<int>(rxbuf_pop_head());
+  }
+  if (Serial.available() <= 0) {
+    return -1;
+  }
+  return Serial.read();
+#else
+  return -1;
+#endif
+}
+
+void writer_hal_delay_ms(uint32_t ms) {
+  delay(ms);
+}
+
+void writer_hal_delay_us(uint32_t us) {
+  delayMicroseconds(us);
+}
+
+uint32_t writer_hal_millis(void) {
+  return millis();
+}
+
+uint32_t writer_hal_micros(void) {
+  return micros();
+}
+
+void writer_hal_pin_mode(uint8_t pin, uint8_t mode) {
+  pinMode(pin, mode == WRITER_HAL_PIN_OUTPUT ? OUTPUT : INPUT);
+}
+
+void writer_hal_digital_write(uint8_t pin, uint8_t value) {
+  digitalWrite(pin, value ? HIGH : LOW);
+}
+
+int writer_hal_digital_read(uint8_t pin) {
+  return digitalRead(pin);
+}
+
+void writer_hal_spi_begin(void) {
+  SPI.begin();
+}
+
+void writer_hal_spi_begin_transaction(void) {
+  SPI.beginTransaction(g_nfc_spi_settings);
+}
+
+void writer_hal_spi_end_transaction(void) {
+  SPI.endTransaction();
+}
+
+uint8_t writer_hal_spi_transfer(uint8_t data) {
+  return SPI.transfer(data);
+}
+
+void nfc_combined_shell_serial_begin(unsigned long baud) {
+#if !defined(NERO_CCID_ONLY_BUILD)
+  Serial.begin(baud);
+#else
+  (void)baud;
+#endif
+}
+
+bool nfc_combined_shell_serial_ready(void) {
+#if !defined(NERO_CCID_ONLY_BUILD)
+  return static_cast<bool>(Serial);
+#else
+  return false;
+#endif
+}
+
+void nfc_combined_shell_serial_write_byte(std::uint8_t value) {
+#if !defined(NERO_CCID_ONLY_BUILD)
+  Serial.write(value);
+#else
+  (void)value;
+#endif
+}
+
+std::uint32_t nfc_combined_shell_millis(void) {
+  return millis();
+}

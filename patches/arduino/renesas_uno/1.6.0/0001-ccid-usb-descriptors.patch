@@ -1,0 +1,239 @@
+--- a/cores/arduino/usb/USB.cpp
++++ b/cores/arduino/usb/USB.cpp
+@@ -16,6 +16,8 @@
+ */
+ 
+ #include <Arduino.h>
++#include <cstring>
++
+ #include "IRQManager.h"
+ #include "USB.h"
+ 
+@@ -31,6 +33,19 @@
+ #include "r_usb_basic_api.h"
+ #include "r_usb_pcdc_api.h"
+ 
++#if defined(NERO_CCID_USB_BUILD)
++#ifndef USBD_CDC_EP_CMD
++#define USBD_CDC_EP_CMD  (0x83)
++#endif
++
++#ifndef USBD_CDC_EP_OUT
++#define USBD_CDC_EP_OUT (0x04)
++#endif
++
++#ifndef USBD_CDC_EP_IN
++#define USBD_CDC_EP_IN (0x84)
++#endif
++#else
+ #ifndef USBD_CDC_EP_CMD
+ #define USBD_CDC_EP_CMD  (0x81)
+ #endif
+@@ -42,6 +57,7 @@
+ #ifndef USBD_CDC_EP_IN
+ #define USBD_CDC_EP_IN (0x82)
+ #endif
++#endif
+ 
+ #ifndef USBD_HID_EP
+ #define USBD_HID_EP    (0x83)
+@@ -71,6 +87,77 @@
+ #define USBD_STR_SERIAL (0x03)
+ #define USBD_STR_CDC (0x04)
+ #define USBD_STR_DFU_RT (0x05)
++#define USBD_STR_CCID (0x06)
++
++#if defined(NERO_CCID_USB_BUILD)
++extern "C" {
++#include "common/tusb_types.h"
++}
++
++/* Must match firmware `firmware/port/include/ccid_usb_desc.h`; CCID owns the
++ * primary USB endpoint slots and keeps interrupt/bulk endpoints on distinct
++ * endpoint numbers for better host-driver compatibility. */
++#define NERO_USB_CCID_EP_INT     0x81u
++#define NERO_USB_CCID_EP_OUT     0x03u
++#define NERO_USB_CCID_EP_IN      0x82u
++#define NERO_USB_CCID_BULK_EPSIZE 64u
++#define NERO_USB_CCID_INT_EPSIZE 8u
++
++/* CCID_DW_FEATURES_EXTENDED_APDU = 0x000404BA (Smart-Card_USB_CCID §4.2.6). */
++static const uint8_t kNeroUsbCc54[54] = {
++    54,  0x21, 0x10, 0x01, 0x00, 0x07, 0x02, 0x00, 0x00, 0x00, 0xC0, 0x12, 0x00, 0x00,
++    0xC0, 0x12, 0x00, 0x00, 0x00, 0x67, 0x32, 0x00, 0x00, 0x8F, 0x9D, 0x0C, 0x00, 0x00, 0xFE,
++    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xBA, 0x04, 0x04, 0x00,
++    0x0C, 0x08, 0x00, 0x00, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x01};
++
++static size_t nero_usb_ccid_emit_interface_desc(uint8_t *dst, uint8_t interface_number,
++                                                uint8_t ccid_string_index) {
++  if (!dst) {
++    return (size_t)0;
++  }
++
++  uint8_t *p = dst;
++
++  *p++ = 9;
++  *p++ = TUSB_DESC_INTERFACE;
++  *p++ = interface_number;
++  *p++ = 0;
++  *p++ = 3;
++  *p++ = TUSB_CLASS_SMART_CARD;
++  *p++ = 0;
++  *p++ = 0;
++  *p++ = ccid_string_index;
++
++  memcpy(p, kNeroUsbCc54, sizeof(kNeroUsbCc54));
++  p += sizeof(kNeroUsbCc54);
++
++  *p++ = 7;
++  *p++ = TUSB_DESC_ENDPOINT;
++  *p++ = NERO_USB_CCID_EP_OUT;
++  *p++ = TUSB_XFER_BULK;
++  *p++ = (uint8_t)(NERO_USB_CCID_BULK_EPSIZE & 0xFFu);
++  *p++ = (uint8_t)((NERO_USB_CCID_BULK_EPSIZE >> 8) & 0xFFu);
++  *p++ = 0;
++
++  *p++ = 7;
++  *p++ = TUSB_DESC_ENDPOINT;
++  *p++ = NERO_USB_CCID_EP_IN;
++  *p++ = TUSB_XFER_BULK;
++  *p++ = (uint8_t)(NERO_USB_CCID_BULK_EPSIZE & 0xFFu);
++  *p++ = (uint8_t)((NERO_USB_CCID_BULK_EPSIZE >> 8) & 0xFFu);
++  *p++ = 0;
++
++  *p++ = 7;
++  *p++ = TUSB_DESC_ENDPOINT;
++  *p++ = NERO_USB_CCID_EP_INT;
++  *p++ = TUSB_XFER_INTERRUPT;
++  *p++ = (uint8_t)(NERO_USB_CCID_INT_EPSIZE & 0xFFu);
++  *p++ = (uint8_t)((NERO_USB_CCID_INT_EPSIZE >> 8) & 0xFFu);
++  *p++ = 50;
++
++  return static_cast<size_t>(p - dst);
++}
++#endif /* NERO_CCID_USB_BUILD */
+ 
+ const uint8_t *tud_descriptor_device_cb(void) {
+     static tusb_desc_device_t usbd_desc_device = {
+@@ -90,10 +177,16 @@
+         .bNumConfigurations = 1
+     };
+ 
+-    // Descriptors are always composite
++#if defined(NERO_CCID_ONLY_BUILD)
++    usbd_desc_device.bDeviceClass = TUSB_CLASS_SMART_CARD;
++    usbd_desc_device.bDeviceSubClass = 0;
++    usbd_desc_device.bDeviceProtocol = 0;
++#else
++    // Mixed-function images keep device-class 0 so the interface descriptors describe each function.
+     usbd_desc_device.bDeviceClass = 0;
+     usbd_desc_device.bDeviceSubClass = 0;
+     usbd_desc_device.bDeviceProtocol = 0;
++#endif
+     return (const uint8_t *)&usbd_desc_device;
+ }
+ 
+@@ -128,18 +221,18 @@
+          * -----    CDC
+          */
+         bool install_CDC = __USBInstallSerial;
+-        uint8_t cdc_desc[TUD_CDC_DESC_LEN] = {
+-            // Interface number, string index, protocol, report descriptor len, EP In & Out address, size & polling interval
+-            TUD_CDC_DESCRIPTOR(interface_count, USBD_STR_CDC, USBD_CDC_EP_CMD, USBD_CDC_CMD_MAX_SIZE, USBD_CDC_EP_OUT, USBD_CDC_EP_IN, USBD_CDC_IN_OUT_MAX_SIZE)
+-        };
+-        interface_count += (install_CDC ? 2 : 0);
++#if defined(NERO_CCID_ONLY_BUILD)
++        install_CDC = false;
++#endif
+ 
+         /*
+          * -----    DFU
+          */
+         bool install_DFU = false;
+ #if CFG_TUD_DFU_RUNTIME
++#if !defined(NERO_CCID_ONLY_BUILD)
+         install_DFU = __USBInstallSerial;
++#endif
+         uint8_t dfu_desc[TUD_DFU_RT_DESC_LEN] = {
+             // Interface number, string index, attribute, timeout, xfer size
+             TUD_DFU_RT_DESCRIPTOR(interface_count, USBD_STR_DFU_RT, 0x0d, 1000, 4096)
+@@ -150,20 +243,40 @@
+ #endif
+ 
+         /*
+-         * -----    HID
++         * -----    HID (skipped for NERO_CCID_USB_BUILD)
+          */
+         bool install_HID = false;
+         size_t hid_report_len = 0;
++#if !defined(NERO_CCID_USB_BUILD)
+         if (__USBGetHIDReport) {
+             install_HID = true;
+             __USBGetHIDReport(&hid_report_len);
+         }
++#endif
+         uint8_t hid_desc[TUD_HID_DESC_LEN] = {
+             // Interface number, string index, protocol, report descriptor len, EP In & Out address, size & polling interval
+             TUD_HID_DESCRIPTOR(interface_count, 0, HID_ITF_PROTOCOL_NONE, hid_report_len, USBD_HID_EP, CFG_TUD_HID_EP_BUFSIZE, 10)
+         };
+         interface_count += (install_HID ? 1: 0);
+ 
++#if defined(NERO_CCID_USB_BUILD)
++        /* CCID comes first when another USB function is present so it keeps the primary endpoint slots. */
++        uint8_t ccid_desc[(9u + 54u + 21u)];
++        memset(ccid_desc, 0, sizeof(ccid_desc));
++        unsigned ccid_desc_len =
++            static_cast<unsigned>(nero_usb_ccid_emit_interface_desc(ccid_desc, interface_count, USBD_STR_CCID));
++        interface_count += 1;
++#else
++        uint8_t ccid_desc[0] = {};
++        unsigned ccid_desc_len = 0;
++#endif
++
++        uint8_t cdc_desc[TUD_CDC_DESC_LEN] = {
++            // Interface number, string index, protocol, report descriptor len, EP In & Out address, size & polling interval
++            TUD_CDC_DESCRIPTOR(interface_count, USBD_STR_CDC, USBD_CDC_EP_CMD, USBD_CDC_CMD_MAX_SIZE, USBD_CDC_EP_OUT, USBD_CDC_EP_IN, USBD_CDC_IN_OUT_MAX_SIZE)
++        };
++        interface_count += (install_CDC ? 2 : 0);
++
+         /*
+          * -----    MASS STORAGE DEVICE
+          */
+@@ -185,6 +298,9 @@
+             + (install_CDC ? sizeof(cdc_desc) : 0)
+             + (install_DFU ? sizeof(dfu_desc) : 0)
+             + (install_HID ? sizeof(hid_desc) : 0)
++#if defined(NERO_CCID_USB_BUILD)
++            + (int)ccid_desc_len
++#endif
+             + (install_MSD ? sizeof(msd_desc) : 0);
+         uint8_t tud_cfg_desc[TUD_CONFIG_DESC_LEN] = {
+             // Config number, interface count, string index, total length, attribute, power in mA
+@@ -198,6 +314,10 @@
+             uint8_t *ptr = usbd_desc_cfg;
+             memcpy(ptr, tud_cfg_desc, sizeof(tud_cfg_desc));
+             ptr += sizeof(tud_cfg_desc);
++#if defined(NERO_CCID_USB_BUILD)
++            memcpy(ptr, ccid_desc, (size_t)ccid_desc_len);
++            ptr += (size_t)ccid_desc_len;
++#endif
+             if (install_CDC) {
+                 memcpy(ptr, cdc_desc, sizeof(cdc_desc));
+                 ptr += sizeof(cdc_desc);
+@@ -241,6 +361,9 @@
+         [USBD_STR_SERIAL] = idString,
+         [USBD_STR_CDC] = "CDC Port",
+         [USBD_STR_DFU_RT] = "DFU-RT Port",
++#if defined(NERO_CCID_USB_BUILD)
++        [USBD_STR_CCID] = "NERO NFC CCID",
++#endif
+     };
+ 
+     if (!idString[0]) {
+@@ -485,4 +608,4 @@
+     (void) buffer;
+     (void) bufsize;
+     return -1;
+-}
+\ No newline at end of file
++}

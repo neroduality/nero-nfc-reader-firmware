@@ -1,0 +1,17 @@
+<!-- Merge these strings into the matching arrays inside an upstream -->
+<!-- ifd-ccid.bundle/Contents/Info.plist and keep the indices aligned. -->
+<key>ifdVendorID</key>
+<array>
+  <string>0x2341</string>
+  <string>0x2341</string>
+</array>
+<key>ifdProductID</key>
+<array>
+  <string>0x006D</string>
+  <string>0x006E</string>
+</array>
+<key>ifdFriendlyName</key>
+<array>
+  <string>Nero NFC Arduino UNO R4 WiFi CCID</string>
+  <string>Nero NFC NUCLEO-WBA65RI CCID</string>
+</array>

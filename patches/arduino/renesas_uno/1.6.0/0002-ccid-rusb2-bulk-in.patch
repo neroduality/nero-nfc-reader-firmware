@@ -1,0 +1,76 @@
+--- a/cores/arduino/tinyusb/rusb2/dcd_rusb2.c
++++ b/cores/arduino/tinyusb/rusb2/dcd_rusb2.c
+@@ -572,6 +572,20 @@
+   }
+ }
+ 
++static void process_pipe_bemp(uint8_t rhport, unsigned num)
++{
++  rusb2_reg_t* rusb = RUSB2_REG(rhport);
++  pipe_state_t* pipe = &_dcd.pipe[num];
++
++  if (!pipe->ep || !tu_edpt_dir(pipe->ep) || (pipe->buf == NULL) || (pipe->remaining != 0)) {
++    return;
++  }
++
++  wait_pipe_fifo_empty(rusb, (uint8_t) num);
++  pipe->buf = NULL;
++  dcd_event_xfer_complete(rhport, pipe->ep, pipe->length, XFER_RESULT_SUCCESS, true);
++}
++
+ static void process_pipe_brdy(uint8_t rhport, unsigned num)
+ {
+   rusb2_reg_t* rusb = RUSB2_REG(rhport);
+@@ -579,6 +593,10 @@
+   const unsigned dir  = tu_edpt_dir(pipe->ep);
+   bool completed;
+ 
++  if (dir && (pipe->buf == NULL)) {
++    return;
++  }
++
+   if (dir) {
+     /* IN */
+     completed = pipe_xfer_in(rusb, num);
+@@ -863,6 +881,10 @@
+   rusb->PIPECFG = cfg;
+   rusb->BRDYSTS = 0x1FFu ^ TU_BIT(num);
+   rusb->BRDYENB |= TU_BIT(num);
++  if (dir && num) {
++    rusb->BEMPSTS = 0x1FFu ^ TU_BIT(num);
++    rusb->BEMPENB |= TU_BIT(num);
++  }
+ 
+   if (dir || (xfer != TUSB_XFER_BULK)) {
+     *ctr = RUSB2_PIPE_CTR_PID_BUF;
+@@ -894,6 +916,7 @@
+   const unsigned num = _dcd.ep[dir][epn];
+ 
+   rusb->BRDYENB &= ~TU_BIT(num);
++  rusb->BEMPENB &= ~TU_BIT(num);
+   volatile uint16_t *ctr = get_pipectr(rusb, num);
+   *ctr = 0;
+   rusb->PIPESEL = num;
+@@ -1043,6 +1066,22 @@
+     if ( s & 1 ) {
+       process_pipe0_bemp(rhport);
+     }
++    unsigned b = s & ~1u;
++    while (b) {
++#if defined(__CCRX__)
++      static const int Mod37BitPosition[] = {
++        -1, 0, 1, 26, 2, 23, 27, 0, 3, 16, 24, 30, 28, 11, 0, 13, 4,
++        7, 17, 0, 25, 22, 31, 15, 29, 10, 12, 6, 0, 21, 14, 9, 5,
++        20, 8, 19, 18
++      };
++
++      const unsigned num = Mod37BitPosition[(-b & b) % 37];
++#else
++      const unsigned num = __builtin_ctz(b);
++#endif
++      process_pipe_bemp(rhport, num);
++      b &= ~TU_BIT(num);
++    }
+   }
+ 
+   // Buffer ready

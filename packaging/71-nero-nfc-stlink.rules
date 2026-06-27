@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (C) 2026 Nero Duality, LLC.
+#
+# ST-Link USB access for Nucleo-WBA65RI OpenOCD upload (arduino-cli bootstrap).
+# Fedora stlink package installs /etc rules with GROUP="plugdev" (Debian-only);
+# udev ignores those lines entirely, leaving USB at root:root 664 → LIBUSB_ERROR_ACCESS.
+
+ACTION=="remove", GOTO="nero_nfc_stlink_end"
+
+# ST-Link V3 (NUCLEO-WBA65RI onboard debugger, 0483:3753)
+SUBSYSTEM=="usb", ATTR{idVendor}=="0483", ATTR{idProduct}=="3753", MODE="0666", TAG+="uaccess", ENV{ID_MM_DEVICE_IGNORE}="1"
+
+# ST-Link V2-1 (common on older Nucleo boards)
+SUBSYSTEM=="usb", ATTR{idVendor}=="0483", ATTR{idProduct}=="3748", MODE="0666", TAG+="uaccess", ENV{ID_MM_DEVICE_IGNORE}="1"
+
+LABEL="nero_nfc_stlink_end"
