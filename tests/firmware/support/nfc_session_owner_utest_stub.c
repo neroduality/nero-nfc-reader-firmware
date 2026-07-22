@@ -18,10 +18,6 @@
 
 static nfc_session_owner_t g_owner = NFC_SESSION_OWNER_NONE;
 
-nfc_session_owner_t nfc_session_owner_get(void) {
-  return g_owner;
-}
+nfc_session_owner_t nfc_session_owner_get(void) { return g_owner; }
 
-void nfc_session_owner_set(nfc_session_owner_t o) {
-  g_owner = o;
-}
+void nfc_session_owner_set(nfc_session_owner_t o) { g_owner = o; }

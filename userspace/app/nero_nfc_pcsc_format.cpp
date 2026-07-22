@@ -14,75 +14,77 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "nero_nfc_pcsc.h"
+#include "nero_nfc_pcsc.hpp"
 
 #include <sstream>
 
 namespace nero_nfc {
 
-std::string format_pcsc_tag_snapshot_header(const PcscTagSnapshot &tag) {
+std::string FormatPcscTagSnapshotHeader(const PcscTagSnapshot& tag) {
   std::ostringstream out;
-  out << "PC/SC reader: " << tag.reader_name << '\n';
-  if (!tag.tag_type.empty()) {
-    out << "Tag type: " << tag.tag_type << '\n';
+  out << "PC/SC reader: " << tag.reader_name_ << '\n';
+  if (!tag.tag_type_.empty()) {
+    out << "Tag type: " << tag.tag_type_ << '\n';
   }
   return out.str();
 }
 
-std::string format_pcsc_tag_snapshot_body(const PcscTagSnapshot &tag) {
+std::string FormatPcscTagSnapshotBody(const PcscTagSnapshot& tag) {
   std::ostringstream out;
-  if (!tag.tech_list.empty()) {
-    out << "Tech list: " << tag.tech_list << '\n';
+  if (!tag.tech_list_.empty()) {
+    out << "Tech list: " << tag.tech_list_ << '\n';
   }
-  if (!tag.uid_hex.empty()) {
-    out << "Serial number / UID: " << tag.uid_hex << '\n';
+  if (!tag.uid_hex_.empty()) {
+    out << "Serial number / UID: " << tag.uid_hex_ << '\n';
   }
-  if (!tag.atqa_hex.empty()) {
-    out << "ATQA: " << tag.atqa_hex << '\n';
+  if (!tag.atqa_hex_.empty()) {
+    out << "ATQA: " << tag.atqa_hex_ << '\n';
   }
-  if (!tag.sak_hex.empty()) {
-    out << "SAK: 0x" << tag.sak_hex << '\n';
+  if (!tag.sak_hex_.empty()) {
+    out << "SAK: 0x" << tag.sak_hex_ << '\n';
   }
-  if (!tag.ats_hex.empty()) {
-    out << "ATS: " << tag.ats_hex << '\n';
+  if (!tag.ats_hex_.empty()) {
+    out << "ATS: " << tag.ats_hex_ << '\n';
   }
-  if (!tag.manufacturer.empty()) {
-    out << "Manufacturer: " << tag.manufacturer << '\n';
+  if (!tag.manufacturer_.empty()) {
+    out << "Manufacturer: " << tag.manufacturer_ << '\n';
   }
-  if (!tag.product_name.empty()) {
-    out << "Product: " << tag.product_name << '\n';
+  if (!tag.product_name_.empty()) {
+    out << "Product: " << tag.product_name_ << '\n';
   }
-  if (!tag.family_name.empty()) {
-    out << "Family: " << tag.family_name << '\n';
+  if (!tag.family_name_.empty()) {
+    out << "Family: " << tag.family_name_ << '\n';
   }
-  if (!tag.atr_hex.empty()) {
-    out << "ATR: " << tag.atr_hex << '\n';
+  if (!tag.atr_hex_.empty()) {
+    out << "ATR: " << tag.atr_hex_ << '\n';
   }
-  if (!tag.type2_version_hex.empty()) {
-    out << "GET_VERSION: " << tag.type2_version_hex << '\n';
+  if (!tag.type2_version_hex_.empty()) {
+    out << "GET_VERSION: " << tag.type2_version_hex_ << '\n';
   }
-  if (!tag.type2_signature_hex.empty()) {
-    out << "Signature: " << tag.type2_signature_hex << '\n';
+  if (!tag.type2_signature_hex_.empty()) {
+    out << "Signature: " << tag.type2_signature_hex_ << '\n';
   }
-  if (!tag.type5_system_info_hex.empty()) {
-    out << "System Info: " << tag.type5_system_info_hex << '\n';
+  if (!tag.type5_system_info_hex_.empty()) {
+    out << "System Info: " << tag.type5_system_info_hex_ << '\n';
   }
-  for (const auto &line : tag.detail_lines) {
+  for (const auto& line : tag.detail_lines_) {
     out << line << '\n';
   }
-  if (tag.max_ndef_size != 0u) {
-    out << "NDEF max size: " << tag.max_ndef_size << " bytes\n";
-    out << "Read access: " << (tag.read_access_open ? "open" : "restricted")
-        << "  Write access: " << (tag.write_access_open ? "open" : "restricted") << '\n';
+  if (tag.max_ndef_size_ != 0u) {
+    out << "NDEF max size: " << tag.max_ndef_size_ << " bytes\n";
+    out << "Read access: " << (tag.read_access_open_ ? "open" : "restricted")
+        << "  Write access: "
+        << (tag.write_access_open_ ? "open" : "restricted") << '\n';
   }
-  if (!tag.ndef_message.empty()) {
-    out << "NDEF message: " << tag.ndef_message.size() << " bytes\n";
-    for (std::size_t i = 0; i < tag.records.size(); ++i) {
-      const auto &rec = tag.records[i];
-      out << "  Record #" << (i + 1u) << ": TNF=" << static_cast<unsigned>(rec.tnf)
-          << " Type=" << rec.type << " Payload=" << rec.payload.size() << "B";
-      if (rec.decoded) {
-        out << " Decoded=\"" << *rec.decoded << '"';
+  if (!tag.ndef_message_.empty()) {
+    out << "NDEF message: " << tag.ndef_message_.size() << " bytes\n";
+    for (std::size_t i = 0; i < tag.records_.size(); ++i) {
+      const auto& rec = tag.records_[i];
+      out << "  Record #" << (i + 1u)
+          << ": TNF=" << static_cast<unsigned>(rec.tnf_)
+          << " Type=" << rec.type_ << " Payload=" << rec.payload_.size() << "B";
+      if (rec.decoded_) {
+        out << " Decoded=\"" << *rec.decoded_ << '"';
       }
       out << '\n';
     }
@@ -90,8 +92,8 @@ std::string format_pcsc_tag_snapshot_body(const PcscTagSnapshot &tag) {
   return out.str();
 }
 
-std::string format_pcsc_tag_snapshot(const PcscTagSnapshot &tag) {
-  return format_pcsc_tag_snapshot_header(tag) + format_pcsc_tag_snapshot_body(tag);
+std::string FormatPcscTagSnapshot(const PcscTagSnapshot& tag) {
+  return FormatPcscTagSnapshotHeader(tag) + FormatPcscTagSnapshotBody(tag);
 }
 
-} // namespace nero_nfc
+}  // namespace nero_nfc

@@ -116,22 +116,22 @@ while (($# > 0)); do
   shift
 done
 
-[[ -x "${ARDUINO_CLI}" ]] || {
+[[ -x ${ARDUINO_CLI} ]] || {
   echo "ERROR: arduino-cli not executable: ${ARDUINO_CLI}" >&2
   exit 1
 }
-[[ -n "${FQBN}" ]] || {
+[[ -n ${FQBN} ]] || {
   echo "ERROR: --fqbn is required" >&2
   exit 1
 }
-[[ -d "${INPUT_DIR}" ]] || {
+[[ -d ${INPUT_DIR} ]] || {
   echo "ERROR: input dir not found: ${INPUT_DIR}" >&2
   exit 1
 }
 
 normalize_port() {
   local candidate="$1"
-  if [[ -n "${candidate}" && ! -e "${candidate}" && -e "/dev/${candidate}" ]]; then
+  if [[ -n ${candidate} && ! -e ${candidate} && -e "/dev/${candidate}" ]]; then
     printf '/dev/%s\n' "${candidate}"
     return 0
   fi
@@ -145,7 +145,7 @@ discover_port_once() {
   else
     found="$("${ARDUINO_CLI}" board list 2>/dev/null | awk 'NR > 1 && $1 ~ /^\/dev\// { print $1; exit }')"
   fi
-  if [[ -z "${found}" ]]; then
+  if [[ -z ${found} ]]; then
     found="$(ls /dev/ttyACM* /dev/ttyUSB* 2>/dev/null | head -1 || true)"
   fi
   printf '%s\n' "${found}"
@@ -154,7 +154,7 @@ discover_port_once() {
 UPLOAD_SPINNER_DURING_CLI=1
 
 emit_ready_banner() {
-  if [[ -n "${READY_BANNER}" ]]; then
+  if [[ -n ${READY_BANNER} ]]; then
     echo "── ${READY_BANNER} ──" >&2
     UPLOAD_SPINNER_DURING_CLI=0
   fi
@@ -164,23 +164,23 @@ resolve_upload_port() {
   local saved_port=""
   PORT="$(normalize_port "${PORT}")"
 
-  if [[ -n "${PSEUDO_PORT}" ]]; then
+  if [[ -n ${PSEUDO_PORT} ]]; then
     PORT="${PSEUDO_PORT}"
     return 0
   fi
 
-  if [[ "${NEEDS_PORT}" != "1" ]]; then
+  if [[ ${NEEDS_PORT} != "1" ]]; then
     return 0
   fi
 
-  if [[ -n "${PORT}" ]]; then
+  if [[ -n ${PORT} ]]; then
     emit_ready_banner
     return 0
   fi
 
-  if [[ -n "${BUILD_DIR}" && -f "${BUILD_DIR}/.port" ]]; then
+  if [[ -n ${BUILD_DIR} && -f "${BUILD_DIR}/.port" ]]; then
     saved_port="$(<"${BUILD_DIR}/.port")"
-    if [[ -e "${saved_port}" ]]; then
+    if [[ -e ${saved_port} ]]; then
       PORT="${saved_port}"
       emit_ready_banner
       return 0
@@ -194,9 +194,9 @@ resolve_upload_port() {
 
   cli_spinner_start "${WAIT_MESSAGE}"
   local waited=0
-  while [[ -z "${PORT}" && "${waited}" -lt "${PORT_WAIT_SECONDS}" ]]; do
+  while [[ -z ${PORT} && ${waited} -lt ${PORT_WAIT_SECONDS} ]]; do
     PORT="$(discover_port_once)"
-    if [[ -z "${PORT}" ]]; then
+    if [[ -z ${PORT} ]]; then
       waited=$((waited + 1))
       remaining=$((PORT_WAIT_SECONDS - waited))
       cli_spinner_set_message "${WAIT_MESSAGE} (${remaining}s left)"
@@ -205,11 +205,11 @@ resolve_upload_port() {
   done
   cli_spinner_finish
 
-  if [[ -z "${PORT}" ]]; then
+  if [[ -z ${PORT} ]]; then
     echo "ERROR: No board found" >&2
     exit 1
   fi
-  if [[ ! -e "${PORT}" ]]; then
+  if [[ ! -e ${PORT} ]]; then
     echo "ERROR: Port ${PORT} not found" >&2
     exit 1
   fi
@@ -223,22 +223,22 @@ run_upload_with_spinner() {
   local line=""
   local -a upload_args=(upload --fqbn "${FQBN}" --input-dir "${INPUT_DIR}" --discovery-timeout "${DISCOVERY_TIMEOUT}")
 
-  if [[ "${UPLOAD_SPINNER_DURING_CLI}" -eq 1 && -n "${READY_MARKER}" ]]; then
+  if [[ ${UPLOAD_SPINNER_DURING_CLI} -eq 1 && -n ${READY_MARKER} ]]; then
     cli_spinner_start "${WAIT_MESSAGE}"
     spinner_active=1
   fi
 
-  if [[ -n "${upload_port}" ]]; then
+  if [[ -n ${upload_port} ]]; then
     upload_args+=(-p "${upload_port}")
   fi
 
   # Upload tools that draw \r spinners on stderr need a real TTY.
-  if [[ -z "${READY_MARKER}" ]]; then
+  if [[ -z ${READY_MARKER} ]]; then
     timeout 120 "${ARDUINO_CLI}" "${upload_args[@]}"
   else
     timeout 120 "${ARDUINO_CLI}" "${upload_args[@]}" 2> >(
-      while IFS= read -r line || [[ -n "${line}" ]]; do
-        if [[ "${spinner_active}" -eq 1 && "${line}" == *"${READY_MARKER}"* ]]; then
+      while IFS= read -r line || [[ -n ${line} ]]; do
+        if [[ ${spinner_active} -eq 1 && ${line} == *"${READY_MARKER}"* ]]; then
           cli_spinner_finish
           spinner_active=0
         fi
@@ -247,17 +247,17 @@ run_upload_with_spinner() {
     )
   fi
 
-  if [[ "${spinner_active}" -eq 1 ]]; then
+  if [[ ${spinner_active} -eq 1 ]]; then
     cli_spinner_finish
   fi
 }
 
 remember_port() {
   local live_port=""
-  [[ "${NEEDS_PORT}" == "1" ]] || return 0
-  [[ -n "${BUILD_DIR}" ]] || return 0
+  [[ ${NEEDS_PORT} == "1" ]] || return 0
+  [[ -n ${BUILD_DIR} ]] || return 0
   live_port="$("${ARDUINO_CLI}" board list 2>/dev/null | awk 'NR > 1 && $1 ~ /^\/dev\// { print $1; exit }')"
-  if [[ -n "${live_port}" ]]; then
+  if [[ -n ${live_port} ]]; then
     PORT="${live_port}"
   fi
   mkdir -p "${BUILD_DIR}"
@@ -275,10 +275,10 @@ for ATTEMPT in 1 2 3 4; do
     break
   fi
   NEXT_PORT="$("${ARDUINO_CLI}" board list 2>/dev/null | awk 'NR > 1 && $1 ~ /^\/dev\// { print $1; exit }')"
-  if [[ -z "${NEXT_PORT}" ]]; then
+  if [[ -z ${NEXT_PORT} ]]; then
     NEXT_PORT="$(ls /dev/ttyACM* /dev/ttyUSB* 2>/dev/null | head -1 || true)"
   fi
-  if [[ -z "${NEXT_PORT}" ]]; then
+  if [[ -z ${NEXT_PORT} ]]; then
     break
   fi
   echo "── Retrying upload on ${NEXT_PORT} (attempt ${ATTEMPT}) ──" >&2
@@ -286,7 +286,7 @@ for ATTEMPT in 1 2 3 4; do
   sleep 1
 done
 
-if [[ "${UPLOAD_OK}" -ne 1 ]]; then
+if [[ ${UPLOAD_OK} -ne 1 ]]; then
   exit 1
 fi
 

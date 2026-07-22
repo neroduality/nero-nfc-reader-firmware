@@ -94,6 +94,18 @@ arduino_repo_fatal_error_count() {
     "${log}"
 }
 
+print_arduino_repo_diagnostics() {
+  local log="$1" root="$2"
+  awk -v root="${root}/" '
+    match($0, /^[^:]+/) { p = substr($0, RSTART, RLENGTH) }
+    index(p, root) == 1 &&
+      index(p, root "third-party/") == 0 &&
+      ($0 ~ /: (warning|error|fatal error|note):/) {
+      print
+    }' \
+    "${log}" >&2
+}
+
 assert_arduino_repo_clean() {
   local log="$1" label="$2" root="$3"
   local repo_warnings repo_errors repo_fatals
@@ -101,7 +113,7 @@ assert_arduino_repo_clean() {
   repo_errors=$(arduino_repo_diagnostic_count "$log" error "$root")
   repo_fatals=$(arduino_repo_fatal_error_count "$log" "$root")
   if ((repo_warnings > 0 || repo_errors > 0 || repo_fatals > 0)); then
-    cat "${log}" >&2
+    print_arduino_repo_diagnostics "${log}" "${root}"
     printf 'error: repo-owned Arduino diagnostics for %s: %u warning(s), %u error(s), %u fatal error(s)\n' \
       "${label}" "${repo_warnings}" "${repo_errors}" "${repo_fatals}" >&2
     exit 1
@@ -114,7 +126,7 @@ run_compile_with_log_heartbeat() {
 
   printf '── Compiling firmware for %s ──\n' "${BOARD_DESCRIPTION}" >&2
   if [[ ${NERO_CI_LOCAL_IN_VM:-0} == 1 ]]; then
-    printf '── note: first STM32/WBA65 compile in Lima can take 5–15 min (sources on /src, objects on /tmp) ──\n' >&2
+    printf '── note: Lima uses a VM-local work tree (not the host mount); first third-party fetch + STM32/WBA65 compile can take several minutes ──\n' >&2
   fi
 
   : >"${COMPILE_LOG}"
@@ -175,7 +187,7 @@ while (($# > 0)); do
   shift
 done
 
-if [[ -z "${BOARD_DESCRIPTION}" || "$#" -eq 0 ]]; then
+if [[ -z ${BOARD_DESCRIPTION} || $# -eq 0 ]]; then
   echo "ERROR: --board and compile command are required" >&2
   usage
   exit 2
@@ -199,11 +211,12 @@ if [[ -n ${REPO_ROOT} ]]; then
     repo_errors=$(arduino_repo_diagnostic_count "${COMPILE_LOG}" error "${REPO_ROOT}")
     repo_fatals=$(arduino_repo_fatal_error_count "${COMPILE_LOG}" "${REPO_ROOT}")
     if ((repo_warnings > 0 || repo_errors > 0 || repo_fatals > 0)); then
-      cat "${COMPILE_LOG}" >&2
+      print_arduino_repo_diagnostics "${COMPILE_LOG}" "${REPO_ROOT}"
       printf 'error: repo-owned Arduino diagnostics for %s: %u warning(s), %u error(s), %u fatal error(s)\n' \
         "${BOARD_DESCRIPTION}" "${repo_warnings}" "${repo_errors}" "${repo_fatals}" >&2
       exit 1
     fi
+    cat "${COMPILE_LOG}" >&2
     printf 'error: Arduino compile failed for %s (third-party/toolchain only; repo sources clean)\n' \
       "${BOARD_DESCRIPTION}" >&2
     exit 1

@@ -14,8 +14,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "nero_nfc_detect.h"
-#include "nero_nfc_glob_raii.h"
+#include "nero_nfc_detect.hpp"
+#include "nero_nfc_glob_raii.hpp"
 #include "nero_nfc_null.h"
 
 #include <algorithm>
@@ -30,7 +30,7 @@
 #include <string_view>
 #include <vector>
 
-#include "nero_nfc_io.h"
+#include "nero_nfc_io.hpp"
 
 namespace nero_nfc {
 namespace {
@@ -39,7 +39,7 @@ constexpr std::string_view kDevPathPrefix = "/dev/";
 constexpr int kSysfsDeviceParentSearchMaxDepth = 8;
 constexpr std::string_view kStlinkUsbVendorId = "0483";
 
-bool read_sysfs_token(const std::string &path, std::string &out) {
+bool ReadSysfsToken(const std::string& path, std::string& out) {
   std::ifstream in(path);
   if (!in) {
     return false;
@@ -48,15 +48,16 @@ bool read_sysfs_token(const std::string &path, std::string &out) {
   return !out.empty();
 }
 
-std::optional<std::string> serial_port_usb_vendor_id(const std::string &port) {
+std::optional<std::string> SerialPortUsbVendorId(const std::string& port) {
   if (!port.starts_with(kDevPathPrefix)) {
     return std::nullopt;
   }
-  const std::string tty_name = port.substr(kDevPathPrefix.size());
-  std::filesystem::path node = std::filesystem::path("/sys/class/tty") / tty_name / "device";
+  const std::string kTtyName = port.substr(kDevPathPrefix.size());
+  std::filesystem::path node =
+      std::filesystem::path("/sys/class/tty") / kTtyName / "device";
   for (int depth = 0; depth < kSysfsDeviceParentSearchMaxDepth; ++depth) {
     std::string vendor;
-    if (read_sysfs_token((node / "idVendor").string(), vendor)) {
+    if (ReadSysfsToken((node / "idVendor").string(), vendor)) {
       return vendor;
     }
     if (!node.has_parent_path() || node == node.parent_path()) {
@@ -67,34 +68,37 @@ std::optional<std::string> serial_port_usb_vendor_id(const std::string &port) {
   return std::nullopt;
 }
 
-bool is_stlink_virtual_serial_port(const std::string &port) {
-  const auto vendor = serial_port_usb_vendor_id(port);
-  return vendor.has_value() && *vendor == kStlinkUsbVendorId;
+bool IsStlinkVirtualSerialPort(const std::string& port) {
+  const auto kVendor = SerialPortUsbVendorId(port);
+  return kVendor.has_value() && *kVendor == kStlinkUsbVendorId;
 }
 
-std::vector<std::string> filter_nero_cdc_serial_ports(const std::vector<std::string> &ports) {
+std::vector<std::string> FilterNeroCdcSerialPorts(
+    const std::vector<std::string>& ports) {
   std::vector<std::string> filtered;
   filtered.reserve(ports.size());
-  std::copy_if(ports.begin(), ports.end(), std::back_inserter(filtered),
-               [](const std::string &port) { return !is_stlink_virtual_serial_port(port); });
+  std::ranges::copy_if(
+      ports, std::back_inserter(filtered),
+      [](const std::string& port) { return !IsStlinkVirtualSerialPort(port); });
   return filtered;
 }
 
-} // namespace
+}  // namespace
 
 #ifdef NERO_HOST_UNIT_TEST_HOOKS
 namespace {
-const std::vector<std::string> *g_find_serial_ports_override = NERO_NFC_NULL;
+const std::vector<std::string>* g_find_serial_ports_override = NERO_NFC_NULL;
 }
-void nero_nfc_utest_set_find_serial_ports_override(const std::vector<std::string> *ports) {
+void NeroNfcUtestSetFindSerialPortsOverride(
+    const std::vector<std::string>* ports) {
   g_find_serial_ports_override = ports;
 }
-void nero_nfc_utest_clear_find_serial_ports_override() {
+void NeroNfcUtestClearFindSerialPortsOverride() {
   g_find_serial_ports_override = NERO_NFC_NULL;
 }
 #endif
 
-std::vector<std::string> find_serial_ports() {
+std::vector<std::string> FindSerialPorts() {
 #ifdef NERO_HOST_UNIT_TEST_HOOKS
   if (g_find_serial_ports_override != NERO_NFC_NULL) {
     auto v = *g_find_serial_ports_override;
@@ -103,68 +107,74 @@ std::vector<std::string> find_serial_ports() {
   }
 #endif
   static constexpr std::size_t kGlobPatternCount = 2u;
-  static constexpr std::array<const char *, kGlobPatternCount> kGlobPatterns = {"/dev/ttyACM*",
-                                                                                "/dev/ttyUSB*"};
+  static constexpr std::array<const char*, kGlobPatternCount> kGlobPatterns = {
+      "/dev/ttyACM*", "/dev/ttyUSB*"};
 
   std::vector<std::string> result;
-  for (const char *pattern : kGlobPatterns) {
+  for (const char* pattern : kGlobPatterns) {
     GlobResult gr;
-    if (gr.match(pattern) == 0) {
-      for (size_t i = 0; i < gr.count(); ++i) {
-        result.emplace_back(gr.path(i));
+    if (gr.Match(pattern) == 0) {
+      for (size_t i = 0; i < gr.Count(); ++i) {
+        const char* path = gr.Path(i);
+        if (path != NERO_NFC_NULL) {
+          result.emplace_back(path);
+        }
       }
     }
   }
   std::ranges::sort(result);
-  return filter_nero_cdc_serial_ports(result);
+  return FilterNeroCdcSerialPorts(result);
 }
 
-std::string select_best_port(const std::vector<std::string> &ports) {
+std::string SelectBestPort(const std::vector<std::string>& ports) {
   if (ports.empty()) {
     return {};
   }
   // Prefer ttyACM over ttyUSB; within the same prefix, pick lowest index.
-  const auto ttyacm =
-    std::ranges::find_if(ports, [](const std::string &p) { return p.contains("ttyACM"); });
-  if (ttyacm != ports.end()) {
-    return *ttyacm;
+  const auto kTtyacm = std::ranges::find_if(
+      ports, [](const std::string& p) { return p.contains("ttyACM"); });
+  if (kTtyacm != ports.end()) {
+    return *kTtyacm;
   }
   return ports.front();
 }
 
-std::string serial_port_from_env() {
-  const char *env = std::getenv("PORT");
+std::string SerialPortFromEnv() {
+  const char* env = std::getenv("PORT");
   if (env == NERO_NFC_NULL) {
     return {};
   }
-  while (std::isspace(static_cast<unsigned char>(*env)) != 0) {
-    ++env;
+  std::string_view sv{env};
+  while (!sv.empty() &&
+         (std::isspace(static_cast<unsigned char>(sv.front())) != 0)) {
+    sv.remove_prefix(1u);
   }
-  return (*env == '\0') ? std::string{} : std::string{env};
+  return sv.empty() ? std::string{} : std::string{sv};
 }
 
-std::string detect_serial_port_candidate(const std::string &explicit_port) {
+std::string DetectSerialPortCandidate(const std::string& explicit_port) {
   if (!explicit_port.empty()) {
     return explicit_port;
   }
-  auto env_port = serial_port_from_env();
+  auto env_port = SerialPortFromEnv();
   if (!env_port.empty()) {
     return env_port;
   }
-  return select_best_port(find_serial_ports());
+  return SelectBestPort(FindSerialPorts());
 }
 
-std::string resolve_serial_port_choice(const std::string &explicit_port,
-                                       const std::vector<std::string> &discovered_ports) {
+std::string ResolveSerialPortChoice(
+    const std::string& explicit_port,
+    const std::vector<std::string>& discovered_ports) {
   if (!explicit_port.empty()) {
     return explicit_port;
   }
-  auto best = select_best_port(discovered_ports);
+  auto best = SelectBestPort(discovered_ports);
   if (best.empty()) {
-    nero_nfc::nero_nfc_stderr_line(
-      "error: no serial port detected (set PORT=/dev/ttyACM0 or use --port)");
+    nero_nfc::NeroNfcStderrLine(
+        "error: no serial port detected (set PORT=/dev/ttyACM0 or use --port)");
   }
   return best;
 }
 
-} // namespace nero_nfc
+}  // namespace nero_nfc

@@ -29,9 +29,9 @@ void nero_nfc_print_utils_compile_touch_c(void) {
   nero_nfc_emit_write(touch_putc, "");
   nero_nfc_emit_write(touch_putc, "x");
   nero_nfc_emit_hex_u8(touch_putc, 0x00u);
-  nero_nfc_emit_hex_u8(touch_putc, 0xFFu);
+  nero_nfc_emit_hex_u8(touch_putc, UINT8_MAX);
   nero_nfc_emit_dec_u32(touch_putc, 0u);
-  nero_nfc_emit_dec_u32(touch_putc, 4294967295u);
+  nero_nfc_emit_dec_u32(touch_putc, UINT32_MAX);
   nero_nfc_emit_dec_i32(touch_putc, 0);
   nero_nfc_emit_dec_i32(touch_putc, INT32_MIN);
 }

@@ -25,10 +25,16 @@ report_dir="${repo_root}/tests/scan-build-report"
 
 resolve_scan_build() {
   local c v
-  if command -v scan-build >/dev/null 2>&1; then printf '%s' "scan-build"; return 0; fi
+  if command -v scan-build >/dev/null 2>&1; then
+    printf '%s' "scan-build"
+    return 0
+  fi
   for v in 21 20 19 18 17 16; do
     c="scan-build-${v}"
-    if command -v "$c" >/dev/null 2>&1; then printf '%s' "$c"; return 0; fi
+    if command -v "$c" >/dev/null 2>&1; then
+      printf '%s' "$c"
+      return 0
+    fi
   done
   return 1
 }
@@ -51,14 +57,14 @@ Environment:
 EOF
 }
 
-if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+if [[ ${1:-} == "-h" || ${1:-} == "--help" ]]; then
   usage
   exit 0
 fi
 
 if [[ "$(uname -s)" == "Linux" ]]; then
   : "${AUTO_INSTALL_LINUX_DEPS:=${INSTALL_DEPS:-0}}"
-  if [[ "${AUTO_INSTALL_LINUX_DEPS}" != "0" ]]; then
+  if [[ ${AUTO_INSTALL_LINUX_DEPS} != "0" ]]; then
     FIRMWARE_ROOT="${repo_root}" \
       INSTALL_DEPS="${INSTALL_DEPS:-1}" \
       AUTO_INSTALL_LINUX_DEPS="${AUTO_INSTALL_LINUX_DEPS}" \
@@ -71,8 +77,10 @@ if ! command -v cmake >/dev/null 2>&1; then
   exit 1
 fi
 
+make -C "${repo_root}" third-party-nfc-libs
+
 scan_build="${NERO_SCAN_BUILD_CMD:-}"
-if [[ -z "$scan_build" ]]; then
+if [[ -z $scan_build ]]; then
   if ! scan_build="$(resolve_scan_build)"; then
     printf 'error: scan-build not found (install clang-tools / llvm — e.g. apt install clang-tools)\n' >&2
     exit 1
@@ -100,7 +108,7 @@ cmake \
 
 procs="$(bash "${repo_root}/make/cpu-jobs.sh")"
 
-if [[ "${generator}" == "Ninja" ]]; then
+if [[ ${generator} == "Ninja" ]]; then
   "${scan_build}" --status-bugs -o "${report_dir}" ninja -C "${build_dir}" -j "${procs}"
 else
   env -u MAKEFLAGS "${scan_build}" --status-bugs -o "${report_dir}" cmake --build "${build_dir}" -j "${procs}"

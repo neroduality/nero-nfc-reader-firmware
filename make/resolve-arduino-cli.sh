@@ -22,7 +22,7 @@
 # Usage: bash make/resolve-arduino-cli.sh [FIRMWARE_ROOT]
 set -euo pipefail
 
-if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+if [[ ${1:-} == "-h" || ${1:-} == "--help" ]]; then
   cat <<'EOF'
 Usage: bash make/resolve-arduino-cli.sh [FIRMWARE_ROOT]
 
@@ -36,7 +36,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib-firmware-root.sh"
 root="$(nero_resolve_firmware_root "${1:-}")"
 
 cli="${root}/third-party/arduino-cli/arduino-cli"
-if [[ ! -x "${cli}" ]]; then
+if [[ ! -x ${cli} ]]; then
   echo "ERROR: pinned arduino-cli not found at ${cli}" >&2
   echo "  Run: make -C \"${root}\" third-party-host-tools" >&2
   exit 1

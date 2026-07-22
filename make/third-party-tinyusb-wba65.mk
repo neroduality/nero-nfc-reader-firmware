@@ -23,8 +23,8 @@ _ENSURE_TUSBWBA := $(_TUSBWBA_MKDIR)/ensure-tinyusb-wba65.sh
 TINYUSB_WBA65_STAMP := $(_TUSBWBA_ROOT)/third-party/.tinyusb-wba65-version
 TINYUSB_WBA65_SRC := $(_TUSBWBA_ROOT)/third-party/tinyusb/src
 
-$(TINYUSB_WBA65_STAMP): $(_ENSURE_TUSBWBA)
-	@bash "$(_ENSURE_TUSBWBA)" "$(_TUSBWBA_ROOT)" "$(TINYUSB_WBA65_STAMP)" "$(FORCE_EXTERNAL)"
+$(TINYUSB_WBA65_STAMP): | third-party-tinyusb-wba65
 
 .PHONY: third-party-tinyusb-wba65
-third-party-tinyusb-wba65: $(TINYUSB_WBA65_STAMP)
+third-party-tinyusb-wba65:
+	@bash "$(_ENSURE_TUSBWBA)" "$(_TUSBWBA_ROOT)" "$(TINYUSB_WBA65_STAMP)" "$(FORCE_EXTERNAL)"

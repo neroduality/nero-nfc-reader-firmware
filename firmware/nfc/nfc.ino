@@ -14,23 +14,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/*
- * Combined NFC firmware — reader + writer in one flash image.
- *
- * Default mode: reader (override at build time with NFC_MODE=writer, or at
- * runtime by sending "mode writer\n" over the serial console).
- *
- * Build:  make            (or: make nfc)
- * Flash:  make flash  |  make flash-cdc
- * Mode:   NFC_MODE=writer make flash-cdc
- */
+#include <NeroNfc.h>
+#include <NeroNfcArduino.hpp>
 
-#include "src/nfc_app.h"
+static NfcArduinoPort g_port;
+static nero_nfc_app_storage_t g_storage;
+static nero_nfc_app_t *g_app = nullptr;
 
 void setup() {
-  nfc_app_setup();
+  nero_nfc_board_config_t board;
+  nero_nfc_platform_ops_t ops;
+
+  nero_nfc_board_config_defaults(&board);
+  g_port.SetSpiClockHz(board.spi_clock_hz);
+  ops = g_port.MakeOps();
+#if defined(NERO_CCID_ONLY_BUILD)
+  g_app = nero_nfc_app_init(&g_storage, &ops, &board,
+                            NERO_NFC_PRODUCT_READER);
+#else
+  g_app =
+      nero_nfc_app_init(&g_storage, &ops, &board, NERO_NFC_PRODUCT_COMBINED);
+#endif
+  if (g_app == nullptr) {
+    return;
+  }
+  nero_nfc_app_begin(g_app);
 }
 
-void loop() {
-  nfc_app_loop();
-}
+void loop() { nero_nfc_app_step(g_app); }

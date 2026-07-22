@@ -58,6 +58,34 @@ _lima_repo_set() {
   printf '.param.repoRoot = "%s"' "${escaped}"
 }
 
+_lima_lint_kit_set() {
+  local escaped="${HOST_LINT_KIT//\"/\\\"}"
+  printf '.param.lintKitRoot = "%s"' "${escaped}"
+}
+
+_lima_resolve_host_lint_kit() {
+  local candidate=""
+  # shellcheck source=lint-kit-config.sh
+  source "${SCRIPT_DIR}/lint-kit-config.sh"
+  if [[ -n ${LINT_KIT:-} ]]; then
+    candidate="$(cd "${LINT_KIT}" && pwd)" || {
+      printf 'error: lint kit not found: %s\n' "${LINT_KIT}" >&2
+      exit 1
+    }
+  else
+    lint_kit_ensure_cloned "${FIRMWARE_ROOT}"
+    candidate="$(lint_kit_root "${FIRMWARE_ROOT}")"
+  fi
+  if [[ ! -x ${candidate}/lint-c-cpp.sh ]]; then
+    printf 'error: lint kit missing lint-c-cpp.sh: %s\n' "${candidate}" >&2
+    exit 1
+  fi
+  printf '%s\n' "${candidate}"
+}
+
+LIMA_GUEST_LINT_KIT=/opt/lint-kit
+HOST_LINT_KIT="$(_lima_resolve_host_lint_kit)"
+
 _lima_instance_exists() {
   limactl list "${INSTANCE}" --format '{{.Name}}' 2>/dev/null | grep -qx "${INSTANCE}"
 }
@@ -150,9 +178,9 @@ _lima_print_failure_diagnostics() {
     ci)
       printf '── hint: CI error output should appear above this block ──\n' >&2
       if _lima_instance_exists; then
-        limactl shell "${INSTANCE}" -- bash -ce '
+        limactl shell "${INSTANCE}" -- env LINT_KIT="${LIMA_GUEST_LINT_KIT}" bash -ce '
           printf "user=%s\n" "$(id -un)"
-          command -v clang-tidy >/dev/null && clang-tidy --version | head -1 || echo clang-tidy=missing
+          printf "lint_kit=%s\n" "${LINT_KIT:-unset}"
           docker info >/dev/null 2>&1 && echo docker=ok || echo docker=broken
         ' >&2 || true
       fi
@@ -243,7 +271,9 @@ _lima_teardown() {
 }
 
 printf '── Lima Main CI: fresh ubuntu-24.04 VM %s ──\n' "${INSTANCE}"
-printf '   repo: %s → /src\n' "${FIRMWARE_ROOT}"
+printf '   repo (read-only source): %s → /src\n' "${FIRMWARE_ROOT}"
+printf '   CI work tree (guest disk): ~/nero-nfc-ci-work (no host build/third-party)\n'
+printf '   lint kit: %s → %s\n' "${HOST_LINT_KIT}" "${LIMA_GUEST_LINT_KIT}"
 printf '   start timeout: %s (override: NERO_LIMA_START_TIMEOUT)\n' "${START_TIMEOUT}"
 
 _LIMA_PHASE=boot
@@ -255,8 +285,8 @@ _lima_create_size=()
 while IFS= read -r _lima_opt; do
   [[ -n ${_lima_opt} ]] && _lima_create_size+=("${_lima_opt}")
 done < <(_lima_create_args)
-limactl "${LIMA_YES[@]}" create "${LIMA_TEMPLATE}" --name "${INSTANCE}" --set "$(_lima_repo_set)" \
-  "${_lima_create_size[@]}"
+limactl "${LIMA_YES[@]}" create "${LIMA_TEMPLATE}" --name "${INSTANCE}" \
+  --set "$(_lima_repo_set)" --set "$(_lima_lint_kit_set)" "${_lima_create_size[@]}"
 
 printf '── Lima: starting %s ──\n' "${INSTANCE}"
 _lima_start_instance
@@ -264,4 +294,8 @@ printf '── Lima: boot complete (dockerd probe passed) ──\n'
 
 _LIMA_PHASE=ci
 printf '── Lima: running full Main CI inside %s (deps + lint + containers) ──\n' "${INSTANCE}"
-limactl shell "${INSTANCE}" -- bash /src/.github/scripts/run-ci-locally-lima-guest.sh "$@"
+limactl shell "${INSTANCE}" -- env \
+  LINT_KIT="${LIMA_GUEST_LINT_KIT}" \
+  NERO_LIMA_HOST_SRC=/src \
+  NERO_CI_LOCAL_IN_VM=1 \
+  bash /src/.github/scripts/run-ci-locally-lima-guest.sh "$@"

@@ -22,7 +22,7 @@
 #   cli_spinner_start "Processing — wait"   # blank line, spinner row, reserved blank line below
 #   cli_spinner_set_message "Processing — updated detail"
 #   cli_spinner_finish                      # clear spinner row; blank line before next output
-if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+if [[ ${BASH_SOURCE[0]} == "${0}" ]]; then
   echo "Source this file; do not execute directly." >&2
   exit 1
 fi
@@ -42,10 +42,10 @@ cli_spinner_start() {
     local i=0
     local frame_count="${#CLI_SPINNER_FRAMES[@]}"
     local msg=""
-    while [[ -f "${CLI_SPINNER_MSG_FILE}" ]]; do
+    while [[ -f ${CLI_SPINNER_MSG_FILE} ]]; do
       msg="$(<"${CLI_SPINNER_MSG_FILE}")"
       printf '\r%s %s  ' "${CLI_SPINNER_FRAMES[$i]}" "${msg}" >&2
-      i=$(( (i + 1) % frame_count ))
+      i=$(((i + 1) % frame_count))
       sleep 0.12
     done
   ) &
@@ -53,18 +53,18 @@ cli_spinner_start() {
 }
 
 cli_spinner_set_message() {
-  if [[ -n "${CLI_SPINNER_MSG_FILE}" && -f "${CLI_SPINNER_MSG_FILE}" ]]; then
+  if [[ -n ${CLI_SPINNER_MSG_FILE} && -f ${CLI_SPINNER_MSG_FILE} ]]; then
     printf '%s' "$1" >"${CLI_SPINNER_MSG_FILE}"
   fi
 }
 
 cli_spinner_stop() {
-  if [[ -n "${CLI_SPINNER_PID}" ]]; then
+  if [[ -n ${CLI_SPINNER_PID} ]]; then
     kill "${CLI_SPINNER_PID}" 2>/dev/null || true
     wait "${CLI_SPINNER_PID}" 2>/dev/null || true
     CLI_SPINNER_PID=""
   fi
-  if [[ -n "${CLI_SPINNER_MSG_FILE}" ]]; then
+  if [[ -n ${CLI_SPINNER_MSG_FILE} ]]; then
     rm -f "${CLI_SPINNER_MSG_FILE}"
     CLI_SPINNER_MSG_FILE=""
   fi

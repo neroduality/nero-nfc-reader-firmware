@@ -46,11 +46,11 @@ MARKER="<!-- nero-nfc-arduino -->"
 # ---------------------------------------------------------------------------
 find_drivers_dir() {
   for d in \
-      /usr/lib64/pcsc/drivers \
-      /usr/lib/x86_64-linux-gnu/pcsc/drivers \
-      /usr/lib/pcsc/drivers \
-      /usr/local/lib/pcsc/drivers; do
-    if [[ -d "$d" ]]; then
+    /usr/lib64/pcsc/drivers \
+    /usr/lib/x86_64-linux-gnu/pcsc/drivers \
+    /usr/lib/pcsc/drivers \
+    /usr/local/lib/pcsc/drivers; do
+    if [[ -d $d ]]; then
       printf '%s' "$d"
       return
     fi
@@ -65,7 +65,7 @@ patch_system_bundle() {
   local plist="$1"
   local entries_arg
   local rc
-  if [[ ! -f "$plist" ]]; then
+  if [[ ! -f $plist ]]; then
     echo "  WARNING: system bundle plist not found at ${plist} — skipping." >&2
     return
   fi
@@ -75,7 +75,7 @@ patch_system_bundle() {
   fi
   entries_arg="$(printf '%s\n' "${CCID_ENTRIES[@]}")"
   set +e
-  python3 - "$plist" "$MARKER" "$entries_arg" << 'PYEOF'
+  python3 - "$plist" "$MARKER" "$entries_arg" <<'PYEOF'
 import sys, re
 
 plist_path, marker, entries_arg = sys.argv[1], sys.argv[2], sys.argv[3]
@@ -125,9 +125,9 @@ sys.exit(10)
 PYEOF
   rc=$?
   set -e
-  if [[ "$rc" -eq 10 ]]; then
+  if [[ $rc -eq 10 ]]; then
     return 0
-  elif [[ "$rc" -ne 0 ]]; then
+  elif [[ $rc -ne 0 ]]; then
     return "$rc"
   fi
 }
@@ -137,11 +137,11 @@ PYEOF
 unpatch_system_bundle() {
   local plist="$1"
   local backup="${plist}.nero-nfc-arduino.bak"
-  if [[ -f "$backup" ]]; then
+  if [[ -f $backup ]]; then
     cp "$backup" "$plist"
     rm -f "$backup"
     echo "  System bundle restored from backup."
-  elif [[ -f "$plist" ]] && grep -qF "$MARKER" "$plist"; then
+  elif [[ -f $plist ]] && grep -qF "$MARKER" "$plist"; then
     sed -i "/${MARKER}/d" "$plist"
     echo "  System bundle entries removed."
   else
@@ -155,15 +155,18 @@ unpatch_system_bundle() {
 REMOVE=0
 for arg in "$@"; do
   case "$arg" in
-    --remove|-r) REMOVE=1 ;;
-    *) echo "Usage: $0 [--remove]" >&2; exit 1 ;;
+    --remove | -r) REMOVE=1 ;;
+    *)
+      echo "Usage: $0 [--remove]" >&2
+      exit 1
+      ;;
   esac
 done
 
 # ---------------------------------------------------------------------------
 # Root check
 # ---------------------------------------------------------------------------
-if [[ "$EUID" -ne 0 ]]; then
+if [[ $EUID -ne 0 ]]; then
   echo "ERROR: This script must be run as root." >&2
   echo "  sudo bash $0${REMOVE:+ --remove}" >&2
   exit 1
@@ -173,7 +176,7 @@ fi
 # Locate pcscd drivers directory
 # ---------------------------------------------------------------------------
 DRIVERS_DIR="$(find_drivers_dir)"
-if [[ -z "$DRIVERS_DIR" ]]; then
+if [[ -z $DRIVERS_DIR ]]; then
   echo "ERROR: Cannot find pcscd drivers directory." >&2
   echo "  Install pcsc-lite: dnf install pcsc-lite  OR  apt install pcscd" >&2
   exit 1
@@ -184,10 +187,10 @@ BUNDLE_DIR="${DRIVERS_DIR}/${BUNDLE_NAME}"
 # ---------------------------------------------------------------------------
 # --remove path
 # ---------------------------------------------------------------------------
-if [[ "$REMOVE" -eq 1 ]]; then
+if [[ $REMOVE -eq 1 ]]; then
   # Remove any legacy standalone bundle (may have been created by an older
   # version of this script).
-  if [[ -d "$BUNDLE_DIR" ]]; then
+  if [[ -d $BUNDLE_DIR ]]; then
     rm -rf "$BUNDLE_DIR"
     echo "Removed legacy bundle ${BUNDLE_DIR}"
   fi
@@ -208,7 +211,7 @@ fi
 # ---------------------------------------------------------------------------
 
 # Remove any legacy standalone bundle left by a previous install.
-if [[ -d "$BUNDLE_DIR" ]]; then
+if [[ -d $BUNDLE_DIR ]]; then
   rm -rf "$BUNDLE_DIR"
   echo "Removed legacy bundle ${BUNDLE_DIR}"
 fi

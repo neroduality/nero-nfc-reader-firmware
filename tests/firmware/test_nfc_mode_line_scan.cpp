@@ -16,8 +16,17 @@
 
 #include <cstdint>
 #include <cstring>
+#include <span>
 #include <string>
 #include <vector>
+
+namespace {
+enum {
+  kTestLit25u = 25u,
+  kTestLit64 = 64,
+  kTestLit8 = 8,
+};
+}  // namespace
 
 #include <gtest/gtest.h>
 
@@ -29,20 +38,21 @@ extern "C" {
 
 namespace {
 
-nfc_mode_scan_result_t FeedAll(nfc_mode_scan_state_t *st, const std::string &in,
-                               std::vector<uint8_t> *pushbacks) {
-  const auto *bytes = reinterpret_cast<const unsigned char *>(in.data());
-  uint8_t pb[64];
+nfc_mode_scan_result_t FeedAll(nfc_mode_scan_state_t* st, const std::string& in,
+                               std::vector<uint8_t>* pushbacks) {
+  uint8_t pb[kTestLit64];
   uint16_t pblen = 0;
   nfc_mode_scan_result_t last = NFC_MODE_SCAN_INGESTED;
   if (pushbacks != NERO_NFC_NULL) {
     pushbacks->clear();
   }
-  for (size_t i = 0; i < in.size(); ++i) {
-    last = nfc_mode_scan_feed(st, bytes[i], pb, &pblen, sizeof(pb));
+  for (char byte : in) {
+    last = nfc_mode_scan_feed(st, static_cast<uint8_t>(byte), &pb[0], &pblen,
+                              sizeof(pb));
     if (last == NFC_MODE_SCAN_PUSHBACK_STOP && pblen > 0 &&
         pushbacks != NERO_NFC_NULL) {
-      pushbacks->insert(pushbacks->end(), pb, pb + pblen);
+      const auto kPushback = std::span<uint8_t>{pb}.subspan(0u, pblen);
+      pushbacks->insert(pushbacks->end(), kPushback.begin(), kPushback.end());
     }
     if (last == NFC_MODE_SCAN_GOT_READER || last == NFC_MODE_SCAN_GOT_WRITER ||
         last == NFC_MODE_SCAN_PUSHBACK_STOP) {
@@ -52,7 +62,7 @@ nfc_mode_scan_result_t FeedAll(nfc_mode_scan_state_t *st, const std::string &in,
   return last;
 }
 
-} // namespace
+}  // namespace
 
 TEST(NfcModeLineScan, ModeWriterCrlf) {
   nfc_mode_scan_state_t st{};
@@ -65,17 +75,18 @@ TEST(NfcModeLineScan, ModeWriterCrlf) {
 TEST(NfcModeLineScan, ModeReaderSplitChunks) {
   nfc_mode_scan_state_t st{};
   nfc_mode_scan_reset(&st);
-  uint8_t buf[64];
+  uint8_t buf[kTestLit64];
   uint16_t len = 0;
 
-  EXPECT_EQ(nfc_mode_scan_feed(&st, static_cast<uint8_t>('m'), buf, &len,
+  EXPECT_EQ(nfc_mode_scan_feed(&st, static_cast<uint8_t>('m'), &buf[0], &len,
                                sizeof(buf)),
             NFC_MODE_SCAN_INGESTED);
-  EXPECT_EQ(nfc_mode_scan_feed(&st, static_cast<uint8_t>('o'), buf, &len,
+  EXPECT_EQ(nfc_mode_scan_feed(&st, static_cast<uint8_t>('o'), &buf[0], &len,
                                sizeof(buf)),
             NFC_MODE_SCAN_INGESTED);
 
-  EXPECT_EQ(FeedAll(&st, "de reader\n", NERO_NFC_NULL), NFC_MODE_SCAN_GOT_READER);
+  EXPECT_EQ(FeedAll(&st, "de reader\n", NERO_NFC_NULL),
+            NFC_MODE_SCAN_GOT_READER);
 }
 
 TEST(NfcModeLineScan, ModeFooPushbackIncludesNewline) {
@@ -122,99 +133,102 @@ TEST(NfcModeLineScan, AlmostModeLineThenRealCommand) {
 
 TEST(NfcModeLineScan, ResetClearsPartial) {
   nfc_mode_scan_state_t st{};
-  uint8_t buf[64];
+  uint8_t buf[kTestLit64];
   uint16_t len = 0;
   nfc_mode_scan_reset(&st);
-  EXPECT_EQ(nfc_mode_scan_feed(&st, static_cast<uint8_t>('m'), buf, &len,
+  EXPECT_EQ(nfc_mode_scan_feed(&st, static_cast<uint8_t>('m'), &buf[0], &len,
                                sizeof(buf)),
             NFC_MODE_SCAN_INGESTED);
   nfc_mode_scan_reset(&st);
-  EXPECT_EQ(FeedAll(&st, "mode writer\n", NERO_NFC_NULL), NFC_MODE_SCAN_GOT_WRITER);
+  EXPECT_EQ(FeedAll(&st, "mode writer\n", NERO_NFC_NULL),
+            NFC_MODE_SCAN_GOT_WRITER);
 }
 
 TEST(NfcModeLineScan, ResetNullIsSafe) { nfc_mode_scan_reset(NERO_NFC_NULL); }
 
 TEST(NfcModeLineScan, FeedNullPointersReturnsStop) {
   nfc_mode_scan_state_t st{};
-  uint8_t buf[8];
+  uint8_t buf[kTestLit8];
   uint16_t len = 0;
   nfc_mode_scan_reset(&st);
-  EXPECT_EQ(nfc_mode_scan_feed(NERO_NFC_NULL, static_cast<uint8_t>('a'), buf, &len,
-                               sizeof(buf)),
+  EXPECT_EQ(nfc_mode_scan_feed(NERO_NFC_NULL, static_cast<uint8_t>('a'),
+                               &buf[0], &len, sizeof(buf)),
             NFC_MODE_SCAN_PUSHBACK_STOP);
-  EXPECT_EQ(nfc_mode_scan_feed(&st, static_cast<uint8_t>('a'), NERO_NFC_NULL, &len,
-                               sizeof(buf)),
+  EXPECT_EQ(nfc_mode_scan_feed(&st, static_cast<uint8_t>('a'), NERO_NFC_NULL,
+                               &len, sizeof(buf)),
             NFC_MODE_SCAN_PUSHBACK_STOP);
-  EXPECT_EQ(nfc_mode_scan_feed(&st, static_cast<uint8_t>('a'), buf, NERO_NFC_NULL,
-                               sizeof(buf)),
+  EXPECT_EQ(nfc_mode_scan_feed(&st, static_cast<uint8_t>('a'), &buf[0],
+                               NERO_NFC_NULL, sizeof(buf)),
             NFC_MODE_SCAN_PUSHBACK_STOP);
 }
 
 TEST(NfcModeLineScan, CarriageReturnDoesNotAdvanceState) {
   nfc_mode_scan_state_t st{};
-  uint8_t buf[64];
+  uint8_t buf[kTestLit64];
   uint16_t len = 0;
   nfc_mode_scan_reset(&st);
-  EXPECT_EQ(nfc_mode_scan_feed(&st, static_cast<uint8_t>('m'), buf, &len,
+  EXPECT_EQ(nfc_mode_scan_feed(&st, static_cast<uint8_t>('m'), &buf[0], &len,
                                sizeof(buf)),
             NFC_MODE_SCAN_INGESTED);
-  EXPECT_EQ(nfc_mode_scan_feed(&st, static_cast<uint8_t>('\r'), buf, &len,
+  EXPECT_EQ(nfc_mode_scan_feed(&st, static_cast<uint8_t>('\r'), &buf[0], &len,
                                sizeof(buf)),
             NFC_MODE_SCAN_INGESTED);
-  EXPECT_EQ(nfc_mode_scan_feed(&st, static_cast<uint8_t>('o'), buf, &len,
+  EXPECT_EQ(nfc_mode_scan_feed(&st, static_cast<uint8_t>('o'), &buf[0], &len,
                                sizeof(buf)),
             NFC_MODE_SCAN_INGESTED);
-  EXPECT_EQ(FeedAll(&st, "de writer\n", NERO_NFC_NULL), NFC_MODE_SCAN_GOT_WRITER);
+  EXPECT_EQ(FeedAll(&st, "de writer\n", NERO_NFC_NULL),
+            NFC_MODE_SCAN_GOT_WRITER);
 }
 
 TEST(NfcModeLineScan, NewlineFlushExceedsPushbackCap) {
   nfc_mode_scan_state_t st{};
   nfc_mode_scan_reset(&st);
-  uint8_t pb[64];
+  uint8_t pb[kTestLit64];
   uint16_t pblen = 0;
-  const std::string payload("mode xy");
-  const auto *bytes = reinterpret_cast<const unsigned char *>(payload.data());
-  for (size_t i = 0; i < payload.size(); ++i) {
-    ASSERT_EQ(nfc_mode_scan_feed(&st, bytes[i], pb, &pblen, /*pushback_cap=*/2),
+  const std::string kPayload("mode xy");
+  for (char byte : kPayload) {
+    ASSERT_EQ(nfc_mode_scan_feed(&st, static_cast<uint8_t>(byte), &pb[0],
+                                 &pblen, /*pushback_cap=*/2),
               NFC_MODE_SCAN_INGESTED);
   }
   EXPECT_EQ(st.len, 7u);
-  EXPECT_EQ(nfc_mode_scan_feed(&st, static_cast<uint8_t>('\n'), pb, &pblen, 2),
-            NFC_MODE_SCAN_PUSHBACK_STOP);
+  EXPECT_EQ(
+      nfc_mode_scan_feed(&st, static_cast<uint8_t>('\n'), &pb[0], &pblen, 2),
+      NFC_MODE_SCAN_PUSHBACK_STOP);
   EXPECT_EQ(pblen, 0u);
 }
 
 TEST(NfcModeLineScan, NewlineFlushCopiesWhenFinalLenEqualsPushbackCap) {
   nfc_mode_scan_state_t st{};
   nfc_mode_scan_reset(&st);
-  uint8_t pb[64];
+  uint8_t pb[kTestLit64];
   uint16_t pblen = 0;
-  const std::string payload("mode x");
-  const auto *bytes = reinterpret_cast<const unsigned char *>(payload.data());
-  for (size_t i = 0; i < payload.size(); ++i) {
-    ASSERT_EQ(nfc_mode_scan_feed(&st, bytes[i], pb, &pblen, sizeof(pb)),
+  const std::string kPayload("mode x");
+  for (char byte : kPayload) {
+    ASSERT_EQ(nfc_mode_scan_feed(&st, static_cast<uint8_t>(byte), &pb[0],
+                                 &pblen, sizeof(pb)),
               NFC_MODE_SCAN_INGESTED);
   }
   EXPECT_EQ(st.len, 6u);
-  EXPECT_EQ(nfc_mode_scan_feed(&st, static_cast<uint8_t>('\n'), pb, &pblen,
+  EXPECT_EQ(nfc_mode_scan_feed(&st, static_cast<uint8_t>('\n'), &pb[0], &pblen,
                                /*pushback_cap=*/7),
             NFC_MODE_SCAN_PUSHBACK_STOP);
   ASSERT_EQ(pblen, 7u);
-  EXPECT_EQ(std::memcmp(pb, "mode x\n", 7), 0);
+  EXPECT_EQ(std::memcmp(&pb[0], "mode x\n", 7), 0);
 }
 
 TEST(NfcModeLineScan, NewlineFlushDropsWhenFinalLenOnePastPushbackCap) {
   nfc_mode_scan_state_t st{};
   nfc_mode_scan_reset(&st);
-  uint8_t pb[64];
+  uint8_t pb[kTestLit64];
   uint16_t pblen = 0;
-  const std::string payload2("mode x");
-  const auto *bytes2 = reinterpret_cast<const unsigned char *>(payload2.data());
-  for (size_t i = 0; i < payload2.size(); ++i) {
-    ASSERT_EQ(nfc_mode_scan_feed(&st, bytes2[i], pb, &pblen, sizeof(pb)),
+  const std::string kPayload2("mode x");
+  for (char byte : kPayload2) {
+    ASSERT_EQ(nfc_mode_scan_feed(&st, static_cast<uint8_t>(byte), &pb[0],
+                                 &pblen, sizeof(pb)),
               NFC_MODE_SCAN_INGESTED);
   }
-  EXPECT_EQ(nfc_mode_scan_feed(&st, static_cast<uint8_t>('\n'), pb, &pblen,
+  EXPECT_EQ(nfc_mode_scan_feed(&st, static_cast<uint8_t>('\n'), &pb[0], &pblen,
                                /*pushback_cap=*/6),
             NFC_MODE_SCAN_PUSHBACK_STOP);
   EXPECT_EQ(pblen, 0u);
@@ -224,19 +238,19 @@ TEST(NfcModeLineScan, LongLineCapFlushDropsWhenLenExceedsPushbackCap) {
   nfc_mode_scan_state_t st{};
   nfc_mode_scan_reset(&st);
   std::string long_line = "mode ";
-  long_line.append(25u, 'a');
+  long_line.append(kTestLit25u, 'a');
   ASSERT_EQ(long_line.size(), 30u);
-  uint8_t pb[64];
+  uint8_t pb[kTestLit64];
   uint16_t pblen = 0;
   {
-    const auto *b = reinterpret_cast<const unsigned char *>(long_line.data());
-    for (size_t i = 0; i < long_line.size(); ++i) {
-      ASSERT_EQ(nfc_mode_scan_feed(&st, b[i], pb, &pblen, sizeof(pb)),
+    for (char byte : long_line) {
+      ASSERT_EQ(nfc_mode_scan_feed(&st, static_cast<uint8_t>(byte), &pb[0],
+                                   &pblen, sizeof(pb)),
                 NFC_MODE_SCAN_INGESTED);
     }
   }
   EXPECT_EQ(st.len, 30u);
-  EXPECT_EQ(nfc_mode_scan_feed(&st, static_cast<uint8_t>('a'), pb, &pblen,
+  EXPECT_EQ(nfc_mode_scan_feed(&st, static_cast<uint8_t>('a'), &pb[0], &pblen,
                                /*pushback_cap=*/30),
             NFC_MODE_SCAN_PUSHBACK_STOP);
   EXPECT_EQ(pblen, 0u);
@@ -246,53 +260,53 @@ TEST(NfcModeLineScan, LongLineCapFlushCopiesWhenLenEqualsPushbackCap) {
   nfc_mode_scan_state_t st{};
   nfc_mode_scan_reset(&st);
   std::string long_line = "mode ";
-  long_line.append(25u, 'a');
-  uint8_t pb[64];
+  long_line.append(kTestLit25u, 'a');
+  uint8_t pb[kTestLit64];
   uint16_t pblen = 0;
   {
-    const auto *b = reinterpret_cast<const unsigned char *>(long_line.data());
-    for (size_t i = 0; i < long_line.size(); ++i) {
-      ASSERT_EQ(nfc_mode_scan_feed(&st, b[i], pb, &pblen, sizeof(pb)),
+    for (char byte : long_line) {
+      ASSERT_EQ(nfc_mode_scan_feed(&st, static_cast<uint8_t>(byte), &pb[0],
+                                   &pblen, sizeof(pb)),
                 NFC_MODE_SCAN_INGESTED);
     }
   }
-  EXPECT_EQ(nfc_mode_scan_feed(&st, static_cast<uint8_t>('a'), pb, &pblen,
+  EXPECT_EQ(nfc_mode_scan_feed(&st, static_cast<uint8_t>('a'), &pb[0], &pblen,
                                /*pushback_cap=*/31),
             NFC_MODE_SCAN_PUSHBACK_STOP);
   ASSERT_EQ(pblen, 31u);
-  EXPECT_EQ(std::memcmp(pb, (long_line + "a").c_str(), 31), 0);
+  EXPECT_EQ(std::memcmp(&pb[0], (long_line + "a").c_str(), 31), 0);
 }
 
 TEST(NfcModeLineScan, PrefixMismatchMidPrefixCopiesWhenCapIsLargeEnough) {
   nfc_mode_scan_state_t st{};
   nfc_mode_scan_reset(&st);
-  uint8_t pb[64];
+  uint8_t pb[kTestLit64];
   uint16_t pblen = 0;
-  const std::string prefix("mode");
-  const auto *bp = reinterpret_cast<const unsigned char *>(prefix.data());
-  for (size_t i = 0; i < prefix.size(); ++i) {
-    ASSERT_EQ(nfc_mode_scan_feed(&st, bp[i], pb, &pblen, sizeof(pb)),
+  const std::string kPrefix("mode");
+  for (char byte : kPrefix) {
+    ASSERT_EQ(nfc_mode_scan_feed(&st, static_cast<uint8_t>(byte), &pb[0],
+                                 &pblen, sizeof(pb)),
               NFC_MODE_SCAN_INGESTED);
   }
-  EXPECT_EQ(nfc_mode_scan_feed(&st, static_cast<uint8_t>('X'), pb, &pblen,
+  EXPECT_EQ(nfc_mode_scan_feed(&st, static_cast<uint8_t>('X'), &pb[0], &pblen,
                                /*pushback_cap=*/5),
             NFC_MODE_SCAN_PUSHBACK_STOP);
   ASSERT_EQ(pblen, 5u);
-  EXPECT_EQ(std::memcmp(pb, "modeX", 5), 0);
+  EXPECT_EQ(std::memcmp(&pb[0], "modeX", 5), 0);
 }
 
 TEST(NfcModeLineScan, PrefixMismatchMidPrefixDropsWhenCapTooSmall) {
   nfc_mode_scan_state_t st{};
   nfc_mode_scan_reset(&st);
-  uint8_t pb[64];
+  uint8_t pb[kTestLit64];
   uint16_t pblen = 0;
-  const std::string prefix2("mode");
-  const auto *bp2 = reinterpret_cast<const unsigned char *>(prefix2.data());
-  for (size_t i = 0; i < prefix2.size(); ++i) {
-    ASSERT_EQ(nfc_mode_scan_feed(&st, bp2[i], pb, &pblen, sizeof(pb)),
+  const std::string kPrefix2("mode");
+  for (char byte : kPrefix2) {
+    ASSERT_EQ(nfc_mode_scan_feed(&st, static_cast<uint8_t>(byte), &pb[0],
+                                 &pblen, sizeof(pb)),
               NFC_MODE_SCAN_INGESTED);
   }
-  EXPECT_EQ(nfc_mode_scan_feed(&st, static_cast<uint8_t>('X'), pb, &pblen,
+  EXPECT_EQ(nfc_mode_scan_feed(&st, static_cast<uint8_t>('X'), &pb[0], &pblen,
                                /*pushback_cap=*/4),
             NFC_MODE_SCAN_PUSHBACK_STOP);
   EXPECT_EQ(pblen, 0u);
@@ -301,10 +315,11 @@ TEST(NfcModeLineScan, PrefixMismatchMidPrefixDropsWhenCapTooSmall) {
 TEST(NfcModeLineScan, PrefixMismatchExceedsPushbackCap) {
   nfc_mode_scan_state_t st{};
   nfc_mode_scan_reset(&st);
-  uint8_t pb[64];
+  uint8_t pb[kTestLit64];
   uint16_t pblen = 0;
-  EXPECT_EQ(nfc_mode_scan_feed(&st, static_cast<uint8_t>('z'), pb, &pblen, 0),
-            NFC_MODE_SCAN_PUSHBACK_STOP);
+  EXPECT_EQ(
+      nfc_mode_scan_feed(&st, static_cast<uint8_t>('z'), &pb[0], &pblen, 0),
+      NFC_MODE_SCAN_PUSHBACK_STOP);
   EXPECT_EQ(pblen, 0u);
 }
 
@@ -312,21 +327,21 @@ TEST(NfcModeLineScan, LongLineWithoutNewlineTriggersCapsPath) {
   nfc_mode_scan_state_t st{};
   nfc_mode_scan_reset(&st);
   std::string long_line = "mode ";
-  long_line.append(25u, 'a');
+  long_line.append(kTestLit25u, 'a');
   ASSERT_EQ(long_line.size(), 30u);
-  uint8_t pb[64];
+  uint8_t pb[kTestLit64];
   uint16_t pblen = 0;
   {
-    const auto *b = reinterpret_cast<const unsigned char *>(long_line.data());
-    for (size_t i = 0; i < long_line.size(); ++i) {
-      EXPECT_EQ(nfc_mode_scan_feed(&st, b[i], pb, &pblen, sizeof(pb)),
+    for (char byte : long_line) {
+      EXPECT_EQ(nfc_mode_scan_feed(&st, static_cast<uint8_t>(byte), &pb[0],
+                                   &pblen, sizeof(pb)),
                 NFC_MODE_SCAN_INGESTED);
     }
   }
   EXPECT_EQ(st.len, 30u);
-  EXPECT_EQ(nfc_mode_scan_feed(&st, static_cast<uint8_t>('a'), pb, &pblen,
+  EXPECT_EQ(nfc_mode_scan_feed(&st, static_cast<uint8_t>('a'), &pb[0], &pblen,
                                sizeof(pb)),
             NFC_MODE_SCAN_PUSHBACK_STOP);
   EXPECT_EQ(pblen, 31u);
-  EXPECT_EQ(std::memcmp(pb, (long_line + "a").c_str(), 31), 0);
+  EXPECT_EQ(std::memcmp(&pb[0], (long_line + "a").c_str(), 31), 0);
 }

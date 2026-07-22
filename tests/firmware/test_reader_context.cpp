@@ -14,10 +14,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 #include "nero_nfc_null.h"
+#include "nero_nfc_reader_app_fixture.hpp"
+#include "nfc_tag_geometry_limits.h"
 #include "reader_context.h"
 #include "reader_iso_dep_timing.h"
+#include "writer_context.h"
+
+namespace {
+enum {
+  kTestLit0x5Au = 0x5Au,
+  kTestLit0xA5u = 0xA5u,
+  kTestLit0xC3u = 0xC3u,
+};
+}  // namespace
 
 #include <gtest/gtest.h>
 
@@ -38,37 +48,60 @@ TEST(ReaderContext, ResetAppliesIsoDepDefaults) {
   EXPECT_EQ(ctx.iso_dep_debug.iso_trace, 0u);
 }
 
-TEST(ReaderContext, ResetNullIsNoOp) {
-  reader_context_reset(NERO_NFC_NULL);
+TEST(ReaderContext, ResetNullIsNoOp) { reader_context_reset(NERO_NFC_NULL); }
+
+TEST(ReaderContext, ResetDoesNotPreserveAnUnknownFrontendPointer) {
+  reader_context_t ctx{};
+  nfc_frontend_t stale_frontend{};
+  ctx.frontend = &stale_frontend;
+
+  reader_context_reset(&ctx);
+
+  EXPECT_EQ(ctx.frontend, NERO_NFC_NULL);
 }
 
 TEST(ReaderContext, ResetClearsSensitiveIsoDepBuffers) {
   reader_context_t ctx{};
-  for (std::size_t i = 0u; i < sizeof(ctx.iso_dep.iblock_tx); ++i) {
-    ctx.iso_dep.iblock_tx[i] = 0xA5u;
+  for (unsigned char& i : ctx.iso_dep.iblock_tx) {
+    i = kTestLit0xA5u;
   }
-  for (std::size_t i = 0u; i < sizeof(ctx.iso_dep.raw_rx); ++i) {
-    ctx.iso_dep.raw_rx[i] = 0x5Au;
+  for (unsigned char& i : ctx.iso_dep.raw_rx) {
+    i = kTestLit0x5Au;
   }
-  for (std::size_t i = 0u; i < sizeof(ctx.iso_dep.ats_data); ++i) {
-    ctx.iso_dep.ats_data[i] = 0xC3u;
+  for (unsigned char& i : ctx.iso_dep.ats_data) {
+    i = kTestLit0xC3u;
   }
 
   reader_context_reset(&ctx);
 
-  for (std::size_t i = 0u; i < sizeof(ctx.iso_dep.iblock_tx); ++i) {
-    EXPECT_EQ(ctx.iso_dep.iblock_tx[i], 0u);
+  for (unsigned char i : ctx.iso_dep.iblock_tx) {
+    EXPECT_EQ(i, 0u);
   }
-  for (std::size_t i = 0u; i < sizeof(ctx.iso_dep.raw_rx); ++i) {
-    EXPECT_EQ(ctx.iso_dep.raw_rx[i], 0u);
+  for (unsigned char i : ctx.iso_dep.raw_rx) {
+    EXPECT_EQ(i, 0u);
   }
-  for (std::size_t i = 0u; i < sizeof(ctx.iso_dep.ats_data); ++i) {
-    EXPECT_EQ(ctx.iso_dep.ats_data[i], 0u);
+  for (unsigned char i : ctx.iso_dep.ats_data) {
+    EXPECT_EQ(i, 0u);
   }
 }
 
-TEST(ReaderContext, GlobalResetClearsIsoDepTrace) {
-  g_iso_dep_trace = 1u;
-  reader_context_reset(&g_reader);
-  EXPECT_EQ(g_iso_dep_trace, 0u);
+TEST_F(NeroNfcReaderAppFixture, ActiveResetClearsIsoDepTrace) {
+  G_ISO_DEP_TRACE = 1u;
+  reader_context_reset(reader_context_active());
+  EXPECT_EQ(G_ISO_DEP_TRACE, 0u);
+}
+
+TEST_F(NeroNfcReaderAppFixture, ReaderContextLivesInAppStorage) {
+  reader_context_t* ctx = nero_nfc_app_reader(App());
+  ASSERT_NE(ctx, NERO_NFC_NULL);
+  EXPECT_EQ(ctx, reader_context_active());
+  EXPECT_EQ(ctx, &G_READER);
+}
+
+TEST_F(NeroNfcReaderAppFixture, WriterContextLivesInAppStorage) {
+  writer_context_t* ctx = nero_nfc_app_writer(App());
+  ASSERT_NE(ctx, NERO_NFC_NULL);
+  EXPECT_EQ(ctx, writer_context_active());
+  WRITER_APP_SAK = NFC_TAG_T4T_SAK_ISO14443_4_BIT;
+  EXPECT_EQ(ctx->sak, NFC_TAG_T4T_SAK_ISO14443_4_BIT);
 }

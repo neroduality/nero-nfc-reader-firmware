@@ -28,7 +28,11 @@
 #
 # After boot: run-ci-locally-lima-guest.sh runs docker run smoke + full Main CI.
 #
-# Repo bind-mount: /src (param repoRoot). Override sizing: limactl create --cpus 8 --memory 8GiB
+# Repo bind-mount: /src read-only (param repoRoot) — source only.
+# Guest seeds ~/nero-nfc-ci-work on the VM disk (no host build/third-party reuse).
+# Host make ci-local uses ~/.cache/nero-nfc-ci-local/work for the same isolation.
+# Lint kit bind-mount: /opt/lint-kit (param lintKitRoot).
+# Override sizing: limactl create --cpus 8 --memory 8GiB
 minimumLimaVersion: 2.0.0
 
 user:
@@ -43,11 +47,15 @@ containerd:
 
 param:
   repoRoot: ""
+  lintKitRoot: ""
 
 mounts:
   - location: "{{.Param.repoRoot}}"
     mountPoint: /src
-    writable: true
+    writable: false
+  - location: "{{.Param.lintKitRoot}}"
+    mountPoint: /opt/lint-kit
+    writable: false
 
 # Conservative defaults (override at create time on larger hosts).
 cpus: 4
@@ -121,6 +129,7 @@ hostResolver:
 
 message: |
   nero-nfc Main CI Lima VM (ubuntu-24.04).
-  Repo mount: /src
-  Boot: Docker (SocketUser) → guest smoke + CI via run-ci-locally-lima-guest.sh.
-  Each `make ci-local CI_LOCAL_FLAGS=--lima` destroys and recreates this instance.
+  Repo mount: /src (read-only source).
+  CI work tree: ~/nero-nfc-ci-work on guest disk (fresh third-party/build).
+  Boot: Docker (SocketUser) → seed work tree → CI via run-ci-locally-lima-guest.sh.
+  Each `make lima` / `make ci-local CI_LOCAL_FLAGS=--lima` destroys and recreates this instance.

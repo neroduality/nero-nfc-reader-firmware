@@ -17,22 +17,32 @@
 // Unit tests for nero_nfc_browser fork/exec path (no real browser; uses
 // /bin/true).
 //
-#include "nero_nfc_browser.h"
+#include "nero_nfc_browser.hpp"
 
-#include <stdlib.h>
+#include <cstdlib>
 
 #include <gtest/gtest.h>
 
 class UserspaceBrowserTest : public ::testing::Test {
-protected:
+ protected:
   void TearDown() override {
-    nero_nfc::nero_nfc_utest_clear_open_url_hook();
+    nero_nfc::NeroNfcUtestClearOpenUrlHook();
     unsetenv("NERO_NFC_UTEST_BROWSER_EXEC");
   }
 };
 
 TEST_F(UserspaceBrowserTest, OpenUrlForkPathWithTestHelper) {
-  nero_nfc::nero_nfc_utest_clear_open_url_hook();
+  nero_nfc::NeroNfcUtestClearOpenUrlHook();
   setenv("NERO_NFC_UTEST_BROWSER_EXEC", "/bin/true", 1);
-  nero_nfc::open_url_nonblocking("https://coverage.example.test/");
+  nero_nfc::OpenUrlNonblocking("https://coverage.example.test/");
+}
+
+TEST_F(UserspaceBrowserTest, AllowsPrintableUriCharactersWithoutShellParsing) {
+  EXPECT_TRUE(nero_nfc::NeroNfcUtestUrlSafeForOpener(
+      "https://example.test/?price=$5&name='tag'"));
+}
+
+TEST_F(UserspaceBrowserTest, RejectsControlCharacters) {
+  EXPECT_FALSE(nero_nfc::NeroNfcUtestUrlSafeForOpener(
+      "https://example.test/line\nbreak"));
 }

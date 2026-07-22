@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "nero_nfc_pcsc.h"
+#include "nero_nfc_pcsc.hpp"
 
 #include <gtest/gtest.h>
 
@@ -23,12 +23,12 @@
 #if defined(NERO_USERSPACE_HAVE_PCSC)
 
 TEST(UserspacePcscLive, ListReadersOverrideStillWorksWithPcscLinked) {
-  const std::vector<std::string> readers_in = {"Nero NFC Test Reader"};
-  nero_nfc::nero_nfc_utest_set_list_pcsc_readers_override(&readers_in);
+  const std::vector<std::string> kReadersIn = {"Nero NFC Test Reader"};
+  nero_nfc::NeroNfcUtestSetListPcscReadersOverride(&kReadersIn);
   std::vector<std::string> readers_out;
   std::string err;
-  ASSERT_TRUE(nero_nfc::list_pcsc_readers(readers_out, err)) << err;
-  nero_nfc::nero_nfc_utest_clear_list_pcsc_readers_override();
+  ASSERT_TRUE(nero_nfc::ListPcscReaders(readers_out, err)) << err;
+  nero_nfc::NeroNfcUtestClearListPcscReadersOverride();
   ASSERT_EQ(readers_out.size(), 1u);
   EXPECT_EQ(readers_out[0], "Nero NFC Test Reader");
 }
@@ -36,7 +36,8 @@ TEST(UserspacePcscLive, ListReadersOverrideStillWorksWithPcscLinked) {
 #else
 
 TEST(UserspacePcscLive, SkippedWithoutLibpcsclite) {
-  GTEST_SKIP() << "Rebuild with NERO_TESTS_ENABLE_PCSC=1 and libpcsclite dev headers";
+  GTEST_SKIP()
+      << "Rebuild with NERO_TESTS_ENABLE_PCSC=1 and libpcsclite dev headers";
 }
 
 #endif

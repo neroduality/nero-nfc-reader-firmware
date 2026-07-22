@@ -18,14 +18,14 @@ limitations under the License.
 # Release
 
 Source code release only — from annotated `v*` tags. Pushing a tag runs
-[`.github/workflows/release.yml`](.github/workflows/release.yml) after **Main CI** has
-passed on that commit (source tarball + GitHub Release). Release body and download details
+[`.github/workflows/release.yml`](.github/workflows/release.yml) on that commit
+(source tarball + GitHub Release). Release body and download details
 are in [`.github/release-notes.md`](.github/release-notes.md) (`@TAG@` / `@VERSION@`
 substituted by CI). Edit the GitHub Release description after CI if you need extra notes.
 
 ## Tag a release
 
-1. Merge to **`main`** and wait for **Main CI** to finish green on that commit.
+1. Merge to **`main`**.
 2. Tag and push:
 
 ```bash

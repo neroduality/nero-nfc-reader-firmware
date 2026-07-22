@@ -38,15 +38,16 @@ add_library(
   nero_nfc_pcsc_type4.cpp
   nero_nfc_pcsc.cpp
   nero_nfc_io.cpp
-  "${NERO_FIRMWARE_ROOT}/firmware/nfc_core/common/nfc_ndef_record_decode.c"
-  "${NERO_FIRMWARE_ROOT}/firmware/nfc_core/common/nero_nfc_format.c")
+  "${NERO_FIRMWARE_ROOT}/firmware/libraries/NeroNfc/src/protocol/nfc_ndef_record_decode.c"
+  "${NERO_FIRMWARE_ROOT}/firmware/libraries/NeroNfc/src/core/nero_nfc_format.c")
 
 target_include_directories(
   nero_nfc_app
-  PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} "${NERO_FIRMWARE_ROOT}/firmware/nfc_core/common")
+  PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} "${NERO_FIRMWARE_ROOT}/firmware/libraries/NeroNfc/src"
+  "${NERO_FIRMWARE_ROOT}/firmware/libraries/NeroNfc/src")
 
 find_package(Threads REQUIRED)
-target_link_libraries(nero_nfc_app PUBLIC Threads::Threads nero_host_hardening)
+target_link_libraries(nero_nfc_app PUBLIC Threads::Threads hardening)
 target_compile_features(nero_nfc_app PUBLIC cxx_std_23)
 find_package(PkgConfig QUIET)
 set(_nero_pcsc_found OFF)

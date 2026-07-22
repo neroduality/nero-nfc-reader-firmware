@@ -23,7 +23,7 @@
  *
  * TinyUSB config for NUCLEO-WBA65RI CCID-only builds.
  * Mirrors upstream examples/device/cdc_msc/src/tusb_config.h + UNO R4 CCID-only
- * (no built-in classes; CCID class driver in ccid_usb_tinyusb.cpp).
+ * (no built-in classes; CCID class driver in ccid_usb_tinyusb.c).
  * Bulk EP size for HS comes from board mk (-DNERO_CCID_BULK_EPSIZE=512u).
  */
 #ifdef __cplusplus

@@ -16,6 +16,9 @@ third-party/tinyusb/
 third-party/*.lock
 third-party/.*-version
 
+# Org lint kit clone (refetched on next make lint/verify)
+.lint-kit-org/
+
 .DS_Store
 .cache/
 .mypy_cache/
@@ -31,6 +34,7 @@ third-party/.*-version
 __pycache__/
 
 *.o
+*.d
 *.a
 *.so
 compile_commands.json

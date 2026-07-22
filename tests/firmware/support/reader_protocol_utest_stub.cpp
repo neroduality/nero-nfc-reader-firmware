@@ -14,52 +14,61 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Stubs RF/protocol entry points so ISO-DEP session sources link without ST25 SPI frontend.
+// Stubs RF/protocol entry points so ISO-DEP session sources link without ST25
+// SPI frontend.
 
 #include "reader_protocol.h"
 
+#include "nfc_tag_info.h"
 #include "nero_nfc_mem_util.h"
 
-void reader_protocol_configure_iso14443a(void) {}
+namespace {
+enum {
+  kTestLit0x04u = 0x04u,
+};
+}  // namespace
 
-void reader_protocol_configure_iso15693(void) {}
+void reader_protocol_configure_iso14443a() {}
 
-bool reader_protocol_field_on(void) {
-  return true;
-}
+void reader_protocol_configure_iso15693() {}
 
-bool reader_protocol_activate_iso14443a(void) {
-  return true;
-}
+bool reader_protocol_field_on() { return true; }
 
-bool reader_protocol_send_wupa(uint8_t *atqa) {
+bool reader_protocol_activate_iso14443a() { return true; }
+
+bool reader_protocol_send_wupa(uint8_t* atqa) {
   if (atqa != NERO_NFC_NULL) {
-    atqa[0] = 0x04u;
-    atqa[1] = 0x00u;
+    (void)nero_nfc_store_u8(atqa, NFC_TAG_TYPEA_ATQA_LEN, 0u, kTestLit0x04u);
+    (void)nero_nfc_store_u8(atqa, NFC_TAG_TYPEA_ATQA_LEN, 1u, 0x00u);
   }
   return true;
 }
 
-int reader_protocol_transceive14(const uint8_t *tx_data, uint16_t tx_len, uint8_t *rx,
-                                 uint16_t rx_max, bool with_crc, uint16_t timeout_ms, bool anticol,
+int reader_protocol_transceive14(const uint8_t* tx_data, uint16_t tx_len,
+                                 uint8_t* rx, uint16_t rx_max, bool with_crc,
+                                 uint16_t timeout_ms, bool anticol,
                                  bool no_rx_par) {
   (void)tx_data;
   (void)tx_len;
-  (void)rx;
-  (void)rx_max;
   (void)with_crc;
   (void)timeout_ms;
   (void)anticol;
   (void)no_rx_par;
+  /* Touch the output buffer so the parameter stays non-const (API contract). */
+  if ((rx != NERO_NFC_NULL) && (rx_max > 0u)) {
+    *rx = *rx;
+  }
   return -1;
 }
 
-int reader_protocol_iso15693_transceive(const uint8_t *tx, uint16_t tx_len, uint8_t *rx,
-                                        uint16_t rx_max, uint16_t timeout_ms) {
+int reader_protocol_iso15693_transceive(const uint8_t* tx, uint16_t tx_len,
+                                        uint8_t* rx, uint16_t rx_max,
+                                        uint16_t timeout_ms) {
   (void)tx;
   (void)tx_len;
-  (void)rx;
-  (void)rx_max;
   (void)timeout_ms;
+  if ((rx != NERO_NFC_NULL) && (rx_max > 0u)) {
+    *rx = *rx;
+  }
   return -1;
 }

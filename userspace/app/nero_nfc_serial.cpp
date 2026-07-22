@@ -14,52 +14,74 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "nero_nfc_serial.h"
+#include "nero_nfc_serial.hpp"
 #include "nero_nfc_attrs.h"
+#include "nero_nfc_limits.h"
 
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <termios.h>
+#include <cerrno>
+#include <ctime>
 #include <unistd.h>
 
 #ifdef NERO_HOST_UNIT_TEST_HOOKS
 #include <functional>
 namespace {
-std::function<int(const std::string &)> g_serial_open_hook;
+std::function<int(const std::string&)> g_serial_open_hook;
 bool g_serial_reset_noop = false;
 bool g_serial_reset_skip_delays = false;
-} // namespace
+}  // namespace
 namespace nero_nfc {
-void nero_nfc_utest_set_serial_open_hook(std::function<int(const std::string &path)> hook) {
+void NeroNfcUtestSetSerialOpenHook(
+    std::function<int(const std::string& path)> hook) {
   g_serial_open_hook = std::move(hook);
 }
-void nero_nfc_utest_clear_serial_open_hook() {
-  g_serial_open_hook = NERO_NFC_NULL;
-}
-void nero_nfc_utest_set_serial_reset_noop(bool noop) {
-  g_serial_reset_noop = noop;
-}
-void nero_nfc_utest_set_serial_reset_skip_delays(bool skip) {
+void NeroNfcUtestClearSerialOpenHook() { g_serial_open_hook = NERO_NFC_NULL; }
+void NeroNfcUtestSetSerialResetNoop(bool noop) { g_serial_reset_noop = noop; }
+void NeroNfcUtestSetSerialResetSkipDelays(bool skip) {
   g_serial_reset_skip_delays = skip;
 }
-} // namespace nero_nfc
+}  // namespace nero_nfc
 #endif
 
 namespace nero_nfc {
 
 static constexpr double kResetSettleS = 2.0;
 static constexpr double kPostResetReopenWaitS = 2.5;
-static constexpr useconds_t kMicrosecondsPerSecond = 1000000;
+static constexpr double kNsPerSec = 1000000000.0;
 static constexpr cc_t kSerialVtimeTenthsSec = 10;
 
-int serial_open(const std::string &path) {
+static bool SleepFor(double seconds) {
+  struct timespec delay{
+      .tv_sec = static_cast<time_t>(seconds),
+      .tv_nsec = static_cast<long>(
+          (seconds - static_cast<double>(static_cast<time_t>(seconds))) *
+          kNsPerSec)};
+  while (nanosleep(&delay, &delay) != 0) {
+    if (errno != EINTR) {
+      return false;
+    }
+  }
+  return true;
+}
+
+int SerialOpen(const std::string& path) {
 #ifdef NERO_HOST_UNIT_TEST_HOOKS
   if (g_serial_open_hook) {
     return g_serial_open_hook(path);
   }
 #endif
+  if (path.empty() || path.size() > NERO_NFC_HOST_SERIAL_LINE_MAX ||
+      path.find('\0') != std::string::npos) {
+    return -1;
+  }
   int fd = open(path.c_str(), O_RDWR | O_NOCTTY | O_NONBLOCK | O_CLOEXEC);
   if (fd < 0) {
+    return -1;
+  }
+  if (ioctl(fd, TIOCEXCL) != 0) {
+    (void)close(fd);
     return -1;
   }
 
@@ -69,14 +91,16 @@ int serial_open(const std::string &path) {
     return -1;
   }
 
-  cfsetispeed(&tty, B115200);
-  cfsetospeed(&tty, B115200);
+  if (cfsetispeed(&tty, B115200) != 0 || cfsetospeed(&tty, B115200) != 0) {
+    (void)close(fd);
+    return -1;
+  }
   cfmakeraw(&tty);
 
   tty.c_cflag &= static_cast<tcflag_t>(~(CSIZE | PARENB | CSTOPB));
   tty.c_cflag |= CS8 | CLOCAL | CREAD;
   tty.c_cc[VMIN] = 0;
-  tty.c_cc[VTIME] = kSerialVtimeTenthsSec; // 1 second read timeout
+  tty.c_cc[VTIME] = kSerialVtimeTenthsSec;  // 1 second read timeout
 
   if (tcsetattr(fd, TCSANOW, &tty) != 0) {
     close(fd);
@@ -85,36 +109,55 @@ int serial_open(const std::string &path) {
   return fd;
 }
 
-void serial_reset(int fd) {
+bool SerialReset(int fd) {
 #ifdef NERO_HOST_UNIT_TEST_HOOKS
   if (g_serial_reset_noop) {
     (void)fd;
-    return;
+    return true;
   }
 #endif
+  if (fd < 0) {
+    return false;
+  }
   int bits = TIOCM_DTR | TIOCM_RTS;
-  ioctl(fd, TIOCMBIS, &bits); // assert DTR + RTS
+  if (ioctl(fd, TIOCMBIS, &bits) != 0) {
+    return false;
+  }
 #ifdef NERO_HOST_UNIT_TEST_HOOKS
   if (!g_serial_reset_skip_delays) {
-    usleep(static_cast<useconds_t>(kResetSettleS * kMicrosecondsPerSecond));
+    if (!SleepFor(kResetSettleS)) {
+      (void)ioctl(fd, TIOCMBIC, &bits);
+      return false;
+    }
   }
 #else
-  usleep(static_cast<useconds_t>(kResetSettleS * kMicrosecondsPerSecond));
+  if (!SleepFor(kResetSettleS)) {
+    (void)ioctl(fd, TIOCMBIC, &bits);
+    return false;
+  }
 #endif
-  ioctl(fd, TIOCMBIC, &bits); // release DTR + RTS
+  if (ioctl(fd, TIOCMBIC, &bits) != 0) {
+    return false;
+  }
 #ifdef NERO_HOST_UNIT_TEST_HOOKS
   if (!g_serial_reset_skip_delays) {
-    usleep(static_cast<useconds_t>(kPostResetReopenWaitS * kMicrosecondsPerSecond));
+    if (!SleepFor(kPostResetReopenWaitS)) {
+      return false;
+    }
   }
 #else
-  usleep(static_cast<useconds_t>(kPostResetReopenWaitS * kMicrosecondsPerSecond));
-#endif
-}
-
-void serial_close(int fd) {
-  if (fd >= 0) {
-    close(fd);
+  if (!SleepFor(kPostResetReopenWaitS)) {
+    return false;
   }
+#endif
+  return true;
 }
 
-} // namespace nero_nfc
+bool SerialClose(int fd) {
+  if (fd < 0) {
+    return false;
+  }
+  return close(fd) == 0;
+}
+
+}  // namespace nero_nfc

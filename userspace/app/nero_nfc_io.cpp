@@ -14,54 +14,90 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "nero_nfc_io.h"
+#include "nero_nfc_io.hpp"
 
+#include "nero_nfc_limits.h"
+#include "nero_nfc_mem_util.h"
 #include "nero_nfc_null.h"
 
 #include <cstdio>
-#include <print>
 #include <string_view>
 
 namespace {
 
-void nero_nfc_write_stderr_line_impl(std::string_view s) {
-  if (!s.empty() && s.back() == '\r') {
-    std::fwrite(s.data(), 1, s.size(), stderr);
-    std::fflush(stderr);
+bool NeroNfcWriteAll(FILE* stream, std::string_view s) {
+  std::size_t written = 0;
+  if (stream == NERO_NFC_NULL) {
+    return false;
+  }
+  while (written < s.size()) {
+    const std::string_view kRemaining = s.substr(written);
+    const std::size_t kN =
+        std::fwrite(kRemaining.data(), 1, kRemaining.size(), stream);
+    if (kN == 0) {
+      return false;
+    }
+    written += kN;
+  }
+  return true;
+}
+
+void NeroNfcWriteLine(FILE* stream, std::string_view s, bool preserve_cr) {
+  if (stream == NERO_NFC_NULL) {
     return;
   }
-  std::println(stderr, "{}", s);
+  ::flockfile(stream);
+  if (!NeroNfcWriteAll(stream, s)) {
+    ::funlockfile(stream);
+    return;
+  }
+  if ((!preserve_cr || s.empty() || s.back() != '\r') &&
+      std::fputc('\n', stream) != '\n') {
+    ::funlockfile(stream);
+    return;
+  }
+  (void)std::fflush(stream);
+  ::funlockfile(stream);
 }
 
-void nero_nfc_write_stdout_line_impl(std::string_view s) {
-  std::println("{}", s);
-  std::fflush(stdout);
+void NeroNfcWriteStderrLineImpl(std::string_view s) {
+  NeroNfcWriteLine(stderr, s, true);
 }
 
-} // namespace
+void NeroNfcWriteStdoutLineImpl(std::string_view s) {
+  NeroNfcWriteLine(stdout, s, false);
+}
+
+}  // namespace
 
 namespace nero_nfc {
 
-void nero_nfc_stderr_line(std::string_view s) {
-  nero_nfc_write_stderr_line_impl(s);
-}
+void NeroNfcStderrLine(std::string_view s) { NeroNfcWriteStderrLineImpl(s); }
 
-void nero_nfc_stderr_line(const char *s) {
+void NeroNfcStderrLine(const char* s) {
+  std::size_t len = 0u;
   if (s == NERO_NFC_NULL) {
     return;
   }
-  nero_nfc_write_stderr_line_impl(std::string_view(s));
+  if (!nero_nfc_bounded_strlen(s, NERO_NFC_HOST_SERIAL_LINE_MAX, &len)) {
+    return;
+  }
+  NeroNfcWriteStderrLineImpl(std::string_view(s, len));
 }
 
-void nero_nfc_stdout_line(std::string_view s) {
-  nero_nfc_write_stdout_line_impl(s);
-}
+void NeroNfcStdoutLine(std::string_view s) { NeroNfcWriteStdoutLineImpl(s); }
 
-void nero_nfc_stdout_line(const char *s) {
+void NeroNfcStdoutLine(const char* s) {
+  std::size_t len = 0u;
   if (s == NERO_NFC_NULL) {
     return;
   }
-  nero_nfc_write_stdout_line_impl(std::string_view(s));
+  if (!nero_nfc_bounded_strlen(s, NERO_NFC_HOST_SERIAL_LINE_MAX, &len)) {
+    return;
+  }
+  NeroNfcWriteStdoutLineImpl(std::string_view(s, len));
 }
 
-} // namespace nero_nfc
+int NeroNfcStdoutFlush() { return std::fflush(stdout); }
+
+}  // namespace nero_nfc

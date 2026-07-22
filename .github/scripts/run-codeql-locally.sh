@@ -15,140 +15,77 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Run CodeQL database create + analyze against this checkout (same traced build as CI).
+# Reproduce GitHub Actions CodeQL locally (same pattern as make ci-local):
+#   isolated work tree + debian:sid-slim + ci-run-codeql.sh
 #
-# Uses the official CodeQL CLI bundle from github/codeql-cli-binaries (pinned version),
-# or an existing install when CODEQL_DIST / `codeql` on PATH is set.
+# Mirrors .github/workflows/codeql.yml (install-linux-deps INSTALL_LINT_DEPS=0,
+# traced CMake + make nfc on both boards, then analyze).
 #
-# Usage (from anywhere):
-#   bash /path/to/nero-nfc-reader-firmware/.github/scripts/run-codeql-locally.sh
-#   bash .../run-codeql-locally.sh --db-only
-#   bash .../run-codeql-locally.sh --open
-#   CODEQL_BOOTSTRAP_LINUX_DEPS=0 bash .../run-codeql-locally.sh
+# Usage:
+#   bash .github/scripts/run-codeql-locally.sh
+#   bash .github/scripts/run-codeql-locally.sh --db-only
+#   make codeql-local
 #
 set -euo pipefail
 
-print_codeql_sarif_summary() {
-  local sarif="$1"
-  printf '\n── Results (SARIF) ──\n'
-  printf 'File: %s\n' "${sarif}"
-  if [[ ! -s ${sarif} ]]; then
-    printf 'warning: SARIF missing or empty\n' >&2
-    return 0
-  fi
-  if ! command -v jq >/dev/null 2>&1; then
-    printf 'hint: install jq for an alert summary (counts + listing).\n' >&2
-    return 0
-  fi
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 
-  local total limit
-  total="$(jq '[.runs[].results[]] | length' "${sarif}")"
-  printf 'Total findings: %s\n' "${total}"
-
-  if [[ ${total} != "0" ]]; then
-    printf '\nBy severity:\n'
-    jq -r '[.runs[].results[] | (.level // "warning")] | group_by(.) | map("  \(.[0]): \(length)") | .[]' "${sarif}"
-
-    printf '\nBy rule (top 25):\n'
-    jq -r '[.runs[].results[] | .ruleId // "(no ruleId)"] | group_by(.) | map({id: .[0], n: length}) | sort_by(-.n) | .[:25] | .[] | "  \(.n)\t\(.id)"' "${sarif}"
-
-    limit="${CODEQL_SARIF_LIST_LIMIT:-40}"
-    [[ ${limit} =~ ^[0-9]+$ ]] || limit="40"
-    printf '\nFindings (first %s):\n' "${limit}"
-    jq -r --argjson lim "${limit}" '
-      [.runs[].results[] | . as $r | {
-        rule: ($r.ruleId // "?"),
-        msg: (($r.message.text // "") | gsub("\\s+"; " ") | if length > 160 then .[0:157] + "..." else . end),
-        uri: (($r.locations[0].physicalLocation.artifactLocation.uri // "?")),
-        line: ($r.locations[0].physicalLocation.region.startLine // empty)
-      }]
-      | .[:$lim][]
-      | "[\(.rule)] \(.uri)" + (if .line != null and .line != "" then ":\(.line)" else "" end) + "\n  \(.msg)\n"
-    ' "${sarif}"
-  fi
-}
-
-maybe_open_sarif() {
-  local sarif="$1"
-  [[ ${OPEN_SARIF} == "1" ]] || return 0
-  printf '\n── Opening SARIF (desktop default application) ──\n' >&2
-  case "$(uname -s)" in
-    Linux)
-      if command -v xdg-open >/dev/null 2>&1; then
-        xdg-open "${sarif}" >/dev/null 2>&1 &
-        return 0
-      fi
-      ;;
-    Darwin)
-      if command -v open >/dev/null 2>&1; then
-        open "${sarif}"
-        return 0
-      fi
-      ;;
-  esac
-  printf 'warning: could not open SARIF (install xdg-open on Linux or use OPEN_SARIF=0)\n' >&2
-}
+# shellcheck source=helper-container-engine.sh
+# shellcheck disable=SC1091
+source "${SCRIPT_DIR}/helper-container-engine.sh"
+# shellcheck source=helper-container-bind-mount.sh
+# shellcheck disable=SC1091
+source "${SCRIPT_DIR}/helper-container-bind-mount.sh"
 
 usage() {
   cat <<'EOF'
-Run CodeQL locally — creates build/codeql/cpp-db and SARIF under build/codeql/.
+Reproduce CodeQL locally (mirrors .github/workflows/codeql.yml).
 
-Requires: bash, curl, unzip, sha256sum; C/C++ build deps (cmake, ninja or make, C++23).
-On Linux, installs distro packages via make/install-linux-deps.sh unless disabled.
+Same shape as make ci-local: fresh isolated work tree + debian:sid-slim.
+No host CodeQL CLI/pack caches are mounted — CLI and packs download inside
+the container each run (GHA-cold). Live checkout build/ and third-party/ are
+untouched. SARIF is copied to build/codeql/results.sarif on success.
 
 Usage:
-  bash /path/to/nero-nfc-reader-firmware/.github/scripts/run-codeql-locally.sh [options]
+  bash .github/scripts/run-codeql-locally.sh [options]
+  make codeql-local
 
 Options:
-  --db-only              Only create the CodeQL database (skip analyze)
-  --no-summary           Do not print SARIF summary after analyze
-  --open                 Open SARIF with xdg-open (Linux) or open (macOS)
-  --verify-gate          Exit non-zero on CodeQL error-level findings
-  -h, --help             Help
+  --db-only       Create the CodeQL database only (skip analyze)
+  --no-summary    Do not print SARIF summary after analyze
+  --open          Open SARIF on the host after the container exits
+  --verify-gate   Exit non-zero on CodeQL error-level findings
+  -h, --help      Help
 
 Environment:
-  CODEQL_DIST            Path to extracted bundle root (directory containing ./codeql binary)
-  CODEQL_CLI_VERSION     github/codeql-cli-binaries tag (default: v2.25.6)
-  CODEQL_CACHE           Download/extract cache (default: ~/.cache/nero-nfc-codeql)
-  CODEQL_QUERY_SUITE     Absolute path to a .qls suite file (optional). When unset, uses the
-                         newest ~/.codeql/packages/.../codeql-suites/$CODEQL_SUITE_FILE
-  CODEQL_SUITE_FILE      Suite filename when CODEQL_QUERY_SUITE unset (default: cpp-security-and-quality.qls)
-  CODEQL_PACK_SCOPE      Pack passed to \`codeql pack download\` (default: codeql/cpp-queries)
-  CODEQL_SKIP_PACK_DOWNLOAD    Set to 1 to skip registry pack fetch (you must have suites in ~/.codeql/packages)
-  CODEQL_BOOTSTRAP_LINUX_DEPS  On Linux, run install-linux-deps.sh first (default: 1)
-  CODEQL_INCLUDE_ARDUINO       Set to 0 to skip traced \`make nfc\` (default: 1)
-  CODEQL_SUMMARIZE_SARIF       Set to 0 to skip post-run SARIF summary (default: 1; overridden by --no-summary)
-  CODEQL_OPEN_SARIF            Set to 1 to open SARIF after analyze (default: 0; overridden by --open)
-  CODEQL_SARIF_LIST_LIMIT      Max findings listed in detail (default: 40)
-
-Defaults mirror .github/workflows/codeql.yml (CMake tests + userspace + traced Arduino \`make nfc\`).
-
-The standalone CLI zip does not ship query packs; this script runs \`codeql pack download\` first.
-
-After analyze, a text summary is printed when jq is installed; use --no-summary to skip.
+  CONTAINER_ENGINE         docker (default) or podman
+  CODEQL_IMAGE             Container image (default: digest-pinned debian:sid-slim)
+  CI_PLATFORM              Container platform (default: linux/amd64)
+  CODEQL_INCLUDE_FIRMWARE  Set to 0 to skip traced make nfc (default: 1)
+  NERO_CI_LOCAL_WORK_ROOT  Isolated work tree (default: ~/.cache/nero-nfc-ci-local/work-codeql)
+  NERO_CI_LOCAL_KEEP_WORK  Set to 1 to keep the work tree after exit
 
 EOF
 }
 
-SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-FIRMWARE_ROOT="$(cd -- "${SCRIPT_DIR}/../.." && pwd)"
-
-DB_ONLY=0
 VERIFY_GATE=0
 SUMMARIZE_SARIF="${CODEQL_SUMMARIZE_SARIF:-1}"
 OPEN_SARIF="${CODEQL_OPEN_SARIF:-0}"
+FORWARD_ARGS=()
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --db-only)
-      DB_ONLY=1
+      FORWARD_ARGS+=("$1")
       shift
       ;;
     --verify-gate)
       VERIFY_GATE=1
+      FORWARD_ARGS+=("$1")
       shift
       ;;
     --no-summary)
       SUMMARIZE_SARIF=0
+      FORWARD_ARGS+=("$1")
       shift
       ;;
     --open)
@@ -167,194 +104,122 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if [[ ! -f "${FIRMWARE_ROOT}/tests/CMakeLists.txt" ]]; then
-  printf 'error: unexpected layout (missing tests/CMakeLists.txt under %s)\n' "${FIRMWARE_ROOT}" >&2
+SOURCE_ROOT="$(cd -- "${SCRIPT_DIR}/../.." && pwd)"
+FIRMWARE_ROOT="${SOURCE_ROOT}"
+
+if [[ ! -f "${SOURCE_ROOT}/tests/CMakeLists.txt" ]]; then
+  printf 'error: unexpected layout (missing tests/CMakeLists.txt under %s)\n' "${SOURCE_ROOT}" >&2
   exit 1
 fi
 
-CODEQL_CLI_VERSION="${CODEQL_CLI_VERSION:-v2.25.6}"
-CODEQL_CACHE="${CODEQL_CACHE:-${HOME}/.cache/nero-nfc-codeql}"
-CODEQL_SUITE_FILE="${CODEQL_SUITE_FILE:-cpp-security-and-quality.qls}"
-CODEQL_PACK_SCOPE="${CODEQL_PACK_SCOPE:-codeql/cpp-queries}"
-DB_PATH="${CODEQL_DB_PATH:-${FIRMWARE_ROOT}/build/codeql/cpp-db}"
-SARIF_PATH="${CODEQL_SARIF_PATH:-${FIRMWARE_ROOT}/build/codeql/results.sarif}"
+if ! nero_require_container_engine >/dev/null; then
+  exit 1
+fi
 
-resolve_codeql() {
-  local bin=""
-  if [[ -n ${CODEQL_DIST:-} ]]; then
-    bin="${CODEQL_DIST%/}/codeql"
-    if [[ -x ${bin} ]]; then
-      printf '%s\n' "${bin}"
-      return 0
-    fi
-    if [[ ${VERIFY_GATE:-0} -eq 1 ]]; then
-      printf 'skip: CODEQL_DIST=%s has no executable codeql\n' "${CODEQL_DIST}" >&2
-      return 2
-    fi
-    printf 'error: CODEQL_DIST=%s does not contain executable codeql\n' "${CODEQL_DIST}" >&2
-    exit 1
-  fi
-  if command -v codeql >/dev/null 2>&1; then
-    command -v codeql
+if ! [[ -v CI_PLATFORM ]]; then
+  export CI_PLATFORM=linux/amd64
+fi
+PLATFORM_ARGS=()
+nero_nfc_load_ci_platform_args
+
+_CI_LOCAL_WORK_ROOT_TO_CLEAN=""
+_codeql_local_cleanup_worktree() {
+  local root="${_CI_LOCAL_WORK_ROOT_TO_CLEAN}"
+  [[ -n ${root} ]] || return 0
+  if [[ ${NERO_CI_LOCAL_KEEP_WORK:-0} == 1 ]]; then
+    printf '── codeql-local: keeping work tree %s (NERO_CI_LOCAL_KEEP_WORK=1) ──\n' "${root}" >&2
     return 0
   fi
+  if [[ ! -d ${root} || ${root} == "${SOURCE_ROOT}" ]]; then
+    return 0
+  fi
+  printf '── codeql-local: removing work tree %s ──\n' "${root}" >&2
+  rm -rf "${root}"
+}
 
-  local os arch asset extract_root zip_path
-  os="$(uname -s)"
-  arch="$(uname -m)"
-  case "${os}:${arch}" in
-    Linux:x86_64)
-      asset="codeql-linux64.zip"
-      ;;
-    Darwin:x86_64 | Darwin:arm64)
-      asset="codeql-osx64.zip"
-      ;;
-    *)
-      if [[ ${VERIFY_GATE:-0} -eq 1 ]]; then
-        printf 'skip: unsupported OS/arch %s/%s for CodeQL auto-download (install CLI manually)\n' "${os}" "${arch}" >&2
-        return 2
+_default_work="${XDG_CACHE_HOME:-${HOME}/.cache}/nero-nfc-ci-local/work-codeql"
+WORK_ROOT="${NERO_CI_LOCAL_WORK_ROOT:-${_default_work}}"
+# Fresh tree every run (rsync --exclude leaves prior third-party/ in place otherwise).
+rm -rf "${WORK_ROOT}"
+bash "${SCRIPT_DIR}/prepare-ci-worktree.sh" "${SOURCE_ROOT}" "${WORK_ROOT}"
+FIRMWARE_ROOT="${WORK_ROOT}"
+export FIRMWARE_ROOT
+_CI_LOCAL_WORK_ROOT_TO_CLEAN="${WORK_ROOT}"
+trap '_codeql_local_cleanup_worktree' EXIT
+printf '── codeql-local: fresh isolated work tree %s (live repo %s untouched) ──\n' \
+  "${FIRMWARE_ROOT}" "${SOURCE_ROOT}"
+
+CODEQL_IMAGE="${CODEQL_IMAGE:-debian:sid-slim@sha256:54f7a23f03be1e9fe2849c61a7455588ea29b84c1659440f8ece2aea4c9871af}"
+mkdir -p "${SOURCE_ROOT}/build/codeql"
+
+printf '\n── CodeQL: container %s (cold; no host CodeQL caches) ──\n' "${CODEQL_IMAGE}"
+# Only the isolated work tree is bind-mounted. CodeQL CLI + packs download inside
+# the container (ephemeral), matching a clean GHA runner.
+# shellcheck disable=SC2016
+nero_nfc_run_bind_mount_container \
+  -- \
+  "${PLATFORM_ARGS[@]}" \
+  -v "${FIRMWARE_ROOT}:/src" \
+  -w /src \
+  -e "FIRMWARE_ROOT=/src" \
+  -e "HOST_UID=$(id -u)" \
+  -e "HOST_GID=$(id -g)" \
+  -e "CODEQL_CACHE=/tmp/nero-nfc-codeql-cli" \
+  -e "CODEQL_INCLUDE_FIRMWARE=${CODEQL_INCLUDE_FIRMWARE:-1}" \
+  -e "CODEQL_FIRMWARE_TARGETS=${CODEQL_FIRMWARE_TARGETS:-}" \
+  -e "CODEQL_CLI_VERSION=${CODEQL_CLI_VERSION:-}" \
+  -e "CODEQL_SUITE_FILE=${CODEQL_SUITE_FILE:-}" \
+  -e "CODEQL_PACK_SCOPE=${CODEQL_PACK_SCOPE:-}" \
+  -e "CODEQL_SUMMARIZE_SARIF=${SUMMARIZE_SARIF}" \
+  -e "CODEQL_OPEN_SARIF=0" \
+  -e "CODEQL_SARIF_LIST_LIMIT=${CODEQL_SARIF_LIST_LIMIT:-}" \
+  -e "CODEQL_VERIFY_FAIL_LEVEL=${CODEQL_VERIFY_FAIL_LEVEL:-}" \
+  "${CODEQL_IMAGE}" \
+  bash -ceu 'bash /src/.github/scripts/ci-run-codeql.sh "$@"' \
+  bash \
+  "${FORWARD_ARGS[@]}"
+
+# Preserve SARIF (and db metadata) on the live checkout before work-tree cleanup.
+if [[ -d ${FIRMWARE_ROOT}/build/codeql ]]; then
+  mkdir -p "${SOURCE_ROOT}/build/codeql"
+  cp -a "${FIRMWARE_ROOT}/build/codeql/." "${SOURCE_ROOT}/build/codeql/"
+  printf '── codeql-local: copied results → %s/build/codeql/ ──\n' "${SOURCE_ROOT}" >&2
+fi
+
+SARIF_PATH="${SOURCE_ROOT}/build/codeql/results.sarif"
+if [[ ${OPEN_SARIF} == "1" && -s ${SARIF_PATH} ]]; then
+  case "$(uname -s)" in
+    Linux)
+      if command -v xdg-open >/dev/null 2>&1; then
+        xdg-open "${SARIF_PATH}" >/dev/null 2>&1 &
       fi
-      printf 'error: unsupported OS/arch %s/%s — install CodeQL CLI manually and set CODEQL_DIST\n' "${os}" "${arch}" >&2
-      exit 1
+      ;;
+    Darwin)
+      if command -v open >/dev/null 2>&1; then
+        open "${SARIF_PATH}"
+      fi
       ;;
   esac
-
-  zip_path="${CODEQL_CACHE}/${CODEQL_CLI_VERSION}/${asset}"
-  mkdir -p "$(dirname "${zip_path}")"
-
-  if [[ ! -f ${zip_path} ]]; then
-    printf '\n── Downloading CodeQL CLI %s (%s) ──\n' "${CODEQL_CLI_VERSION}" "${asset}" >&2
-    curl -fsSL --retry 3 --retry-delay 2 \
-      -o "${zip_path}.part" \
-      "https://github.com/github/codeql-cli-binaries/releases/download/${CODEQL_CLI_VERSION}/${asset}"
-    curl -fsSL --retry 3 --retry-delay 2 \
-      -o "${zip_path}.checksum.txt" \
-      "https://github.com/github/codeql-cli-binaries/releases/download/${CODEQL_CLI_VERSION}/${asset}.checksum.txt"
-    expected_hash="$(awk '{print $1}' "${zip_path}.checksum.txt")"
-    actual_hash="$(sha256sum "${zip_path}.part" | awk '{print $1}')"
-    if [[ ${actual_hash} != "${expected_hash}" ]]; then
-      rm -f "${zip_path}.part" "${zip_path}.checksum.txt"
-      printf 'error: SHA256 mismatch for %s (expected %s got %s)\n' "${asset}" "${expected_hash}" "${actual_hash}" >&2
-      exit 1
-    fi
-    mv -f "${zip_path}.part" "${zip_path}"
-  fi
-
-  extract_root="${CODEQL_CACHE}/${CODEQL_CLI_VERSION}/extract-${asset%.zip}"
-  if [[ ! -x "${extract_root}/codeql/codeql" ]]; then
-    printf '\n── Extracting CodeQL bundle ──\n' >&2
-    rm -rf "${extract_root}"
-    mkdir -p "${extract_root}"
-    unzip -q "${zip_path}" -d "${extract_root}"
-  fi
-
-  printf '%s\n' "${extract_root}/codeql/codeql"
-}
-
-CODEQL_BIN="$(resolve_codeql)" || {
-  rc=$?
-  if [[ ${rc} -eq 2 && ${VERIFY_GATE} -eq 1 ]]; then
-    exit 0
-  fi
-  exit "${rc}"
-}
-
-codeql_verify_gate() {
-  local sarif="$1"
-  local fail_level="${CODEQL_VERIFY_FAIL_LEVEL:-error}"
-  if [[ ! -s ${sarif} ]]; then
-    printf 'error: CodeQL verify gate: empty SARIF at %s\n' "${sarif}" >&2
-    return 1
-  fi
-  if ! command -v jq >/dev/null 2>&1; then
-    printf 'error: CodeQL verify gate requires jq\n' >&2
-    return 1
-  fi
-  local count
-  count="$(jq --arg lvl "${fail_level}" '[.runs[].results[] | select((.level // "warning") == $lvl)] | length' "${sarif}")"
-  if [[ ${count} != "0" ]]; then
-    printf 'error: CodeQL verify gate: %s %s-level finding(s) in %s\n' "${count}" "${fail_level}" "${sarif}" >&2
-    return 1
-  fi
-  printf 'CodeQL verify gate: OK (0 %s-level findings)\n' "${fail_level}"
-}
-
-bootstrap_linux_deps() {
-  if [[ "$(uname -s)" != "Linux" ]]; then
-    return 0
-  fi
-  if [[ ${CODEQL_BOOTSTRAP_LINUX_DEPS:-1} != "1" ]]; then
-    return 0
-  fi
-  printf '\n── Linux dependency bootstrap (make/install-linux-deps.sh) ──\n' >&2
-  env FIRMWARE_ROOT="${FIRMWARE_ROOT}" INSTALL_DEPS=1 AUTO_INSTALL_LINUX_DEPS=1 \
-    bash "${FIRMWARE_ROOT}/make/install-linux-deps.sh"
-}
-
-ensure_cpp_query_packs() {
-  if [[ ${CODEQL_SKIP_PACK_DOWNLOAD:-0} == "1" ]]; then
-    return 0
-  fi
-  printf '\n── CodeQL pack download (%s) ──\n' "${CODEQL_PACK_SCOPE}" >&2
-  "${CODEQL_BIN}" pack download "${CODEQL_PACK_SCOPE}" >&2
-}
-
-resolve_query_suite() {
-  if [[ -n ${CODEQL_QUERY_SUITE:-} ]]; then
-    if [[ -f ${CODEQL_QUERY_SUITE} ]]; then
-      printf '%s\n' "${CODEQL_QUERY_SUITE}"
-      return 0
-    fi
-    printf 'error: CODEQL_QUERY_SUITE=%s is not a readable file\n' "${CODEQL_QUERY_SUITE}" >&2
-    exit 1
-  fi
-  local hits hit
-  hits="$(find "${HOME}/.codeql/packages/codeql/cpp-queries" -path "*/codeql-suites/${CODEQL_SUITE_FILE}" 2>/dev/null | sort -V)"
-  hit="$(printf '%s\n' "${hits}" | tail -n1)"
-  if [[ -z ${hit} || ! -f ${hit} ]]; then
-    printf 'error: could not find codeql-suites/%s under ~/.codeql/packages (pack download failed?)\n' "${CODEQL_SUITE_FILE}" >&2
-    exit 1
-  fi
-  printf '%s\n' "${hit}"
-}
-
-bootstrap_linux_deps
-
-rm -rf "${DB_PATH}"
-mkdir -p "$(dirname "${DB_PATH}")" "$(dirname "${SARIF_PATH}")"
-
-build_cmd="env FIRMWARE_ROOT=${FIRMWARE_ROOT} CODEQL_INSTALL_LINUX_DEPS=0 CODEQL_INCLUDE_ARDUINO=${CODEQL_INCLUDE_ARDUINO:-1} bash ${SCRIPT_DIR}/codeql-build.sh"
-
-printf '\n── CodeQL database create → %s ──\n' "${DB_PATH}"
-"${CODEQL_BIN}" database create "${DB_PATH}" \
-  --language=cpp \
-  --overwrite \
-  --source-root="${FIRMWARE_ROOT}" \
-  --command="${build_cmd}"
-
-if [[ ${DB_ONLY} -eq 1 ]]; then
-  printf '\n── Database ready (--db-only); skipping analyze ──\n'
-  exit 0
 fi
-
-ensure_cpp_query_packs
-QUERY_SUITE_PATH="$(resolve_query_suite)"
-
-printf '\n── CodeQL analyze → %s ──\n' "${SARIF_PATH}"
-"${CODEQL_BIN}" database analyze "${DB_PATH}" \
-  --threads=0 \
-  --sarif-category=cpp \
-  --format=sarif-latest \
-  --output="${SARIF_PATH}" \
-  "${QUERY_SUITE_PATH}"
-
-if [[ ${SUMMARIZE_SARIF} == "1" ]]; then
-  print_codeql_sarif_summary "${SARIF_PATH}"
-fi
-maybe_open_sarif "${SARIF_PATH}"
 
 if [[ ${VERIFY_GATE} -eq 1 ]]; then
-  codeql_verify_gate "${SARIF_PATH}"
+  if [[ ! -s ${SARIF_PATH} ]]; then
+    printf 'error: CodeQL verify gate: empty SARIF at %s\n' "${SARIF_PATH}" >&2
+    exit 1
+  fi
+  if ! command -v jq >/dev/null 2>&1; then
+    printf 'error: CodeQL verify gate requires jq on the host\n' >&2
+    exit 1
+  fi
+  fail_level="${CODEQL_VERIFY_FAIL_LEVEL:-error}"
+  count="$(jq --arg lvl "${fail_level}" \
+    '[.runs[].results[] | select((.level // "warning") == $lvl)] | length' "${SARIF_PATH}")"
+  if [[ ${count} != "0" ]]; then
+    printf 'error: CodeQL verify gate: %s %s-level finding(s) in %s\n' \
+      "${count}" "${fail_level}" "${SARIF_PATH}" >&2
+    exit 1
+  fi
+  printf 'CodeQL verify gate: OK (0 %s-level findings)\n' "${fail_level}"
 fi
 
-printf '\n── CodeQL finished ──\n'
+printf '\n── CodeQL local finished ──\n'

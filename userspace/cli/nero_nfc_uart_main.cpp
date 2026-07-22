@@ -23,6 +23,7 @@
 //                  --send CMD | --send-watch CMD | --send-interactive CMD ...]
 //
 #include <getopt.h>
+#include <span>
 
 #include <array>
 #include <cstdint>
@@ -30,17 +31,17 @@
 #include <vector>
 
 #include "nero_nfc_attrs.h"
-#include "nero_nfc_cli_exit.h"
-#include "nero_nfc_driver.h"
-#include "nero_nfc_io.h"
+#include "nero_nfc_cli_exit.hpp"
+#include "nero_nfc_driver.hpp"
+#include "nero_nfc_io.hpp"
 
 namespace {
 
-static constexpr std::size_t kLongOptCount = 9u;
+constexpr std::size_t kLongOptCount = 9u;
 
-void usage(const char *argv0) {
-  nero_nfc::nero_nfc_stderr_line("Usage: {} [--port DEV] [--no-browser]", argv0);
-  nero_nfc::nero_nfc_stderr_line(R"(          [--listen | --interactive |
+void Usage(const char* argv0) {
+  nero_nfc::NeroNfcStderrLine("Usage: {} [--port DEV] [--no-browser]", argv0);
+  nero_nfc::NeroNfcStderrLine(R"(          [--listen | --interactive |
            --send CMD | --send-watch CMD | --send-interactive CMD...]
 
 Modes (default: --listen):
@@ -67,19 +68,44 @@ enum class Mode : std::uint8_t {
   kSendInteractive,
 };
 
-} // namespace
+}  // namespace
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
+  const auto kArgs = std::span(argv, static_cast<std::size_t>(argc));
   static constexpr std::array<struct option, kLongOptCount> kLongOpts{{
-    {.name = "port", .has_arg = required_argument, .flag = NERO_NFC_NULL, .val = 'p'},
-    {.name = "no-browser", .has_arg = no_argument, .flag = NERO_NFC_NULL, .val = 'B'},
-    {.name = "listen", .has_arg = no_argument, .flag = NERO_NFC_NULL, .val = 'l'},
-    {.name = "interactive", .has_arg = no_argument, .flag = NERO_NFC_NULL, .val = 'i'},
-    {.name = "send", .has_arg = required_argument, .flag = NERO_NFC_NULL, .val = 's'},
-    {.name = "send-watch", .has_arg = required_argument, .flag = NERO_NFC_NULL, .val = 'w'},
-    {.name = "send-interactive", .has_arg = required_argument, .flag = NERO_NFC_NULL, .val = 'I'},
-    {.name = "help", .has_arg = no_argument, .flag = NERO_NFC_NULL, .val = 'h'},
-    {.name = NERO_NFC_NULL, .has_arg = 0, .flag = NERO_NFC_NULL, .val = 0},
+      {.name = "port",
+       .has_arg = required_argument,
+       .flag = NERO_NFC_NULL,
+       .val = 'p'},
+      {.name = "no-browser",
+       .has_arg = no_argument,
+       .flag = NERO_NFC_NULL,
+       .val = 'B'},
+      {.name = "listen",
+       .has_arg = no_argument,
+       .flag = NERO_NFC_NULL,
+       .val = 'l'},
+      {.name = "interactive",
+       .has_arg = no_argument,
+       .flag = NERO_NFC_NULL,
+       .val = 'i'},
+      {.name = "send",
+       .has_arg = required_argument,
+       .flag = NERO_NFC_NULL,
+       .val = 's'},
+      {.name = "send-watch",
+       .has_arg = required_argument,
+       .flag = NERO_NFC_NULL,
+       .val = 'w'},
+      {.name = "send-interactive",
+       .has_arg = required_argument,
+       .flag = NERO_NFC_NULL,
+       .val = 'I'},
+      {.name = "help",
+       .has_arg = no_argument,
+       .flag = NERO_NFC_NULL,
+       .val = 'h'},
+      {.name = NERO_NFC_NULL, .has_arg = 0, .flag = NERO_NFC_NULL, .val = 0},
   }};
 
   nero_nfc::DriverOptions opts;
@@ -89,55 +115,56 @@ int main(int argc, char **argv) {
 
   int c;
   int opt_idx = 0;
-  while ((c = getopt_long(argc, argv, "iBhp:s:w:I:", kLongOpts.data(), &opt_idx)) != -1) {
+  while ((c = getopt_long(argc, argv, "iBhp:s:w:I:", kLongOpts.data(),
+                          &opt_idx)) != -1) {
     switch (c) {
-    case 'p':
-      opts.port = optarg;
-      break;
-    case 'B':
-      opts.open_urls = false;
-      break;
-    case 'l':
-      mode = Mode::kListen;
-      break;
-    case 'i':
-      mode = Mode::kInteractive;
-      break;
-    case 's':
-      mode = Mode::kSend;
-      command = optarg;
-      break;
-    case 'w':
-      mode = Mode::kSendWatch;
-      command = optarg;
-      break;
-    case 'I':
-      mode = Mode::kSendInteractive;
-      command = optarg;
-      break;
-    case 'h':
-      usage(argv[0]);
-      return nero_nfc::kCliExitSuccess;
-    default:
-      usage(argv[0]);
-      return nero_nfc::kCliExitUsageError;
+      case 'p':
+        opts.port_ = optarg;
+        break;
+      case 'B':
+        opts.open_urls_ = false;
+        break;
+      case 'l':
+        mode = Mode::kListen;
+        break;
+      case 'i':
+        mode = Mode::kInteractive;
+        break;
+      case 's':
+        mode = Mode::kSend;
+        command = optarg;
+        break;
+      case 'w':
+        mode = Mode::kSendWatch;
+        command = optarg;
+        break;
+      case 'I':
+        mode = Mode::kSendInteractive;
+        command = optarg;
+        break;
+      case 'h':
+        Usage(kArgs[0]);
+        return nero_nfc::kCliExitSuccess;
+      default:
+        Usage(kArgs[0]);
+        return nero_nfc::kCliExitUsageError;
     }
   }
-  for (int i = optind; i < argc; ++i) {
-    extra_args.emplace_back(argv[i]);
+  for (auto i = static_cast<std::size_t>(optind); i < kArgs.size(); ++i) {
+    extra_args.emplace_back(kArgs[i]);
   }
 
   switch (mode) {
-  case Mode::kListen:
-    return nero_nfc::run_listen_only(opts);
-  case Mode::kInteractive:
-    return nero_nfc::run_interactive(opts);
-  case Mode::kSend:
-    return nero_nfc::run_send(opts, command);
-  case Mode::kSendWatch:
-    return nero_nfc::run_send_then_monitor(opts, command);
-  case Mode::kSendInteractive:
-    return nero_nfc::run_send_then_interactive(opts, command, extra_args);
+    case Mode::kListen:
+      return nero_nfc::RunListenOnly(opts);
+    case Mode::kInteractive:
+      return nero_nfc::RunInteractive(opts);
+    case Mode::kSend:
+      return nero_nfc::RunSend(opts, command);
+    case Mode::kSendWatch:
+      return nero_nfc::RunSendThenMonitor(opts, command);
+    case Mode::kSendInteractive:
+      return nero_nfc::RunSendThenInteractive(opts, command, extra_args);
   }
   return nero_nfc::kCliExitSuccess;
 }

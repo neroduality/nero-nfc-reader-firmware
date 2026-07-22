@@ -16,20 +16,107 @@
 
 #include <gtest/gtest.h>
 
+#include <algorithm>
+#include <array>
+#include <cstddef>
 #include <cstring>
+#include <ranges>
 
 extern "C" {
 #include "nero_nfc_null.h"
-#include "nfc_frontend.h"
+#include "nero_nfc_frontend.h"
+#include "st25r3916_iso14443a.h"
 #include "st25r3916_iso14443a_uid.h"
 }
 
+namespace {
+
+constexpr std::size_t kActivationUidCapacity = 10u;
+constexpr uint8_t kUnsetByte = 0xFFu;
+constexpr uint8_t kUidFillByte = 0xAAu;
+constexpr uint8_t kIsoDepSak = 0x20u;
+constexpr std::array<uint8_t, 2u> kActivationAtqa{0x04u, 0x00u};
+constexpr std::array<uint8_t, 4u> kActivationUid{0x11u, 0x22u, 0x33u, 0x44u};
+constexpr uint8_t kActivationUidLen =
+    static_cast<uint8_t>(kActivationUid.size());
+
+struct Iso14443aActivationFake {
+  unsigned short_frame_calls_;
+  unsigned select_calls_;
+  bool tag_present_;
+};
+
+bool ActivationSendFrame(void* context, uint8_t* atqa_out) {
+  auto* fake = static_cast<Iso14443aActivationFake*>(context);
+  ++fake->short_frame_calls_;
+  if (!fake->tag_present_) {
+    return false;
+  }
+  std::ranges::copy(kActivationAtqa, atqa_out);
+  return true;
+}
+
+void ActivationDelay(void* context, uint32_t ms) {
+  (void)context;
+  (void)ms;
+}
+
+int ActivationSelect(void* context, uint8_t sel_cmd, uint8_t* uid_out) {
+  auto* fake = static_cast<Iso14443aActivationFake*>(context);
+  ++fake->select_calls_;
+  if (sel_cmd != NFC_FRONTEND_ISO14443A_SEL_CL1) {
+    return -1;
+  }
+  std::ranges::copy(kActivationUid, uid_out);
+  return kIsoDepSak;
+}
+
+}  // namespace
+
+TEST(NfcFrontend, Iso14443aActivationDoesNotReportPhantomTag) {
+  Iso14443aActivationFake fake{};
+  std::array<uint8_t, kActivationUidCapacity> uid{};
+  uid.fill(kUidFillByte);
+  uint8_t uid_len = kUnsetByte;
+  uint8_t sak = kUnsetByte;
+
+  EXPECT_FALSE(st25_iso14443a_activate_tag(
+      ActivationSendFrame, ActivationSendFrame, ActivationDelay, &fake, true,
+      ActivationSelect, uid.data(), static_cast<uint8_t>(uid.size()), &uid_len,
+      &sak));
+  EXPECT_EQ(fake.short_frame_calls_, 2u);
+  EXPECT_EQ(fake.select_calls_, 0u);
+  EXPECT_EQ(uid_len, 0u);
+  EXPECT_EQ(sak, 0u);
+}
+
+TEST(NfcFrontend, Iso14443aActivationRunsRfCallbacksAndReturnsUid) {
+  Iso14443aActivationFake fake{};
+  fake.tag_present_ = true;
+  std::array<uint8_t, kActivationUidCapacity> uid{};
+  uid.fill(kUidFillByte);
+  uint8_t uid_len = 0u;
+  uint8_t sak = 0u;
+
+  ASSERT_TRUE(st25_iso14443a_activate_tag(
+      ActivationSendFrame, ActivationSendFrame, ActivationDelay, &fake, true,
+      ActivationSelect, uid.data(), static_cast<uint8_t>(uid.size()), &uid_len,
+      &sak));
+  EXPECT_EQ(fake.short_frame_calls_, 1u);
+  EXPECT_EQ(fake.select_calls_, 1u);
+  EXPECT_EQ(uid_len, kActivationUidLen);
+  EXPECT_EQ(sak, kIsoDepSak);
+  EXPECT_TRUE(
+      std::equal(kActivationUid.begin(), kActivationUid.end(), uid.begin()));
+}
+
 TEST(NfcFrontend, AssemblesFourByteUid) {
-  const uint8_t cl1[] = {0x11u, 0x22u, 0x33u, 0x44u};
-  uint8_t uid[10] = {0};
-  uint8_t sak = 0xFFu;
-  EXPECT_EQ(st25_iso14443a_assemble_cascaded_uid(1u, cl1, 0x20, NERO_NFC_NULL, -1, NERO_NFC_NULL, -1, uid,
-                                                 sizeof(uid), &sak),
+  const uint8_t kCl1[] = {0x11u, 0x22u, 0x33u, 0x44u};
+  uint8_t uid[kActivationUidCapacity] = {0};
+  uint8_t sak = kUnsetByte;
+  EXPECT_EQ(st25_iso14443a_assemble_cascaded_uid(
+                1u, &kCl1[0], 0x20, NERO_NFC_NULL, -1, NERO_NFC_NULL, -1,
+                &uid[0], sizeof(uid), &sak),
             4u);
   EXPECT_EQ(sak, 0x20u);
   EXPECT_EQ(uid[0], 0x11u);
@@ -37,57 +124,67 @@ TEST(NfcFrontend, AssemblesFourByteUid) {
 }
 
 TEST(NfcFrontend, AssemblesSevenByteUidSkippingCascadeTag) {
-  /* [ISO14443-3] §6.5.4 — CL1 = CT + UID0..2; CL2 = UID3..6 (double cascade). */
-  const uint8_t cl1[] = {ST25_ISO14443A_CASCADE_TAG, 0x01u, 0x02u, 0x03u};
-  const uint8_t cl2[] = {0x04u, 0x05u, 0x06u, 0x07u};
-  uint8_t uid[10] = {0};
+  /* [ISO14443-3] §6.5.4 — CL1 = CT + UID0..2; CL2 = UID3..6 (double cascade).
+   */
+  const uint8_t kCl1[] = {K_S_T25_ISO14443_A_CASCADE_TAG, 0x01u, 0x02u, 0x03u};
+  const uint8_t kCl2[] = {0x04u, 0x05u, 0x06u, 0x07u};
+  uint8_t uid[kActivationUidCapacity] = {0};
   uint8_t sak = 0u;
-  EXPECT_EQ(st25_iso14443a_assemble_cascaded_uid(2u, cl1, 0x04, cl2, 0x20, NERO_NFC_NULL, -1, uid,
-                                                 sizeof(uid), &sak),
+  EXPECT_EQ(st25_iso14443a_assemble_cascaded_uid(2u, &kCl1[0], 0x04, &kCl2[0],
+                                                 0x20, NERO_NFC_NULL, -1,
+                                                 &uid[0], sizeof(uid), &sak),
             7u);
   EXPECT_EQ(sak, 0x20u);
-  const uint8_t expect[] = {0x01u, 0x02u, 0x03u, 0x04u, 0x05u, 0x06u, 0x07u};
-  EXPECT_EQ(std::memcmp(uid, expect, sizeof(expect)), 0);
+  const uint8_t kExpect[] = {0x01u, 0x02u, 0x03u, 0x04u, 0x05u, 0x06u, 0x07u};
+  EXPECT_EQ(std::memcmp(&uid[0], &kExpect[0], sizeof(kExpect)), 0);
 }
 
 TEST(NfcFrontend, AssemblesTenByteUidTripleCascade) {
   /* [ISO14443-3] §6.5.4 — CL1 = CT+UID0..2, CL2 = CT+UID3..5, CL3 = UID6..9. */
-  const uint8_t cl1[] = {ST25_ISO14443A_CASCADE_TAG, 0x01u, 0x02u, 0x03u};
-  const uint8_t cl2[] = {ST25_ISO14443A_CASCADE_TAG, 0x04u, 0x05u, 0x06u};
-  const uint8_t cl3[] = {0x07u, 0x08u, 0x09u, 0x0Au};
-  uint8_t uid[10] = {0};
+  const uint8_t kCl1[] = {K_S_T25_ISO14443_A_CASCADE_TAG, 0x01u, 0x02u, 0x03u};
+  const uint8_t kCl2[] = {K_S_T25_ISO14443_A_CASCADE_TAG, 0x04u, 0x05u, 0x06u};
+  const uint8_t kCl3[] = {0x07u, 0x08u, 0x09u, 0x0Au};
+  uint8_t uid[kActivationUidCapacity] = {0};
   uint8_t sak = 0u;
-  EXPECT_EQ(st25_iso14443a_assemble_cascaded_uid(3u, cl1, 0x04, cl2, 0x04, cl3, 0x20, uid,
+  EXPECT_EQ(st25_iso14443a_assemble_cascaded_uid(3u, &kCl1[0], 0x04, &kCl2[0],
+                                                 0x04, &kCl3[0], 0x20, &uid[0],
                                                  sizeof(uid), &sak),
             10u);
   EXPECT_EQ(sak, 0x20u);
-  const uint8_t expect[] = {0x01u, 0x02u, 0x03u, 0x04u, 0x05u, 0x06u, 0x07u, 0x08u, 0x09u, 0x0Au};
-  EXPECT_EQ(std::memcmp(uid, expect, sizeof(expect)), 0);
+  const uint8_t kExpect[] = {0x01u, 0x02u, 0x03u, 0x04u, 0x05u,
+                             0x06u, 0x07u, 0x08u, 0x09u, 0x0Au};
+  EXPECT_EQ(std::memcmp(&uid[0], &kExpect[0], sizeof(kExpect)), 0);
 }
 
 TEST(NfcFrontend, RejectsMalformedCascadeFraming) {
-  const uint8_t ct1[] = {ST25_ISO14443A_CASCADE_TAG, 0x01u, 0x02u, 0x03u};
-  const uint8_t lvl2[] = {0x04u, 0x05u, 0x06u, 0x07u};
-  const uint8_t no_ct[] = {0x77u, 0x01u, 0x02u, 0x03u};
-  uint8_t uid[10] = {0};
+  const uint8_t kCt1[] = {K_S_T25_ISO14443_A_CASCADE_TAG, 0x01u, 0x02u, 0x03u};
+  const uint8_t kLvl2[] = {0x04u, 0x05u, 0x06u, 0x07u};
+  const uint8_t kNoCt[] = {0x77u, 0x01u, 0x02u, 0x03u};
+  uint8_t uid[kActivationUidCapacity] = {0};
   uint8_t sak = 0u;
 
   /* Final level still reports cascading -> invalid. */
-  EXPECT_EQ(st25_iso14443a_assemble_cascaded_uid(2u, ct1, 0x04, lvl2, 0x04, NERO_NFC_NULL, -1, uid,
-                                                 sizeof(uid), &sak),
+  EXPECT_EQ(st25_iso14443a_assemble_cascaded_uid(2u, &kCt1[0], 0x04, &kLvl2[0],
+                                                 0x04, NERO_NFC_NULL, -1,
+                                                 &uid[0], sizeof(uid), &sak),
             0u);
   /* Missing cascade tag on an incomplete level -> invalid. */
-  EXPECT_EQ(st25_iso14443a_assemble_cascaded_uid(2u, no_ct, 0x04, lvl2, 0x20, NERO_NFC_NULL, -1, uid,
-                                                 sizeof(uid), &sak),
+  EXPECT_EQ(st25_iso14443a_assemble_cascaded_uid(2u, &kNoCt[0], 0x04, &kLvl2[0],
+                                                 0x20, NERO_NFC_NULL, -1,
+                                                 &uid[0], sizeof(uid), &sak),
             0u);
   /* 10-byte UID into a 7-byte buffer -> invalid (capacity). */
-  const uint8_t c2[] = {ST25_ISO14443A_CASCADE_TAG, 0x04u, 0x05u, 0x06u};
-  const uint8_t c3[] = {0x07u, 0x08u, 0x09u, 0x0Au};
-  EXPECT_EQ(st25_iso14443a_assemble_cascaded_uid(3u, ct1, 0x04, c2, 0x04, c3, 0x20, uid, 7u, &sak),
-            0u);
-  /* CL1 claims complete (no cascade bit) but caller asked for 2 levels -> invalid. */
-  EXPECT_EQ(st25_iso14443a_assemble_cascaded_uid(2u, ct1, 0x20, lvl2, 0x20, NERO_NFC_NULL, -1, uid,
-                                                 sizeof(uid), &sak),
+  const uint8_t kC2[] = {K_S_T25_ISO14443_A_CASCADE_TAG, 0x04u, 0x05u, 0x06u};
+  const uint8_t kC3[] = {0x07u, 0x08u, 0x09u, 0x0Au};
+  EXPECT_EQ(
+      st25_iso14443a_assemble_cascaded_uid(3u, &kCt1[0], 0x04, &kC2[0], 0x04,
+                                           &kC3[0], 0x20, &uid[0], 7u, &sak),
+      0u);
+  /* CL1 claims complete (no cascade bit) but caller asked for 2 levels ->
+   * invalid. */
+  EXPECT_EQ(st25_iso14443a_assemble_cascaded_uid(2u, &kCt1[0], 0x20, &kLvl2[0],
+                                                 0x20, NERO_NFC_NULL, -1,
+                                                 &uid[0], sizeof(uid), &sak),
             0u);
 }
 

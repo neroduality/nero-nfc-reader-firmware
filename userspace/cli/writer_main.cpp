@@ -20,26 +20,28 @@
 // Remaining args are forwarded as writer payload command tail.
 //
 #include <cstdint>
+#include <span>
 #include <optional>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include "nero_nfc_bridge.h"
-#include "nero_nfc_cli_exit.h"
-#include "nero_nfc_driver.h"
-#include "nero_nfc_io.h"
-#include "nero_nfc_pcsc.h"
-#include "nero_nfc_writer_payload.h"
+#include "nero_nfc_bridge.hpp"
+#include "nero_nfc_cli_exit.hpp"
+#include "nero_nfc_driver.hpp"
+#include "nero_nfc_io.hpp"
+#include "nero_nfc_pcsc.hpp"
+#include "nero_nfc_writer_payload.hpp"
 
 namespace {
 
-void usage(const char *argv0) {
-  nero_nfc::nero_nfc_stderr_line("Usage: {} [help] [--bridge=cdc|pcsc] [--port=DEV] "
-                                 "[--pcsc-reader=SUBSTR] "
-                                 "[--pcsc-share=shared|exclusive] [payload flags] [writer-args...]",
-                                 argv0);
-  nero_nfc::nero_nfc_stderr_line(R"(
+void Usage(const char* argv0) {
+  nero_nfc::NeroNfcStderrLine(
+      "Usage: {} [help] [--bridge=cdc|pcsc] [--port=DEV] "
+      "[--pcsc-reader=SUBSTR] "
+      "[--pcsc-share=shared|exclusive] [payload flags] [writer-args...]",
+      argv0);
+  nero_nfc::NeroNfcStderrLine(R"(
 Bridge selection:
   omit --bridge       Auto-select PC/SC when available, else CDC serial
   --bridge=cdc        Require the CDC/UART firmware interface
@@ -78,11 +80,12 @@ Notes:
   the same reader substring as --pcsc-reader.)");
 }
 
-bool is_help_arg(std::string_view arg) {
+bool IsHelpArg(std::string_view arg) {
   return arg == "-h" || arg == "--help" || arg == "help";
 }
 
-std::optional<std::string> flag_value(const std::string &arg, std::string_view name) {
+std::optional<std::string> FlagValue(const std::string& arg,
+                                     std::string_view name) {
   std::string prefix = "--" + std::string(name) + "=";
   if (arg.starts_with(prefix)) {
     return arg.substr(prefix.size());
@@ -90,81 +93,85 @@ std::optional<std::string> flag_value(const std::string &arg, std::string_view n
   return std::nullopt;
 }
 
-} // namespace
+}  // namespace
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   nero_nfc::DriverOptions opts;
   std::optional<nero_nfc::HostBridge> requested_bridge;
   std::string pcsc_reader;
-  auto pcsc_share_mode = nero_nfc::PcscShareMode::Shared;
+  auto pcsc_share_mode = nero_nfc::PcscShareMode::kShared;
   bool pcsc_share_specified = false;
   std::vector<std::uint8_t> ndef_message;
   std::vector<std::vector<std::uint8_t>> ndef_records;
   std::vector<std::string> cdc_extra;
   std::vector<std::string> pcsc_unsupported_args;
-  auto add_record = [&](std::vector<std::uint8_t> record, std::string_view flag) {
+  auto add_record = [&](std::vector<std::uint8_t> record,
+                        std::string_view flag) {
     if (record.empty()) {
-      nero_nfc::nero_nfc_stderr_line("error: invalid or too-large {}", flag);
+      nero_nfc::NeroNfcStderrLine("error: invalid or too-large {}", flag);
       return false;
     }
     ndef_records.push_back(std::move(record));
     return true;
   };
 
-  for (int i = 1; i < argc; ++i) {
-    std::string arg(argv[i]);
-    auto uri = flag_value(arg, "uri");
-    auto link = flag_value(arg, "link");
-    auto unit_link = flag_value(arg, "unit-link");
-    auto text = flag_value(arg, "text");
-    auto search = flag_value(arg, "search");
-    auto social = flag_value(arg, "social");
-    auto video = flag_value(arg, "video");
-    auto file = flag_value(arg, "file");
-    auto application = flag_value(arg, "application");
-    auto mail = flag_value(arg, "mail");
-    auto mailto = flag_value(arg, "mailto");
-    auto contact = flag_value(arg, "contact");
-    auto phone = flag_value(arg, "phone");
-    auto phone_number = flag_value(arg, "phone-number");
-    auto sms = flag_value(arg, "sms");
-    auto location = flag_value(arg, "location");
-    auto custom_location = flag_value(arg, "custom-location");
-    auto address = flag_value(arg, "address");
-    auto destination = flag_value(arg, "destination-address");
-    auto bluetooth = flag_value(arg, "bluetooth");
-    auto wifi = flag_value(arg, "wifi");
-    auto data = flag_value(arg, "data");
-    if (is_help_arg(arg)) {
-      usage(argv[0]);
+  const auto kArgs = std::span(argv, static_cast<std::size_t>(argc));
+  for (std::size_t i = 1u; i < kArgs.size(); ++i) {
+    std::string arg(kArgs[i]);
+    auto uri = FlagValue(arg, "uri");
+    auto link = FlagValue(arg, "link");
+    auto unit_link = FlagValue(arg, "unit-link");
+    auto text = FlagValue(arg, "text");
+    auto search = FlagValue(arg, "search");
+    auto social = FlagValue(arg, "social");
+    auto video = FlagValue(arg, "video");
+    auto file = FlagValue(arg, "file");
+    auto application = FlagValue(arg, "application");
+    auto mail = FlagValue(arg, "mail");
+    auto mailto = FlagValue(arg, "mailto");
+    auto contact = FlagValue(arg, "contact");
+    auto phone = FlagValue(arg, "phone");
+    auto phone_number = FlagValue(arg, "phone-number");
+    auto sms = FlagValue(arg, "sms");
+    auto location = FlagValue(arg, "location");
+    auto custom_location = FlagValue(arg, "custom-location");
+    auto address = FlagValue(arg, "address");
+    auto destination = FlagValue(arg, "destination-address");
+    auto bluetooth = FlagValue(arg, "bluetooth");
+    auto wifi = FlagValue(arg, "wifi");
+    auto data = FlagValue(arg, "data");
+    if (IsHelpArg(arg)) {
+      Usage(kArgs[0]);
       return nero_nfc::kCliExitSuccess;
     }
     if (arg.starts_with("--bridge=")) {
-      auto parsed = nero_nfc::parse_host_bridge(arg.substr(std::string("--bridge=").size()));
+      auto parsed = nero_nfc::ParseHostBridge(
+          arg.substr(std::string("--bridge=").size()));
       if (!parsed.has_value()) {
-        nero_nfc::nero_nfc_stderr_line("error: unsupported --bridge value \"{}\" (use cdc or pcsc)",
-                                       arg.substr(std::string("--bridge=").size()));
-        usage(argv[0]);
+        nero_nfc::NeroNfcStderrLine(
+            "error: unsupported --bridge value \"{}\" (use cdc or pcsc)",
+            arg.substr(std::string("--bridge=").size()));
+        Usage(kArgs[0]);
         return nero_nfc::kCliExitUsageError;
       }
       requested_bridge = parsed;
     } else if (arg.starts_with("--pcsc-reader=")) {
       pcsc_reader = arg.substr(std::string("--pcsc-reader=").size());
     } else if (arg.starts_with("--pcsc-share=")) {
-      auto parsed =
-        nero_nfc::parse_pcsc_share_mode(arg.substr(std::string("--pcsc-share=").size()));
-      if (!parsed.has_value()) {
-        nero_nfc::nero_nfc_stderr_line(
-          "error: unsupported --pcsc-share value \"{}\" (use shared or "
-          "exclusive)",
+      auto parsed = nero_nfc::ParsePcscShareMode(
           arg.substr(std::string("--pcsc-share=").size()));
-        usage(argv[0]);
+      if (!parsed.has_value()) {
+        nero_nfc::NeroNfcStderrLine(
+            "error: unsupported --pcsc-share value \"{}\" (use shared or "
+            "exclusive)",
+            arg.substr(std::string("--pcsc-share=").size()));
+        Usage(kArgs[0]);
         return nero_nfc::kCliExitUsageError;
       }
       pcsc_share_mode = *parsed;
       pcsc_share_specified = true;
     } else if (arg.starts_with("--port=")) {
-      opts.port = arg.substr(std::string("--port=").size());
+      opts.port_ = arg.substr(std::string("--port=").size());
     } else if (uri || link || unit_link) {
       std::string uri_value;
       if (uri) {
@@ -174,18 +181,19 @@ int main(int argc, char **argv) {
       } else {
         uri_value = *unit_link;
       }
-      if (!add_record(nero_nfc::build_ndef_uri_record(uri_value), "--uri/--link")) {
+      if (!add_record(nero_nfc::BuildNdefUriRecord(uri_value),
+                      "--uri/--link")) {
         return nero_nfc::kCliExitUsageError;
       }
     } else if (text) {
-      if (!add_record(nero_nfc::build_ndef_text_record(*text), "--text")) {
+      if (!add_record(nero_nfc::BuildNdefTextRecord(*text), "--text")) {
         return nero_nfc::kCliExitUsageError;
       }
     } else if (search) {
-      if (!add_record(
-            nero_nfc::build_ndef_uri_record("https://www.google.com/search?q=" +
-                                            nero_nfc::writer_url_component_encode(*search)),
-            "--search")) {
+      if (!add_record(nero_nfc::BuildNdefUriRecord(
+                          "https://www.google.com/search?q=" +
+                          nero_nfc::WriterUrlComponentEncode(*search)),
+                      "--search")) {
         return nero_nfc::kCliExitUsageError;
       }
     } else if (social || video || file || application) {
@@ -204,24 +212,27 @@ int main(int argc, char **argv) {
         value = *application;
         flag = "--application";
       }
-      if (!add_record(nero_nfc::build_ndef_uri_record(value), flag)) {
+      if (!add_record(nero_nfc::BuildNdefUriRecord(value), flag)) {
         return nero_nfc::kCliExitUsageError;
       }
     } else if (mail || mailto) {
-      if (!add_record(nero_nfc::build_writer_mail_record(mail ? *mail : *mailto), "--mail")) {
+      if (!add_record(nero_nfc::BuildWriterMailRecord(mail ? *mail : *mailto),
+                      "--mail")) {
         return nero_nfc::kCliExitUsageError;
       }
     } else if (contact) {
-      if (!add_record(nero_nfc::build_writer_vcard_record(*contact), "--contact")) {
+      if (!add_record(nero_nfc::BuildWriterVcardRecord(*contact),
+                      "--contact")) {
         return nero_nfc::kCliExitUsageError;
       }
     } else if (phone || phone_number) {
-      if (!add_record(nero_nfc::build_ndef_uri_record("tel:" + (phone ? *phone : *phone_number)),
+      if (!add_record(nero_nfc::BuildNdefUriRecord(
+                          "tel:" + (phone ? *phone : *phone_number)),
                       "--phone")) {
         return nero_nfc::kCliExitUsageError;
       }
     } else if (sms) {
-      if (!add_record(nero_nfc::build_writer_sms_record(*sms), "--sms")) {
+      if (!add_record(nero_nfc::BuildWriterSmsRecord(*sms), "--sms")) {
         return nero_nfc::kCliExitUsageError;
       }
     } else if (location || custom_location) {
@@ -229,37 +240,40 @@ int main(int argc, char **argv) {
       if (!value.starts_with("geo:")) {
         value.insert(0, "geo:");
       }
-      if (!add_record(nero_nfc::build_ndef_uri_record(value), "--location")) {
+      if (!add_record(nero_nfc::BuildNdefUriRecord(value), "--location")) {
         return nero_nfc::kCliExitUsageError;
       }
     } else if (address || destination) {
-      std::string value = address ? "https://www.google.com/maps/search/?api=1&query=" +
-                                      nero_nfc::writer_url_component_encode(*address)
-                                  : "https://www.google.com/maps/dir/?api=1&destination=" +
-                                      nero_nfc::writer_url_component_encode(*destination);
-      if (!add_record(nero_nfc::build_ndef_uri_record(value),
+      std::string value =
+          address ? "https://www.google.com/maps/search/?api=1&query=" +
+                        nero_nfc::WriterUrlComponentEncode(*address)
+                  : "https://www.google.com/maps/dir/?api=1&destination=" +
+                        nero_nfc::WriterUrlComponentEncode(*destination);
+      if (!add_record(nero_nfc::BuildNdefUriRecord(value),
                       address ? "--address" : "--destination-address")) {
         return nero_nfc::kCliExitUsageError;
       }
     } else if (bluetooth) {
-      if (!add_record(nero_nfc::build_writer_bluetooth_record(*bluetooth), "--bluetooth")) {
+      if (!add_record(nero_nfc::BuildWriterBluetoothRecord(*bluetooth),
+                      "--bluetooth")) {
         return nero_nfc::kCliExitUsageError;
       }
     } else if (wifi) {
-      if (!add_record(nero_nfc::build_writer_wifi_record(*wifi), "--wifi")) {
+      if (!add_record(nero_nfc::BuildWriterWifiRecord(*wifi), "--wifi")) {
         return nero_nfc::kCliExitUsageError;
       }
     } else if (data) {
-      if (!add_record(nero_nfc::build_ndef_text_record(*data), "--data")) {
+      if (!add_record(nero_nfc::BuildNdefTextRecord(*data), "--data")) {
         return nero_nfc::kCliExitUsageError;
       }
     } else if (arg.starts_with("--ndef-hex=")) {
-      if (!nero_nfc::parse_hex_bytes(arg.substr(std::string("--ndef-hex=").size()), ndef_message) ||
+      if (!nero_nfc::ParseHexBytes(
+              arg.substr(std::string("--ndef-hex=").size()), ndef_message) ||
           ndef_message.empty()) {
-        nero_nfc::nero_nfc_stderr_line("error: invalid or empty --ndef-hex");
+        nero_nfc::NeroNfcStderrLine("error: invalid or empty --ndef-hex");
         return nero_nfc::kCliExitUsageError;
       }
-      nero_nfc::normalize_writer_ndef_hex_payload(ndef_message);
+      nero_nfc::NormalizeWriterNdefHexPayload(ndef_message);
       ndef_records.clear();
     } else {
       cdc_extra.emplace_back(arg);
@@ -269,48 +283,49 @@ int main(int argc, char **argv) {
 
   nero_nfc::HostBridgeSelection selection;
   std::string err;
-  if (!nero_nfc::choose_host_bridge(requested_bridge, opts.port, pcsc_reader, selection, err,
-                                    pcsc_share_specified)) {
-    nero_nfc::nero_nfc_stderr_line("error: {}", err);
+  if (!nero_nfc::ChooseHostBridge(requested_bridge, opts.port_, pcsc_reader,
+                                  selection, err, pcsc_share_specified)) {
+    nero_nfc::NeroNfcStderrLine("error: {}", err);
     return nero_nfc::kCliExitUsageError;
   }
 
-  if (selection.bridge == nero_nfc::HostBridge::Pcsc) {
+  if (selection.bridge_ == nero_nfc::HostBridge::kPcsc) {
     if (!ndef_records.empty()) {
-      ndef_message = nero_nfc::build_ndef_message(ndef_records);
+      ndef_message = nero_nfc::BuildNdefMessage(ndef_records);
     }
     if (ndef_message.empty()) {
-      nero_nfc::nero_nfc_stderr_line("error: PC/SC writes require a payload flag; run writer help");
+      nero_nfc::NeroNfcStderrLine(
+          "error: PC/SC writes require a payload flag; run writer help");
       return nero_nfc::kCliExitUsageError;
     }
     if (!pcsc_unsupported_args.empty()) {
-      nero_nfc::nero_nfc_stderr_line(
-        "error: PC/SC writes do not accept forwarded CDC writer arguments "
-        "such as \"{}\"",
-        pcsc_unsupported_args.front());
+      nero_nfc::NeroNfcStderrLine(
+          "error: PC/SC writes do not accept forwarded CDC writer arguments "
+          "such as \"{}\"",
+          pcsc_unsupported_args.front());
       return nero_nfc::kCliExitUsageError;
     }
     nero_nfc::PcscWriteRequest req;
-    req.ndef_message = std::move(ndef_message);
-    req.share_mode = pcsc_share_mode;
-    return nero_nfc::run_pcsc_writer(selection.pcsc_reader, req);
+    req.ndef_message_ = std::move(ndef_message);
+    req.share_mode_ = pcsc_share_mode;
+    return nero_nfc::RunPcscWriter(selection.pcsc_reader_, req);
   }
-  opts.port = selection.serial_port;
-  opts.open_urls = false;
+  opts.port_ = selection.serial_port_;
+  opts.open_urls_ = false;
   if (!ndef_records.empty()) {
-    ndef_message = nero_nfc::build_ndef_message(ndef_records);
+    ndef_message = nero_nfc::BuildNdefMessage(ndef_records);
   }
   if (!ndef_message.empty()) {
     if (!cdc_extra.empty()) {
-      nero_nfc::nero_nfc_stderr_line(
-        "error: CDC payload flags cannot be combined with interactive writer "
-        "argument \"{}\"",
-        cdc_extra.front());
+      nero_nfc::NeroNfcStderrLine(
+          "error: CDC payload flags cannot be combined with interactive writer "
+          "argument \"{}\"",
+          cdc_extra.front());
       return nero_nfc::kCliExitUsageError;
     }
     std::string command = "mode writer\nndef-hex ";
-    command += nero_nfc::hex_bytes(ndef_message, '\0');
-    return nero_nfc::run_send_then_interactive(opts, command, {});
+    command += nero_nfc::HexBytes(ndef_message, '\0');
+    return nero_nfc::RunSendThenInteractive(opts, command, {});
   }
-  return nero_nfc::run_send_then_interactive(opts, "mode writer", cdc_extra);
+  return nero_nfc::RunSendThenInteractive(opts, "mode writer", cdc_extra);
 }

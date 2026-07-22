@@ -16,56 +16,68 @@
 
 // Unit tests for nero_nfc_serial.
 //
-#include "nero_nfc_serial.h"
+#include "nero_nfc_serial.hpp"
 
+namespace {
+enum {
+  kTestLit42 = 42,
+};
+}  // namespace
+
+#include <cstdlib>
 #include <fcntl.h>
-#include <stdlib.h>
 #include <unistd.h>
 
 #include <cstdio>
 
 #include <gtest/gtest.h>
 
+namespace {
+enum {
+  kPtsPathScratchCap = 256u,
+};
+}  // namespace
+
 class UserspaceSerialTest : public ::testing::Test {
-protected:
+ protected:
   void TearDown() override {
-    nero_nfc::nero_nfc_utest_clear_serial_open_hook();
-    nero_nfc::nero_nfc_utest_set_serial_reset_noop(false);
-    nero_nfc::nero_nfc_utest_set_serial_reset_skip_delays(false);
+    nero_nfc::NeroNfcUtestClearSerialOpenHook();
+    nero_nfc::NeroNfcUtestSetSerialResetNoop(false);
+    nero_nfc::NeroNfcUtestSetSerialResetSkipDelays(false);
   }
 };
 
 TEST_F(UserspaceSerialTest, OpenHookShortCircuitsKernelOpen) {
   bool called = false;
-  nero_nfc::nero_nfc_utest_set_serial_open_hook([&](const std::string &path) {
+  nero_nfc::NeroNfcUtestSetSerialOpenHook([&](const std::string& path) {
     called = true;
     EXPECT_EQ(path, "/dev/fictional");
-    return 42;
+    return kTestLit42;
   });
-  EXPECT_EQ(nero_nfc::serial_open("/dev/fictional"), 42);
+  EXPECT_EQ(nero_nfc::SerialOpen("/dev/fictional"), 42);
   EXPECT_TRUE(called);
 }
 
 TEST_F(UserspaceSerialTest, ResetNoopDoesNotTouchFd) {
-  nero_nfc::nero_nfc_utest_set_serial_reset_noop(true);
-  nero_nfc::serial_reset(-1);
+  nero_nfc::NeroNfcUtestSetSerialResetNoop(true);
+  EXPECT_TRUE(nero_nfc::SerialReset(-1));
 }
 
-TEST(SerialClose, NegativeFdIsNoOp) { nero_nfc::serial_close(-1); }
+TEST(SerialClose, NegativeFdIsNoOp) { EXPECT_FALSE(nero_nfc::SerialClose(-1)); }
 
 TEST(SerialOpen, OpenFailsForMissingPath) {
-  EXPECT_EQ(nero_nfc::serial_open("/nonexistent/nero_nfc_serial_utest_path"),
+  EXPECT_EQ(nero_nfc::SerialOpen("/nonexistent/nero_nfc_serial_utest_path"),
             -1);
 }
 
 TEST(SerialOpen, OpenFailsWhenPathIsRegularFile) {
   char tmpl[] = "/tmp/nero_serial_utestXXXXXX";
-  int tfd = mkstemp(tmpl);
+  int tfd = mkstemp(&tmpl[0]);
   ASSERT_GE(tfd, 0);
   ASSERT_EQ(write(tfd, "x", 1), 1);
   close(tfd);
-  EXPECT_EQ(nero_nfc::serial_open(std::string(tmpl)), -1);
-  std::remove(tmpl);
+  EXPECT_EQ(nero_nfc::SerialOpen(std::string(&tmpl[0])), -1);
+  EXPECT_EQ(std::remove(&tmpl[0]), 0);
 }
 
 TEST_F(UserspaceSerialTest, ResetWithSkipDelaysTouchesIoctlOnPty) {
@@ -75,14 +87,14 @@ TEST_F(UserspaceSerialTest, ResetWithSkipDelaysTouchesIoctlOnPty) {
   }
   ASSERT_EQ(grantpt(master), 0);
   ASSERT_EQ(unlockpt(master), 0);
-  char pts[256]{};
-  ASSERT_EQ(ptsname_r(master, pts, sizeof(pts)), 0);
-  int fd = open(pts, O_RDWR | O_NOCTTY);
+  char pts[kPtsPathScratchCap]{};
+  ASSERT_EQ(ptsname_r(master, &pts[0], sizeof(pts)), 0);
+  int fd = open(&pts[0], O_RDWR | O_NOCTTY);
   ASSERT_GE(fd, 0);
 
-  nero_nfc::nero_nfc_utest_set_serial_reset_skip_delays(true);
-  nero_nfc::serial_reset(fd);
-  nero_nfc::serial_close(fd);
+  nero_nfc::NeroNfcUtestSetSerialResetSkipDelays(true);
+  (void)nero_nfc::SerialReset(fd);
+  EXPECT_TRUE(nero_nfc::SerialClose(fd));
   close(master);
 }
 
@@ -93,10 +105,10 @@ TEST(SerialOpen, OpensPtySlaveWhenAvailable) {
   }
   ASSERT_EQ(grantpt(master), 0);
   ASSERT_EQ(unlockpt(master), 0);
-  char pts[256]{};
-  ASSERT_EQ(ptsname_r(master, pts, sizeof(pts)), 0);
-  int fd = nero_nfc::serial_open(std::string(pts));
+  char pts[kPtsPathScratchCap]{};
+  ASSERT_EQ(ptsname_r(master, &pts[0], sizeof(pts)), 0);
+  int fd = nero_nfc::SerialOpen(std::string(&pts[0]));
   ASSERT_GE(fd, 0);
-  nero_nfc::serial_close(fd);
+  EXPECT_TRUE(nero_nfc::SerialClose(fd));
   close(master);
 }

@@ -52,13 +52,13 @@ while (($# > 0)); do
     --patch-version)
       shift
       PATCH_VER="${1:-}"
-      if [[ -z "${PATCH_VER}" ]]; then
+      if [[ -z ${PATCH_VER} ]]; then
         echo "ERROR: --patch-version requires a value." >&2
         usage
         exit 64
       fi
       ;;
-    -h|--help)
+    -h | --help)
       usage
       exit 0
       ;;
@@ -68,7 +68,7 @@ while (($# > 0)); do
       exit 64
       ;;
     *)
-      if [[ -n "${CORE_ARG}" ]]; then
+      if [[ -n ${CORE_ARG} ]]; then
         echo "ERROR: only one Arduino Renesas core path may be provided." >&2
         usage
         exit 64
@@ -79,7 +79,7 @@ while (($# > 0)); do
   shift
 done
 
-if [[ -z "${CORE_ARG}" ]] || [[ ! -d "${CORE_ARG}" ]]; then
+if [[ -z ${CORE_ARG} ]] || [[ ! -d ${CORE_ARG} ]]; then
   usage
   echo "  e.g. <repo>/third-party/arduino-user/packages/arduino/hardware/renesas_uno/1.6.0" >&2
   exit 64
@@ -87,7 +87,7 @@ fi
 
 CORE_ROOT="$(cd "${CORE_ARG}" && pwd)"
 CORE_VER="$(basename "${CORE_ROOT}")"
-if [[ -z "${PATCH_VER}" ]]; then
+if [[ -z ${PATCH_VER} ]]; then
   PATCH_VER="${CORE_VER}"
 fi
 
@@ -97,9 +97,9 @@ CORE_DATA_DIR="$(cd "${CORE_ROOT}/../../../../.." && pwd)"
 STAGING_ARCHIVE="${CORE_DATA_DIR}/staging/packages/ArduinoCore-renesas_uno-${PATCH_VER}.tar.bz2"
 RESTORED_STOCK=0
 
-if [[ ! -f "${SERIES_FILE}" ]]; then
+if [[ ! -f ${SERIES_FILE} ]]; then
   echo "ERROR: patch series not found for arduino:renesas_uno ${PATCH_VER}" >&2
-  if [[ -d "${PATCH_ROOT}" ]]; then
+  if [[ -d ${PATCH_ROOT} ]]; then
     echo "  Available patch versions: $(find "${PATCH_ROOT}" -mindepth 1 -maxdepth 1 -type d -printf '%f ' | sed 's/[[:space:]]*$//')" >&2
   fi
   exit 1
@@ -108,13 +108,13 @@ fi
 for target in \
   "${CORE_ROOT}/cores/arduino/usb/USB.cpp" \
   "${CORE_ROOT}/cores/arduino/tinyusb/rusb2/dcd_rusb2.c"; do
-  if [[ ! -f "${target}" ]]; then
+  if [[ ! -f ${target} ]]; then
     echo "ERROR: Missing ${target}" >&2
     exit 1
   fi
 done
 
-if [[ "${PATCH_VER}" != "${CORE_VER}" ]]; then
+if [[ ${PATCH_VER} != "${CORE_VER}" ]]; then
   echo "ccid-patch: using patch series ${PATCH_VER} against installed core ${CORE_VER}" >&2
 fi
 
@@ -123,14 +123,14 @@ restore_stock_core_files() {
   local rel=""
   local archive_member=""
 
-  if [[ ! -f "${STAGING_ARCHIVE}" ]]; then
+  if [[ ! -f ${STAGING_ARCHIVE} ]]; then
     echo "ERROR: stale patched core detected, but stock archive is unavailable:" >&2
     echo "  ${STAGING_ARCHIVE}" >&2
     echo "Reinstall arduino:renesas_uno@${PATCH_VER} or restore the stock core, then retry." >&2
     return 1
   fi
 
-  if [[ "${DRY_RUN}" -eq 1 ]]; then
+  if [[ ${DRY_RUN} -eq 1 ]]; then
     echo "ERROR: installed core looks stale relative to the current patch series." >&2
     echo "  Re-run without --dry-run so the script can restore stock files from:" >&2
     echo "  ${STAGING_ARCHIVE}" >&2
@@ -158,13 +158,13 @@ apply_one() {
   local patch_rel="$1"
   local patch_src="${PATCH_DIR}/${patch_rel}"
 
-  if [[ ! -f "${patch_src}" ]]; then
+  if [[ ! -f ${patch_src} ]]; then
     echo "ERROR: patch file not found at ${patch_src}" >&2
     return 1
   fi
 
   if patch --batch -p1 -N --dry-run <"${patch_src}" >/dev/null 2>&1; then
-    if [[ "${DRY_RUN}" -eq 1 ]]; then
+    if [[ ${DRY_RUN} -eq 1 ]]; then
       echo "OK: ${patch_rel} applies cleanly (--dry-run only)."
     else
       patch --batch -p1 -N <"${patch_src}" >/dev/null
@@ -178,9 +178,9 @@ apply_one() {
     return 0
   fi
 
-  if [[ "${RESTORED_STOCK}" -eq 0 ]] && restore_stock_core_files; then
+  if [[ ${RESTORED_STOCK} -eq 0 ]] && restore_stock_core_files; then
     if patch --batch -p1 -N --dry-run <"${patch_src}" >/dev/null 2>&1; then
-      if [[ "${DRY_RUN}" -eq 1 ]]; then
+      if [[ ${DRY_RUN} -eq 1 ]]; then
         echo "OK: ${patch_rel} applies cleanly after restoring stock files (--dry-run only)."
       else
         patch --batch -p1 -N <"${patch_src}" >/dev/null
@@ -202,8 +202,8 @@ apply_one() {
 
 cd "${CORE_ROOT}"
 
-while IFS= read -r patch_rel || [[ -n "${patch_rel}" ]]; do
-  [[ -z "${patch_rel}" ]] && continue
-  [[ "${patch_rel}" =~ ^# ]] && continue
+while IFS= read -r patch_rel || [[ -n ${patch_rel} ]]; do
+  [[ -z ${patch_rel} ]] && continue
+  [[ ${patch_rel} =~ ^# ]] && continue
   apply_one "${patch_rel}"
 done <"${SERIES_FILE}"

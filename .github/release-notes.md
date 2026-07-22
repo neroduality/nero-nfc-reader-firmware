@@ -36,7 +36,6 @@ Git history contains detailed changes. Includes general improvements and capabil
 
 - **Source:** `nero-nfc-reader-firmware-@VERSION@.tar.gz` (git archive at tag)
 - **Integrity:** `SHA256SUMS` (GNU `sha256sum` format)
-- **Tests:** release requires a successful **Main CI** run on the tagged commit
 
 Verify downloads: `sha256sum -c SHA256SUMS`.
 

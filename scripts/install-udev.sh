@@ -24,7 +24,7 @@
 # The rules file lives only in this firmware repo under packaging/.
 set -euo pipefail
 
-if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+if [[ ${1:-} == "-h" || ${1:-} == "--help" ]]; then
   cat <<'EOF'
 Usage: sudo bash scripts/install-udev.sh
 
@@ -50,7 +50,7 @@ udev_src_stlink="${repo_root}/packaging/71-nero-nfc-stlink.rules"
 udev_dest_arduino="/etc/udev/rules.d/70-nero-nfc-arduino.rules"
 udev_dest_stlink="/etc/udev/rules.d/71-nero-nfc-stlink.rules"
 
-if [[ ! -f "${udev_src_arduino}" ]]; then
+if [[ ! -f ${udev_src_arduino} ]]; then
   cat >&2 <<-EOF
 ERROR: udev rules file not found:
   ${udev_src_arduino}
@@ -62,7 +62,7 @@ EOF
   exit 1
 fi
 
-if [[ ! -f "${udev_src_stlink}" ]]; then
+if [[ ! -f ${udev_src_stlink} ]]; then
   echo "ERROR: udev rules file not found: ${udev_src_stlink}" >&2
   exit 1
 fi

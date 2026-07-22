@@ -16,17 +16,35 @@
 
 #include "nfc_ndef_record_decode.h"
 
+namespace {
+enum {
+  kTestLit0xAAu = 0xAAu,
+  kTestLit0xC1u = 0xC1u,
+  kTestLit0xD9u = 0xD9u,
+  kTestLit2 = 2,
+  kTestLit256u = 256u,
+  kTestLit2u = 2u,
+  kTestLit3 = 3,
+  kTestLit4 = 4,
+  kTestLit5 = 5,
+  kTestLit6 = 6,
+  kTestLit6u = 6u,
+};
+}  // namespace
+
 #include <gtest/gtest.h>
 
 #include <vector>
 
 TEST(NfcNdefRecordDecode, WalksShortUriRecord) {
-  static const uint8_t kMsg[] = {0xD1u, 0x01u, 0x0Cu, 'U', 0x04u, 'e', 'x', 'a', 'm',
-                                'p',   'l',   'e',   '.',   'c',   'o',   'm'};
+  static const uint8_t kMsg[] = {0xD1u, 0x01u, 0x0Cu, 'U', 0x04u, 'e',
+                                 'x',   'a',   'm',   'p', 'l',   'e',
+                                 '.',   'c',   'o',   'm'};
   nfc_ndef_record_t rec{};
   uint16_t next = 0u;
 
-  ASSERT_EQ(nfc_ndef_record_next(kMsg, sizeof(kMsg), 0u, &rec, &next), NFC_NDEF_RECORD_OK);
+  ASSERT_EQ(nfc_ndef_record_next(&kMsg[0], sizeof(kMsg), 0u, &rec, &next),
+            NFC_NDEF_RECORD_OK);
   EXPECT_EQ(rec.tnf, 0x01u);
   EXPECT_EQ(rec.type_len, 1u);
   EXPECT_EQ(rec.payload_len, 12u);
@@ -43,20 +61,25 @@ TEST(NfcNdefRecordDecode, RejectsChunkedRecord) {
   nfc_ndef_record_t rec{};
   uint16_t next = 0u;
 
-  EXPECT_EQ(nfc_ndef_record_next(kMsg, sizeof(kMsg), 0u, &rec, &next), NFC_NDEF_RECORD_UNSUPPORTED);
+  EXPECT_EQ(nfc_ndef_record_next(&kMsg[0], sizeof(kMsg), 0u, &rec, &next),
+            NFC_NDEF_RECORD_UNSUPPORTED);
 }
 
 TEST(NfcNdefRecordDecode, SkipsEmptyBytesBetweenRecords) {
-  static const uint8_t kMsg[] = {0x00u, 0x00u, 0xD1u, 0x01u, 0x01u, 'U', 0x00u, 'a'};
+  static const uint8_t kMsg[] = {0x00u, 0x00u, 0xD1u, 0x01u,
+                                 0x01u, 'U',   0x00u, 'a'};
   nfc_ndef_record_t rec{};
-  uint16_t kPos = 0u;
+  uint16_t k_pos = 0u;
   uint16_t next = 0u;
 
-  ASSERT_EQ(nfc_ndef_record_next(kMsg, sizeof(kMsg), kPos, &rec, &next), NFC_NDEF_RECORD_EMPTY);
-  kPos = next;
-  ASSERT_EQ(nfc_ndef_record_next(kMsg, sizeof(kMsg), kPos, &rec, &next), NFC_NDEF_RECORD_EMPTY);
-  kPos = next;
-  ASSERT_EQ(nfc_ndef_record_next(kMsg, sizeof(kMsg), kPos, &rec, &next), NFC_NDEF_RECORD_OK);
+  ASSERT_EQ(nfc_ndef_record_next(&kMsg[0], sizeof(kMsg), k_pos, &rec, &next),
+            NFC_NDEF_RECORD_EMPTY);
+  k_pos = next;
+  ASSERT_EQ(nfc_ndef_record_next(&kMsg[0], sizeof(kMsg), k_pos, &rec, &next),
+            NFC_NDEF_RECORD_EMPTY);
+  k_pos = next;
+  ASSERT_EQ(nfc_ndef_record_next(&kMsg[0], sizeof(kMsg), k_pos, &rec, &next),
+            NFC_NDEF_RECORD_OK);
   EXPECT_EQ(rec.payload_len, 1u);
   EXPECT_EQ(next, 7u);
   EXPECT_TRUE(rec.message_end);
@@ -67,15 +90,18 @@ TEST(NfcNdefRecordDecode, RejectsTruncatedRecord) {
   nfc_ndef_record_t rec{};
   uint16_t next = 0u;
 
-  EXPECT_EQ(nfc_ndef_record_next(kMsg, sizeof(kMsg), 0u, &rec, &next), NFC_NDEF_RECORD_TRUNCATED);
+  EXPECT_EQ(nfc_ndef_record_next(&kMsg[0], sizeof(kMsg), 0u, &rec, &next),
+            NFC_NDEF_RECORD_TRUNCATED);
 }
 
 TEST(NfcNdefRecordDecode, WalksShortRecordWithIdLength) {
-  static const uint8_t kMsg[] = {0xD9u, 0x01u, 0x01u, 0x02u, 'T', 'i', 'd', 'x'};
+  static const uint8_t kMsg[] = {0xD9u, 0x01u, 0x01u, 0x02u,
+                                 'T',   'i',   'd',   'x'};
   nfc_ndef_record_t rec{};
   uint16_t next = 0u;
 
-  ASSERT_EQ(nfc_ndef_record_next(kMsg, sizeof(kMsg), 0u, &rec, &next), NFC_NDEF_RECORD_OK);
+  ASSERT_EQ(nfc_ndef_record_next(&kMsg[0], sizeof(kMsg), 0u, &rec, &next),
+            NFC_NDEF_RECORD_OK);
   EXPECT_EQ(rec.type_len, 1u);
   EXPECT_EQ(rec.payload_len, 1u);
   EXPECT_EQ(rec.type_offset, 4u);
@@ -85,35 +111,37 @@ TEST(NfcNdefRecordDecode, WalksShortRecordWithIdLength) {
 }
 
 TEST(NfcNdefRecordDecode, WalksNormalRecordLength) {
-  std::vector<uint8_t> kMsg(6u + 1u + 256u, 0xAAu);
+  std::vector<uint8_t> k_msg(kTestLit6u + 1u + kTestLit256u, kTestLit0xAAu);
   nfc_ndef_record_t rec{};
   uint16_t next = 0u;
 
-  kMsg[0] = 0xC1u; /* MB | ME | TNF=well-known, SR=0 */
-  kMsg[1] = 0x01u;
-  kMsg[2] = 0x00u;
-  kMsg[3] = 0x00u;
-  kMsg[4] = 0x01u;
-  kMsg[5] = 0x00u;
-  kMsg[6] = 'U';
+  k_msg[0] = kTestLit0xC1u; /* MB | ME | TNF=well-known, SR=0 */
+  k_msg[1] = 0x01u;
+  k_msg[kTestLit2] = 0x00u;
+  k_msg[kTestLit3] = 0x00u;
+  k_msg[kTestLit4] = 0x01u;
+  k_msg[kTestLit5] = 0x00u;
+  k_msg[kTestLit6] = 'U';
 
-  ASSERT_EQ(nfc_ndef_record_next(kMsg.data(), (uint16_t)kMsg.size(), 0u, &rec, &next),
+  ASSERT_EQ(nfc_ndef_record_next(k_msg.data(), (uint16_t)k_msg.size(), 0u, &rec,
+                                 &next),
             NFC_NDEF_RECORD_OK);
   EXPECT_EQ(rec.type_len, 1u);
   EXPECT_EQ(rec.payload_len, 256u);
   EXPECT_EQ(rec.type_offset, 6u);
   EXPECT_EQ(rec.payload_offset, 7u);
-  EXPECT_EQ(rec.record_len, kMsg.size());
-  EXPECT_EQ(next, kMsg.size());
+  EXPECT_EQ(rec.record_len, k_msg.size());
+  EXPECT_EQ(next, k_msg.size());
 }
 
 TEST(NfcNdefRecordDecode, WalksNormalRecordWithIdLength) {
   static const uint8_t kMsg[] = {0xC9u, 0x01u, 0x00u, 0x00u, 0x00u,
-                                0x01u, 0x01u, 'T',  'i',  'x'};
+                                 0x01u, 0x01u, 'T',   'i',   'x'};
   nfc_ndef_record_t rec{};
   uint16_t next = 0u;
 
-  ASSERT_EQ(nfc_ndef_record_next(kMsg, sizeof(kMsg), 0u, &rec, &next), NFC_NDEF_RECORD_OK);
+  ASSERT_EQ(nfc_ndef_record_next(&kMsg[0], sizeof(kMsg), 0u, &rec, &next),
+            NFC_NDEF_RECORD_OK);
   EXPECT_EQ(rec.type_len, 1u);
   EXPECT_EQ(rec.payload_len, 1u);
   EXPECT_EQ(rec.type_offset, 7u);
@@ -123,16 +151,17 @@ TEST(NfcNdefRecordDecode, WalksNormalRecordWithIdLength) {
 }
 
 TEST(NfcNdefRecordDecode, RejectsWrappedIdLengthOffset) {
-  std::vector<uint8_t> kMsg(UINT16_MAX, 0x00u);
+  std::vector<uint8_t> k_msg(UINT16_MAX, 0x00u);
   nfc_ndef_record_t rec{};
   uint16_t next = 0u;
   constexpr uint16_t kPos = UINT16_MAX - 3u;
 
-  kMsg[kPos] = 0xD9u; /* MB | ME | SR | IL | TNF=well-known */
-  kMsg[kPos + 1u] = 0x01u;
-  kMsg[kPos + 2u] = 0x00u;
+  k_msg[kPos] = kTestLit0xD9u; /* MB | ME | SR | IL | TNF=well-known */
+  k_msg[kPos + 1u] = 0x01u;
+  k_msg[kPos + kTestLit2u] = 0x00u;
 
-  EXPECT_EQ(nfc_ndef_record_next(kMsg.data(), (uint16_t)kMsg.size(), kPos, &rec, &next),
+  EXPECT_EQ(nfc_ndef_record_next(k_msg.data(), (uint16_t)k_msg.size(), kPos,
+                                 &rec, &next),
             NFC_NDEF_RECORD_TRUNCATED);
 }
 
@@ -142,12 +171,14 @@ TEST(NfcNdefRecordDecode, InvalidInputClearsPreviousOutput) {
   nfc_ndef_record_t rec{};
   uint16_t next = 0u;
 
-  ASSERT_EQ(nfc_ndef_record_next(kValid, sizeof(kValid), 0u, &rec, &next), NFC_NDEF_RECORD_OK);
+  ASSERT_EQ(nfc_ndef_record_next(&kValid[0], sizeof(kValid), 0u, &rec, &next),
+            NFC_NDEF_RECORD_OK);
   ASSERT_NE(rec.record_len, 0u);
   ASSERT_NE(next, 0u);
 
-  EXPECT_EQ(nfc_ndef_record_next(kTruncated, sizeof(kTruncated), 0u, &rec, &next),
-            NFC_NDEF_RECORD_TRUNCATED);
+  EXPECT_EQ(
+      nfc_ndef_record_next(&kTruncated[0], sizeof(kTruncated), 0u, &rec, &next),
+      NFC_NDEF_RECORD_TRUNCATED);
   EXPECT_EQ(rec.header, 0u);
   EXPECT_EQ(rec.record_len, 0u);
   EXPECT_EQ(rec.payload_len, 0u);

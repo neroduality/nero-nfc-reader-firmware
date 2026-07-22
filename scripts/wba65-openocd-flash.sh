@@ -55,7 +55,7 @@ while (($# > 0)); do
   shift
 done
 
-[[ -n "${BUILD_DIR}" ]] || {
+[[ -n ${BUILD_DIR} ]] || {
   echo "ERROR: --build-dir is required" >&2
   exit 1
 }
@@ -63,16 +63,29 @@ done
 OPENOCD_BIN="${WBA65_OPENOCD_BIN:-${repo_root}/third-party/openocd-wba65/bin/openocd}"
 OPENOCD_SCRIPTS="${WBA65_OPENOCD_SCRIPTS:-${repo_root}/third-party/openocd-wba65/share/openocd/scripts}"
 
-[[ -x "${OPENOCD_BIN}" ]] || {
+[[ -x ${OPENOCD_BIN} ]] || {
   echo "ERROR: WBA65 OpenOCD not found at ${OPENOCD_BIN}" >&2
   echo "  Run: TARGET=nucleo_wba65ri make" >&2
   exit 1
 }
 
-if [[ -z "${ELF}" ]]; then
-  ELF="${BUILD_DIR}/nfc.ino.elf"
+if [[ -z ${ELF} ]]; then
+  # Arduino-cli names the ELF after the sketch folder (nfc / reader / writer).
+  shopt -s nullglob
+  local_candidates=("${BUILD_DIR}"/*.ino.elf)
+  shopt -u nullglob
+  if ((${#local_candidates[@]} == 1)); then
+    ELF="${local_candidates[0]}"
+  elif ((${#local_candidates[@]} > 1)); then
+    echo "ERROR: multiple firmware ELFs in ${BUILD_DIR}; pass --elf PATH" >&2
+    printf '  %s\n' "${local_candidates[@]}" >&2
+    exit 1
+  else
+    echo "ERROR: firmware ELF not found under ${BUILD_DIR} (*.ino.elf)" >&2
+    exit 1
+  fi
 fi
-[[ -f "${ELF}" ]] || {
+[[ -f ${ELF} ]] || {
   echo "ERROR: firmware ELF not found: ${ELF}" >&2
   exit 1
 }

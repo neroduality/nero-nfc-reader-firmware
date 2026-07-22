@@ -17,7 +17,7 @@
 # Top-level CMake for the Nero NFC C++ userspace.
 # Builds the shared app library and CLI binaries.
 #
-# Host userspace uses ISO C++23 + HostHardening.cmake. MCU firmware remains GNU++17 (Makefile).
+# Host userspace uses ISO C++23 + kit Hardening.cmake. MCU firmware remains GNU++17 (Makefile).
 #
 # Usage (from repo root):
 #   cmake -S userspace -B build/userspace -DCMAKE_BUILD_TYPE=Release \
@@ -32,12 +32,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
-# OpenSSF PIE for hosted Linux executables (-fPIE + -pie; PIC alone is not enough).
-if(UNIX AND NOT APPLE)
-  add_compile_options(-fPIE)
-  add_link_options(-pie)
-endif()
 
 include(CheckIPOSupported)
 check_ipo_supported(RESULT _nero_ipo_ok OUTPUT _nero_ipo_msg)
@@ -69,7 +63,12 @@ else()
   set(NERO_STRIP_HOST_SYMBOLS OFF CACHE BOOL "Strip debug symbols from Release host binaries" FORCE)
 endif()
 
-include("${CMAKE_CURRENT_SOURCE_DIR}/../cmake/HostHardening.cmake")
+# Org OpenSSF hardening (kit-owned cmake/Hardening.cmake; define_hardening → INTERFACE lib).
+include("${CMAKE_CURRENT_SOURCE_DIR}/../cmake/Hardening.cmake")
+define_hardening(
+  TARGET hardening
+  C_STANDARD 23
+  CXX_STANDARD 23)
 
 add_subdirectory(app)
 add_subdirectory(cli)

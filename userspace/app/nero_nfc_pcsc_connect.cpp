@@ -15,12 +15,13 @@
 // limitations under the License.
 
 #include "nero_nfc_format.h"
-#include "nero_nfc_hex.h"
-#include "nero_nfc_io.h"
+#include <span>
+#include "nero_nfc_hex.hpp"
+#include "nero_nfc_io.hpp"
 #include "nero_nfc_limits.h"
 #include "nero_nfc_null.h"
-#include "nero_nfc_pcsc.h"
-#include "nero_nfc_pcsc_internal.h"
+#include "nero_nfc_pcsc.hpp"
+#include "nero_nfc_pcsc_internal.hpp"
 #include "nfc_pcsc_contactless.h"
 
 #include <algorithm>
@@ -50,20 +51,21 @@ enum {
   kPcscReaderListBufMax = 4096u,
 };
 
-} // namespace
+}  // namespace
 
 #ifdef NERO_HOST_UNIT_TEST_HOOKS
-const std::vector<std::string> *g_list_pcsc_readers_override = NERO_NFC_NULL;
+const std::vector<std::string>* g_list_pcsc_readers_override = NERO_NFC_NULL;
 #endif
 
-std::string lower_copy(std::string_view in) {
+std::string LowerCopy(std::string_view in) {
   std::string out(in);
-  std::ranges::transform(out, out.begin(),
-                         [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+  std::ranges::transform(out, out.begin(), [](unsigned char c) {
+    return static_cast<char>(std::tolower(c));
+  });
   return out;
 }
 
-std::string join_reader_names(const std::vector<std::string> &readers) {
+std::string JoinReaderNames(const std::vector<std::string>& readers) {
   std::string out;
   for (std::size_t i = 0; i < readers.size(); ++i) {
     if (i != 0u) {
@@ -76,63 +78,73 @@ std::string join_reader_names(const std::vector<std::string> &readers) {
   return out;
 }
 
-bool is_preferred_nero_reader(std::string_view reader_name) {
-  std::string const name = lower_copy(reader_name);
-  if (name.find("nero") != std::string::npos || name.find("st25r") != std::string::npos) {
+bool IsPreferredNeroReader(std::string_view reader_name) {
+  std::string const kName = LowerCopy(reader_name);
+  if (kName.find("nero") != std::string::npos ||
+      kName.find("st25r") != std::string::npos) {
     return true;
   }
-  return name.find("arduino") != std::string::npos && name.find("ccid") != std::string::npos;
+  return kName.find("arduino") != std::string::npos &&
+         kName.find("ccid") != std::string::npos;
 }
 
-bool is_sam_reader(std::string_view reader_name) {
-  return lower_copy(reader_name).find("sam") != std::string::npos;
+bool IsSamReader(std::string_view reader_name) {
+  return LowerCopy(reader_name).find("sam") != std::string::npos;
 }
 
-std::vector<std::string> selectable_pcsc_readers(const std::vector<std::string> &readers) {
+std::vector<std::string> SelectablePcscReaders(
+    const std::vector<std::string>& readers) {
   std::vector<std::string> selectable;
-  std::ranges::copy_if(readers, std::back_inserter(selectable),
-                       [](const std::string &reader) { return !is_sam_reader(reader); });
+  std::ranges::copy_if(
+      readers, std::back_inserter(selectable),
+      [](const std::string& reader) { return !IsSamReader(reader); });
   return selectable;
 }
-bool is_type4_compatible(const PcscTagSnapshot &tag) {
-  return tag.tag_type.find("Type 4") != std::string::npos ||
-         tag.tag_type.find("ISO 14443-4") != std::string::npos || !tag.ats_hex.empty();
+bool IsType4Compatible(const PcscTagSnapshot& tag) {
+  return tag.tag_type_.find("Type 4") != std::string::npos ||
+         tag.tag_type_.find("ISO 14443-4") != std::string::npos ||
+         !tag.ats_hex_.empty();
 }
 
-bool status_ok(const std::vector<std::uint8_t> &rapdu) {
-  return nfc_iso7816_response_sw_ok(rapdu.data(), static_cast<int>(rapdu.size()));
+bool StatusOk(const std::vector<std::uint8_t>& rapdu) {
+  return nfc_iso7816_response_sw_ok(rapdu.data(),
+                                    static_cast<int>(rapdu.size()));
 }
 
-std::vector<std::uint8_t> without_status(const std::vector<std::uint8_t> &rapdu) {
+std::vector<std::uint8_t> WithoutStatus(
+    const std::vector<std::uint8_t>& rapdu) {
   if (rapdu.size() < static_cast<std::size_t>(NFC_PCSC_T4_NLEN_LEN)) {
     return {};
   }
-  return {rapdu.begin(), rapdu.end() - static_cast<std::ptrdiff_t>(NFC_PCSC_T4_NLEN_LEN)};
+  return {rapdu.begin(),
+          rapdu.end() - static_cast<std::ptrdiff_t>(NFC_PCSC_T4_NLEN_LEN)};
 }
 
 #ifdef NERO_USERSPACE_HAVE_PCSC
 
-DWORD pcsc_share_mode_to_scard(PcscShareMode mode) {
-  return mode == PcscShareMode::Exclusive ? SCARD_SHARE_EXCLUSIVE : SCARD_SHARE_SHARED;
+DWORD PcscShareModeToScard(PcscShareMode mode) {
+  return mode == PcscShareMode::kExclusive ? SCARD_SHARE_EXCLUSIVE
+                                           : SCARD_SHARE_SHARED;
 }
 
-void pcsc_note(LONG rv, std::string &err, std::string_view stage) {
+void PcscNote(LONG rv, std::string& err, std::string_view stage) {
   char buf[NERO_NFC_PCSC_ERROR_MSG_MAX]{};
-  if (stage.size() > static_cast<std::size_t>(std::numeric_limits<int>::max())) {
+  if (stage.size() >
+      static_cast<std::size_t>(std::numeric_limits<int>::max())) {
     err = "PC/SC stage label too long";
     return;
   }
-  const int n =
-    nero_nfc_snprintf(buf, sizeof(buf), "%.*s: PC/SC 0x%08lX", static_cast<int>(stage.size()),
-                      stage.data(), static_cast<unsigned long>(rv));
-  if (n < 0 || static_cast<std::size_t>(n) >= sizeof(buf)) {
+  const int kN = nero_nfc_snprintf(&buf[0], sizeof(buf), "%.*s: PC/SC 0x%08lX",
+                                   static_cast<int>(stage.size()), stage.data(),
+                                   static_cast<unsigned long>(rv));
+  if (kN < 0 || static_cast<std::size_t>(kN) >= sizeof(buf)) {
     err = "PC/SC error formatting failed";
     return;
   }
-  err = buf;
+  err = &buf[0];
 }
 
-std::string reader_state_summary(DWORD state) {
+std::string ReaderStateSummary(DWORD state) {
   std::string summary;
   auto append = [&](std::string_view name) {
     if (!summary.empty()) {
@@ -173,65 +185,75 @@ std::string reader_state_summary(DWORD state) {
   return summary;
 }
 
-bool wait_for_card_state(SCARDCONTEXT ctx, const std::string &reader, bool want_present,
-                         std::optional<std::chrono::steady_clock::time_point> deadline,
-                         std::string &err) {
+bool WaitForCardState(
+    SCARDCONTEXT ctx, const std::string& reader, bool want_present,
+    std::optional<std::chrono::steady_clock::time_point> deadline,
+    std::string& err) {
   SCARD_READERSTATE rs{};
   rs.szReader = reader.c_str();
   rs.dwCurrentState = SCARD_STATE_UNAWARE;
   std::string last_state;
 
-  while (!deadline.has_value() || (std::chrono::steady_clock::now() < *deadline)) {
-    auto const now = std::chrono::steady_clock::now();
-    auto const remaining_ms =
-      deadline.has_value()
-        ? std::chrono::duration_cast<std::chrono::milliseconds>(*deadline - now).count()
-        : static_cast<long long>(kPcscPollSleep.count());
-    DWORD const wait_ms = remaining_ms > static_cast<long long>(kPcscPollSleep.count())
-                            ? static_cast<DWORD>(kPcscPollSleep.count())
-                            : static_cast<DWORD>(std::max<long long>(remaining_ms, 0));
-    LONG rv = SCardGetStatusChange(ctx, wait_ms, &rs, 1);
+  while (!deadline.has_value() ||
+         (std::chrono::steady_clock::now() < *deadline)) {
+    auto const kNow = std::chrono::steady_clock::now();
+    auto const kRemainingMs =
+        deadline.has_value()
+            ? std::chrono::duration_cast<std::chrono::milliseconds>(*deadline -
+                                                                    kNow)
+                  .count()
+            : static_cast<long long>(kPcscPollSleep.count());
+    DWORD const kWaitMs =
+        kRemainingMs > static_cast<long long>(kPcscPollSleep.count())
+            ? static_cast<DWORD>(kPcscPollSleep.count())
+            : static_cast<DWORD>(std::max<long long>(kRemainingMs, 0));
+    LONG rv = SCardGetStatusChange(ctx, kWaitMs, &rs, 1);
     if (rv == SCARD_E_TIMEOUT) {
       continue;
     }
     if (rv != SCARD_S_SUCCESS) {
-      pcsc_note(rv, err, "SCardGetStatusChange");
+      PcscNote(rv, err, "SCardGetStatusChange");
       return false;
     }
-    bool const present = ((rs.dwEventState & SCARD_STATE_PRESENT) != 0u) &&
-                         ((rs.dwEventState & SCARD_STATE_EMPTY) == 0u) &&
-                         ((rs.dwEventState & SCARD_STATE_UNAVAILABLE) == 0u);
-    if (present == want_present) {
+    bool const kPresent = ((rs.dwEventState & SCARD_STATE_PRESENT) != 0u) &&
+                          ((rs.dwEventState & SCARD_STATE_EMPTY) == 0u) &&
+                          ((rs.dwEventState & SCARD_STATE_UNAVAILABLE) == 0u);
+    if (kPresent == want_present) {
       err.clear();
       return true;
     }
-    last_state = reader_state_summary(rs.dwEventState);
+    last_state = ReaderStateSummary(rs.dwEventState);
     rs.dwCurrentState = rs.dwEventState;
   }
 
-  err = want_present ? "timed out waiting for tag presence" : "timed out waiting for tag removal";
+  err = want_present ? "timed out waiting for tag presence"
+                     : "timed out waiting for tag removal";
   if (want_present && !last_state.empty()) {
     err += " (" + last_state + ")";
   }
   return false;
 }
 
-bool wait_for_card_present(SCARDCONTEXT ctx, const std::string &reader,
-                           std::optional<std::chrono::steady_clock::time_point> deadline,
-                           std::string &err) {
-  return wait_for_card_state(ctx, reader, true, deadline, err);
+bool WaitForCardPresent(
+    SCARDCONTEXT ctx, const std::string& reader,
+    std::optional<std::chrono::steady_clock::time_point> deadline,
+    std::string& err) {
+  return WaitForCardState(ctx, reader, true, deadline, err);
 }
 
-bool wait_for_card_absent(SCARDCONTEXT ctx, const std::string &reader,
-                          std::optional<std::chrono::steady_clock::time_point> deadline,
-                          std::string &err) {
-  return wait_for_card_state(ctx, reader, false, deadline, err);
+bool WaitForCardAbsent(
+    SCARDCONTEXT ctx, const std::string& reader,
+    std::optional<std::chrono::steady_clock::time_point> deadline,
+    std::string& err) {
+  return WaitForCardState(ctx, reader, false, deadline, err);
 }
 
-bool wait_for_card_absent_stable(SCARDCONTEXT ctx, const std::string &reader, std::string &err) {
+bool WaitForCardAbsentStable(SCARDCONTEXT ctx, const std::string& reader,
+                             std::string& err) {
   for (;;) {
-    if (!wait_for_card_absent(ctx, reader,
-                              std::chrono::steady_clock::now() + kPcscRemovalPollWindow, err)) {
+    if (!WaitForCardAbsent(
+            ctx, reader,
+            std::chrono::steady_clock::now() + kPcscRemovalPollWindow, err)) {
       if (err == "timed out waiting for tag removal") {
         continue;
       }
@@ -239,8 +261,10 @@ bool wait_for_card_absent_stable(SCARDCONTEXT ctx, const std::string &reader, st
     }
 
     std::string settle_err;
-    if (wait_for_card_present(
-          ctx, reader, std::chrono::steady_clock::now() + kPcscRemovalSettleWindow, settle_err)) {
+    if (WaitForCardPresent(
+            ctx, reader,
+            std::chrono::steady_clock::now() + kPcscRemovalSettleWindow,
+            settle_err)) {
       continue;
     }
     if (settle_err.starts_with("timed out waiting for tag presence")) {
@@ -252,18 +276,21 @@ bool wait_for_card_absent_stable(SCARDCONTEXT ctx, const std::string &reader, st
   }
 }
 
-bool reader_state_has_present_card(const SCARD_READERSTATE &state) {
+bool ReaderStateHasPresentCard(const SCARD_READERSTATE& state) {
   return ((state.dwEventState & SCARD_STATE_PRESENT) != 0u) &&
          ((state.dwEventState & SCARD_STATE_EMPTY) == 0u) &&
          ((state.dwEventState & SCARD_STATE_UNAVAILABLE) == 0u);
 }
 
-bool wait_for_present_reader(SCARDCONTEXT ctx, const std::vector<std::string> &readers,
-                             std::string &reader, std::string &err, bool announce_selection,
-                             std::size_t *present_count_out) {
-  std::vector<std::string> candidates = selectable_pcsc_readers(readers);
+bool WaitForPresentReader(SCARDCONTEXT ctx,
+                          const std::vector<std::string>& readers,
+                          std::string& reader, std::string& err,
+                          bool announce_selection,
+                          std::size_t* present_count_out) {
+  std::vector<std::string> candidates = SelectablePcscReaders(readers);
   if (candidates.empty()) {
-    err = "no selectable PC/SC readers detected; readers: " + join_reader_names(readers);
+    err = "no selectable PC/SC readers detected; readers: " +
+          JoinReaderNames(readers);
     return false;
   }
   std::vector<SCARD_READERSTATE> states(candidates.size());
@@ -273,14 +300,15 @@ bool wait_for_present_reader(SCARDCONTEXT ctx, const std::vector<std::string> &r
   }
   for (;;) {
     auto wait_ms = static_cast<DWORD>(kPcscPollSleep.count());
-    LONG rv = SCardGetStatusChange(ctx, wait_ms, states.data(), static_cast<DWORD>(states.size()));
+    LONG rv = SCardGetStatusChange(ctx, wait_ms, states.data(),
+                                   static_cast<DWORD>(states.size()));
     if (rv != SCARD_E_TIMEOUT && rv != SCARD_S_SUCCESS) {
-      pcsc_note(rv, err, "SCardGetStatusChange");
+      PcscNote(rv, err, "SCardGetStatusChange");
       return false;
     }
     std::vector<std::string> present;
-    for (auto &state : states) {
-      if (reader_state_has_present_card(state)) {
+    for (auto& state : states) {
+      if (ReaderStateHasPresentCard(state)) {
         present.emplace_back(state.szReader);
       }
       state.dwCurrentState = state.dwEventState;
@@ -291,7 +319,7 @@ bool wait_for_present_reader(SCARDCONTEXT ctx, const std::vector<std::string> &r
         *present_count_out = present.size();
       }
       if (announce_selection) {
-        announce_pcsc_reader_selection(present.size(), reader);
+        AnnouncePcscReaderSelection(present.size(), reader);
       }
       err.clear();
       return true;
@@ -299,43 +327,47 @@ bool wait_for_present_reader(SCARDCONTEXT ctx, const std::vector<std::string> &r
   }
 }
 
-void announce_pcsc_reader_selection(std::size_t present_count, const std::string &reader) {
+void AnnouncePcscReaderSelection(std::size_t present_count,
+                                 const std::string& reader) {
   if (present_count > 1u) {
-    nero_nfc::nero_nfc_stderr_line(
-      "PC/SC: {} readers have cards present; using \"{}\" for this operation", present_count,
-      reader);
+    nero_nfc::NeroNfcStderrLine(
+        "PC/SC: {} readers have cards present; using \"{}\" for this operation",
+        present_count, reader);
     return;
   }
-  nero_nfc::nero_nfc_stderr_line("PC/SC: using reader \"{}\" (selected by card presence)", reader);
+  nero_nfc::NeroNfcStderrLine(
+      "PC/SC: using reader \"{}\" (selected by card presence)", reader);
 }
 
-std::string tag_fingerprint(const PcscTagSnapshot &tag) {
-  return tag.uid_hex + '\n' + tag.atr_hex + '\n' + tag.tag_type;
+std::string TagFingerprint(const PcscTagSnapshot& tag) {
+  return tag.uid_hex_ + '\n' + tag.atr_hex_ + '\n' + tag.tag_type_;
 }
 
-bool is_retryable_connect_error(LONG rv) {
-  return rv == SCARD_E_NO_SMARTCARD || rv == SCARD_W_REMOVED_CARD || rv == SCARD_W_UNPOWERED_CARD ||
-         rv == SCARD_W_UNRESPONSIVE_CARD || rv == SCARD_E_SHARING_VIOLATION;
+bool IsRetryableConnectError(LONG rv) {
+  return rv == SCARD_E_NO_SMARTCARD || rv == SCARD_W_REMOVED_CARD ||
+         rv == SCARD_W_UNPOWERED_CARD || rv == SCARD_W_UNRESPONSIVE_CARD ||
+         rv == SCARD_E_SHARING_VIOLATION;
 }
 
-void prime_reader_state(SCARDCONTEXT ctx, const std::string &reader) {
+void PrimeReaderState(SCARDCONTEXT ctx, const std::string& reader) {
   SCARD_READERSTATE rs{};
   rs.szReader = reader.c_str();
   rs.dwCurrentState = SCARD_STATE_UNAWARE;
   (void)SCardGetStatusChange(ctx, 0u, &rs, 1);
 }
 
-bool list_readers_impl(std::vector<std::string> &readers, std::string &err) {
+bool ListReadersImpl(std::vector<std::string>& readers, std::string& err) {
   SCARDCONTEXT ctx{};
-  LONG rv = SCardEstablishContext(SCARD_SCOPE_USER, NERO_NFC_NULL, NERO_NFC_NULL, &ctx);
+  LONG rv = SCardEstablishContext(SCARD_SCOPE_USER, NERO_NFC_NULL,
+                                  NERO_NFC_NULL, &ctx);
   if (rv != SCARD_S_SUCCESS) {
-    pcsc_note(rv, err, "SCardEstablishContext");
+    PcscNote(rv, err, "SCardEstablishContext");
     return false;
   }
   DWORD n = 0;
   rv = SCardListReaders(ctx, NERO_NFC_NULL, NERO_NFC_NULL, &n);
   if (rv != SCARD_S_SUCCESS || n == 0u) {
-    pcsc_note(rv, err, "SCardListReaders");
+    PcscNote(rv, err, "SCardListReaders");
     (void)SCardReleaseContext(ctx);
     return false;
   }
@@ -348,23 +380,23 @@ bool list_readers_impl(std::vector<std::string> &readers, std::string &err) {
   rv = SCardListReaders(ctx, NERO_NFC_NULL, buf.data(), &n);
   (void)SCardReleaseContext(ctx);
   if (rv != SCARD_S_SUCCESS) {
-    pcsc_note(rv, err, "SCardListReaders");
+    PcscNote(rv, err, "SCardListReaders");
     return false;
   }
   for (auto it = buf.begin(); it != buf.end() && *it != '\0';) {
-    auto const nul = std::ranges::find(it, buf.end(), '\0');
-    if (nul == buf.end()) {
+    auto const kNul = std::ranges::find(it, buf.end(), '\0');
+    if (kNul == buf.end()) {
       err = "PC/SC reader list is not NUL-terminated";
       readers.clear();
       return false;
     }
-    readers.emplace_back(it, nul);
-    it = std::next(nul);
+    readers.emplace_back(it, kNul);
+    it = std::next(kNul);
   }
   return !readers.empty();
 }
 PcscCard::~PcscCard() {
-  disconnect();
+  Disconnect();
   if (ctx_ != 0) {
     (void)SCardReleaseContext(ctx_);
   }
@@ -372,29 +404,27 @@ PcscCard::~PcscCard() {
 
 PcscCard::PcscCard() = default;
 
-const std::string &PcscCard::readerName() const {
-  return reader_name_;
-}
+const std::string& PcscCard::ReaderName() const { return reader_name_; }
 
-SCARDCONTEXT PcscCard::context() const {
-  return ctx_;
-}
+SCARDCONTEXT PcscCard::Context() const { return ctx_; }
 
-bool PcscCard::ensureContext(std::string &err) {
+bool PcscCard::EnsureContext(std::string& err) {
   if (ctx_ != 0) {
     err.clear();
     return true;
   }
-  LONG rv = SCardEstablishContext(SCARD_SCOPE_USER, NERO_NFC_NULL, NERO_NFC_NULL, &ctx_);
+  LONG rv = SCardEstablishContext(SCARD_SCOPE_USER, NERO_NFC_NULL,
+                                  NERO_NFC_NULL, &ctx_);
   if (rv != SCARD_S_SUCCESS) {
-    pcsc_note(rv, err, "SCardEstablishContext");
+    ctx_ = 0;
+    PcscNote(rv, err, "SCardEstablishContext");
     return false;
   }
   err.clear();
   return true;
 }
 
-void PcscCard::disconnect(DWORD disposition) {
+void PcscCard::Disconnect(DWORD disposition) {
   if (card_ != 0) {
     if (transaction_active_) {
       (void)SCardEndTransaction(card_, SCARD_LEAVE_CARD);
@@ -407,18 +437,20 @@ void PcscCard::disconnect(DWORD disposition) {
   pci_ = SCARD_PCI_T1;
 }
 
-bool PcscCard::connect(const std::string &reader, PcscShareMode share_mode, std::string &err) {
+bool PcscCard::Connect(const std::string& reader, PcscShareMode share_mode,
+                       std::string& err) {
   reader_name_ = reader;
-  disconnect();
-  if (!ensureContext(err)) {
+  Disconnect();
+  if (!EnsureContext(err)) {
     return false;
   }
-  auto const started = std::chrono::steady_clock::now();
+  auto const kStarted = std::chrono::steady_clock::now();
   for (;;) {
-    LONG rv = SCardConnect(ctx_, reader.c_str(), pcsc_share_mode_to_scard(share_mode),
-                           SCARD_PROTOCOL_T0 | SCARD_PROTOCOL_T1, &card_, &protocol_);
+    LONG rv =
+        SCardConnect(ctx_, reader.c_str(), PcscShareModeToScard(share_mode),
+                     SCARD_PROTOCOL_T0 | SCARD_PROTOCOL_T1, &card_, &protocol_);
     if (rv == SCARD_E_PROTO_MISMATCH) {
-      rv = SCardConnect(ctx_, reader.c_str(), pcsc_share_mode_to_scard(share_mode),
+      rv = SCardConnect(ctx_, reader.c_str(), PcscShareModeToScard(share_mode),
                         SCARD_PROTOCOL_RAW, &card_, &protocol_);
     }
     if (rv == SCARD_S_SUCCESS) {
@@ -429,32 +461,37 @@ bool PcscCard::connect(const std::string &reader, PcscShareMode share_mode, std:
       } else if ((protocol_ & SCARD_PROTOCOL_RAW) != 0u) {
         pci_ = SCARD_PCI_RAW;
       } else {
-        disconnect(SCARD_LEAVE_CARD);
+        Disconnect(SCARD_LEAVE_CARD);
         err = "connected PC/SC reader returned no usable protocol";
         return false;
       }
       err.clear();
       return true;
     }
-    if (!is_retryable_connect_error(rv)) {
-      pcsc_note(rv, err, "SCardConnect");
+    if (!IsRetryableConnectError(rv)) {
+      PcscNote(rv, err, "SCardConnect");
+      return false;
+    }
+    auto const kNow = std::chrono::steady_clock::now();
+    if ((kNow - kStarted) >= kPcscConnectRetryWindow) {
+      PcscNote(rv, err, "SCardConnect timed out");
       return false;
     }
     err = "waiting for tag connectability";
-    auto const now = std::chrono::steady_clock::now();
-    std::this_thread::sleep_for((now - started) < kPcscFastRetryWindow ? kPcscFastRetrySleep
-                                                                       : kPcscPollSleep);
+    std::this_thread::sleep_for((kNow - kStarted) < kPcscFastRetryWindow
+                                    ? kPcscFastRetrySleep
+                                    : kPcscPollSleep);
   }
 }
 
-bool PcscCard::beginTransaction(std::string &err) {
+bool PcscCard::BeginTransaction(std::string& err) {
   if (card_ == 0) {
     err = "PC/SC transaction requested before card connect";
     return false;
   }
   LONG rv = SCardBeginTransaction(card_);
   if (rv != SCARD_S_SUCCESS) {
-    pcsc_note(rv, err, "SCardBeginTransaction");
+    PcscNote(rv, err, "SCardBeginTransaction");
     return false;
   }
   transaction_active_ = true;
@@ -462,7 +499,7 @@ bool PcscCard::beginTransaction(std::string &err) {
   return true;
 }
 
-bool PcscCard::endTransaction(std::string &err) {
+bool PcscCard::EndTransaction(std::string& err) {
   if (!transaction_active_) {
     err.clear();
     return true;
@@ -470,35 +507,48 @@ bool PcscCard::endTransaction(std::string &err) {
   LONG rv = SCardEndTransaction(card_, SCARD_LEAVE_CARD);
   transaction_active_ = false;
   if (rv != SCARD_S_SUCCESS) {
-    pcsc_note(rv, err, "SCardEndTransaction");
+    PcscNote(rv, err, "SCardEndTransaction");
     return false;
   }
   err.clear();
   return true;
 }
 
-bool PcscCard::status(std::vector<std::uint8_t> &atr, std::string &err) {
+bool PcscCard::Status(std::vector<std::uint8_t>& atr, std::string& err) {
   char name[NERO_NFC_PCSC_READER_NAME_MAX]{};
   DWORD name_len = sizeof(name);
   DWORD state = 0;
   DWORD atr_len = NERO_NFC_PCSC_ATR_HOST_MAX;
   std::array<std::uint8_t, NERO_NFC_PCSC_ATR_HOST_MAX> atr_buf{};
-  LONG rv = SCardStatus(card_, name, &name_len, &state, &protocol_, atr_buf.data(), &atr_len);
+  atr.clear();
+  if (card_ == 0) {
+    err = "PC/SC status requested before card connect";
+    return false;
+  }
+  LONG rv = SCardStatus(card_, &name[0], &name_len, &state, &protocol_,
+                        atr_buf.data(), &atr_len);
   if (rv != SCARD_S_SUCCESS) {
-    pcsc_note(rv, err, "SCardStatus");
+    PcscNote(rv, err, "SCardStatus");
     return false;
   }
   if (atr_len > atr_buf.size()) {
     err = "PC/SC ATR exceeds host buffer";
     return false;
   }
-  atr.assign(atr_buf.begin(), atr_buf.begin() + static_cast<std::ptrdiff_t>(atr_len));
+  const auto kAtr = std::span{atr_buf}.first(static_cast<std::size_t>(atr_len));
+  atr.assign(kAtr.begin(), kAtr.end());
+  err.clear();
   return true;
 }
 
-bool PcscCard::transmit(const std::vector<std::uint8_t> &capdu, std::vector<std::uint8_t> &rapdu,
-                        std::string &err) {
+bool PcscCard::Transmit(const std::vector<std::uint8_t>& capdu,
+                        std::vector<std::uint8_t>& rapdu, std::string& err) {
   std::array<std::uint8_t, NERO_NFC_PCSC_APDU_RX_MAX> rx{};
+  rapdu.clear();
+  if (card_ == 0) {
+    err = "APDU transmit requested before card connect";
+    return false;
+  }
   if (capdu.empty()) {
     err = "APDU command is empty";
     return false;
@@ -508,100 +558,112 @@ bool PcscCard::transmit(const std::vector<std::uint8_t> &capdu, std::vector<std:
     return false;
   }
   auto rx_len = static_cast<DWORD>(rx.size());
-  LONG rv = SCardTransmit(card_, pci_, capdu.data(), static_cast<DWORD>(capdu.size()),
-                          NERO_NFC_NULL, rx.data(), &rx_len);
+  LONG rv =
+      SCardTransmit(card_, pci_, capdu.data(), static_cast<DWORD>(capdu.size()),
+                    NERO_NFC_NULL, rx.data(), &rx_len);
   if (rv != SCARD_S_SUCCESS) {
-    pcsc_note(rv, err, "SCardTransmit");
+    PcscNote(rv, err, "SCardTransmit");
     return false;
   }
   if (rx_len > rx.size()) {
     err = "APDU response exceeds host receive buffer";
     return false;
   }
-  rapdu.assign(rx.begin(), rx.begin() + static_cast<std::ptrdiff_t>(rx_len));
+  const auto kRx = std::span{rx}.first(static_cast<std::size_t>(rx_len));
+  rapdu.assign(kRx.begin(), kRx.end());
+  err.clear();
   return true;
 }
 
-bool transmit_ok(PcscCard &card, const std::vector<std::uint8_t> &capdu,
-                 std::vector<std::uint8_t> &data, std::string &err) {
+bool TransmitOk(PcscCard& card, const std::vector<std::uint8_t>& capdu,
+                std::vector<std::uint8_t>& data, std::string& err) {
   std::vector<std::uint8_t> rapdu;
-  if (!card.transmit(capdu, rapdu, err)) {
+  if (!card.Transmit(capdu, rapdu, err)) {
     return false;
   }
-  if (!status_ok(rapdu)) {
+  if (!StatusOk(rapdu)) {
     if (rapdu.size() >= static_cast<std::size_t>(NFC_PCSC_T4_NLEN_LEN)) {
       std::ostringstream msg;
-      const auto sw_off = rapdu.size() - static_cast<std::size_t>(NFC_PCSC_T4_NLEN_LEN);
-      if (!nero_nfc_span_ok(sw_off, static_cast<std::size_t>(NFC_PCSC_T4_NLEN_LEN), rapdu.size())) {
+      const auto kSwOff =
+          rapdu.size() - static_cast<std::size_t>(NFC_PCSC_T4_NLEN_LEN);
+      if (!nero_nfc_span_ok(kSwOff,
+                            static_cast<std::size_t>(NFC_PCSC_T4_NLEN_LEN),
+                            rapdu.size())) {
         err = "APDU response status word out of range";
         return false;
       }
-      msg << "APDU SW=" << hex_bytes({rapdu[sw_off], rapdu[sw_off + 1u]}, '\0');
+      msg << "APDU SW=" << HexBytes({rapdu[kSwOff], rapdu[kSwOff + 1u]}, '\0');
       err = msg.str();
     } else {
       err = "APDU response missing status word";
     }
     return false;
   }
-  data = without_status(rapdu);
+  data = WithoutStatus(rapdu);
   return true;
 }
 
-std::vector<std::uint8_t> try_get_data_bytes(PcscCard &card, std::uint8_t p1, std::uint8_t p2) {
+std::vector<std::uint8_t> TryGetDataBytes(PcscCard& card, std::uint8_t p1,
+                                          std::uint8_t p2) {
   std::vector<std::uint8_t> data;
   std::string err;
-  if (!transmit_ok(card,
-                   {static_cast<std::uint8_t>(NFC_ISO7816_CLA_PROPRIETARY),
-                    static_cast<std::uint8_t>(NFC_ISO7816_INS_GET_DATA), p1, p2,
-                    static_cast<std::uint8_t>(NFC_ISO7816_SW2_SUCCESS)},
-                   data, err)) {
+  if (!TransmitOk(card,
+                  {static_cast<std::uint8_t>(NFC_ISO7816_CLA_PROPRIETARY),
+                   static_cast<std::uint8_t>(NFC_ISO7816_INS_GET_DATA), p1, p2,
+                   static_cast<std::uint8_t>(NFC_ISO7816_SW2_SUCCESS)},
+                  data, err)) {
     data.clear();
   }
   return data;
 }
 
-bool select_bytes(PcscCard &card, std::uint8_t p1, std::uint8_t p2,
-                  const std::vector<std::uint8_t> &data, std::string &err) {
+bool SelectBytes(PcscCard& card, std::uint8_t p1, std::uint8_t p2,
+                 const std::vector<std::uint8_t>& data, std::string& err) {
   std::vector<std::uint8_t> capdu;
-  if (!build_select_apdu(p1, p2, data, capdu, err)) {
+  if (!BuildSelectApdu(p1, p2, data, capdu, err)) {
     return false;
   }
   std::vector<std::uint8_t> response;
-  return transmit_ok(card, capdu, response, err);
+  return TransmitOk(card, capdu, response, err);
 }
 
-bool select_file(PcscCard &card, std::uint8_t hi, std::uint8_t lo, std::string &err) {
-  if (select_bytes(card, static_cast<std::uint8_t>(NFC_ISO7816_CLA_ISO),
-                   static_cast<std::uint8_t>(NFC_ISO7816_P2_SELECT_NO_FCI), {hi, lo}, err)) {
+bool SelectFile(PcscCard& card, std::uint8_t hi, std::uint8_t lo,
+                std::string& err) {
+  if (SelectBytes(card, static_cast<std::uint8_t>(NFC_ISO7816_CLA_ISO),
+                  static_cast<std::uint8_t>(NFC_ISO7816_P2_SELECT_NO_FCI),
+                  {hi, lo}, err)) {
     return true;
   }
-  return select_bytes(card, static_cast<std::uint8_t>(NFC_ISO7816_CLA_ISO),
-                      static_cast<std::uint8_t>(NFC_ISO7816_P2_SELECT_FIRST), {hi, lo}, err);
+  return SelectBytes(card, static_cast<std::uint8_t>(NFC_ISO7816_CLA_ISO),
+                     static_cast<std::uint8_t>(NFC_ISO7816_P2_SELECT_FIRST),
+                     {hi, lo}, err);
 }
 
-bool read_binary(PcscCard &card, std::uint16_t offset, std::uint8_t len,
-                 std::vector<std::uint8_t> &data, std::string &err) {
-  auto read_with_len = [&](std::uint8_t le, std::uint8_t &sw1, std::uint8_t &sw2) -> bool {
+bool ReadBinary(PcscCard& card, std::uint16_t offset, std::uint8_t len,
+                std::vector<std::uint8_t>& data, std::string& err) {
+  auto read_with_len = [&](std::uint8_t le, std::uint8_t& sw1,
+                           std::uint8_t& sw2) -> bool {
     std::vector<std::uint8_t> rapdu;
-    if (!card.transmit(
-          {static_cast<std::uint8_t>(NFC_ISO7816_CLA_ISO),
-           static_cast<std::uint8_t>(NFC_ISO7816_INS_READ_BINARY),
-           static_cast<std::uint8_t>(offset >>
-                                     static_cast<unsigned>(NFC_TAG_T2T_AREA_SIZE_UNIT_BYTES)),
-           static_cast<std::uint8_t>(offset & static_cast<unsigned>(NFC_BYTE_VALUE_MAX)), le},
-          rapdu, err)) {
+    if (!card.Transmit(
+            {static_cast<std::uint8_t>(NFC_ISO7816_CLA_ISO),
+             static_cast<std::uint8_t>(NFC_ISO7816_INS_READ_BINARY),
+             static_cast<std::uint8_t>(offset >>
+                                       NFC_TAG_T2T_AREA_SIZE_UNIT_BYTES),
+             static_cast<std::uint8_t>(offset & NFC_BYTE_VALUE_MAX), le},
+            rapdu, err)) {
       return false;
     }
-    if (status_ok(rapdu)) {
-      data = without_status(rapdu);
+    if (StatusOk(rapdu)) {
+      data = WithoutStatus(rapdu);
       err.clear();
       return true;
     }
     if (rapdu.size() >= static_cast<std::size_t>(NFC_PCSC_T4_NLEN_LEN)) {
-      sw1 = rapdu[rapdu.size() - static_cast<std::size_t>(NFC_PCSC_T4_NLEN_LEN)];
+      sw1 =
+          rapdu[rapdu.size() - static_cast<std::size_t>(NFC_PCSC_T4_NLEN_LEN)];
       sw2 = rapdu.back();
       std::ostringstream msg;
-      msg << "APDU SW=" << hex_bytes({sw1, sw2}, '\0');
+      msg << "APDU SW=" << HexBytes({sw1, sw2}, '\0');
       err = msg.str();
     } else {
       sw1 = 0u;
@@ -617,48 +679,53 @@ bool read_binary(PcscCard &card, std::uint16_t offset, std::uint8_t len,
   if (read_with_len(len, sw1, sw2)) {
     return true;
   }
-  if (sw1 == static_cast<std::uint8_t>(NFC_ISO7816_SW1_WRONG_LENGTH) && sw2 != len) {
+  if (sw1 == static_cast<std::uint8_t>(NFC_ISO7816_SW1_WRONG_LENGTH) &&
+      sw2 != len) {
     return read_with_len(sw2, sw1, sw2);
   }
   if (sw1 == static_cast<std::uint8_t>(NFC_ISO7816_SW1_WRONG_LENGTH_ALT) &&
       sw2 == static_cast<std::uint8_t>(NFC_ISO7816_SW2_SUCCESS) &&
       len != static_cast<std::uint8_t>(NFC_ISO7816_SW2_SUCCESS)) {
-    return read_with_len(static_cast<std::uint8_t>(NFC_ISO7816_SW2_SUCCESS), sw1, sw2);
+    return read_with_len(static_cast<std::uint8_t>(NFC_ISO7816_SW2_SUCCESS),
+                         sw1, sw2);
   }
   return false;
 }
 
-bool update_binary(PcscCard &card, std::uint16_t offset, const std::vector<std::uint8_t> &bytes,
-                   std::string &err) {
-  if (bytes.empty() || bytes.size() > static_cast<std::size_t>(NFC_BYTE_VALUE_MAX)) {
+bool UpdateBinary(PcscCard& card, std::uint16_t offset,
+                  const std::vector<std::uint8_t>& bytes, std::string& err) {
+  if (bytes.empty() ||
+      bytes.size() > static_cast<std::size_t>(NFC_BYTE_VALUE_MAX)) {
     err = "short UPDATE BINARY chunk too large";
     return false;
   }
   std::vector<std::uint8_t> capdu = {
-    static_cast<std::uint8_t>(NFC_ISO7816_CLA_ISO),
-    static_cast<std::uint8_t>(NFC_ISO7816_INS_UPDATE_BINARY),
-    static_cast<std::uint8_t>(offset >> static_cast<unsigned>(NFC_TAG_T2T_AREA_SIZE_UNIT_BYTES)),
-    static_cast<std::uint8_t>(offset & static_cast<unsigned>(NFC_BYTE_VALUE_MAX)),
-    static_cast<std::uint8_t>(bytes.size())};
+      static_cast<std::uint8_t>(NFC_ISO7816_CLA_ISO),
+      static_cast<std::uint8_t>(NFC_ISO7816_INS_UPDATE_BINARY),
+      static_cast<std::uint8_t>(offset >> NFC_TAG_T2T_AREA_SIZE_UNIT_BYTES),
+      static_cast<std::uint8_t>(offset & NFC_BYTE_VALUE_MAX),
+      static_cast<std::uint8_t>(bytes.size())};
   capdu.insert(capdu.end(), bytes.begin(), bytes.end());
   std::vector<std::uint8_t> data;
-  return transmit_ok(card, capdu, data, err);
+  return TransmitOk(card, capdu, data, err);
 }
 
-bool resolve_pcsc_reader_for_operation(const PcscCard &card, std::string_view requested,
-                                       std::string &reader, std::string &err,
-                                       bool announce_selection, std::size_t *present_count_out) {
+bool ResolvePcscReaderForOperation(const PcscCard& card,
+                                   std::string_view requested,
+                                   std::string& reader, std::string& err,
+                                   bool announce_selection,
+                                   std::size_t* present_count_out) {
   if (!requested.empty()) {
-    return nero_nfc::resolve_pcsc_reader(requested, reader, err);
+    return nero_nfc::ResolvePcscReader(requested, reader, err);
   }
   std::vector<std::string> readers;
-  if (!nero_nfc::list_pcsc_readers(readers, err)) {
+  if (!nero_nfc::ListPcscReaders(readers, err)) {
     return false;
   }
-  return wait_for_present_reader(card.context(), readers, reader, err, announce_selection,
-                                 present_count_out);
+  return WaitForPresentReader(card.Context(), readers, reader, err,
+                              announce_selection, present_count_out);
 }
 
-#endif // NERO_USERSPACE_HAVE_PCSC
+#endif  // NERO_USERSPACE_HAVE_PCSC
 
-} // namespace nero_nfc::pcsc_internal
+}  // namespace nero_nfc::pcsc_internal

@@ -20,7 +20,10 @@
 # Usage: fetch-tarball.sh <url> <expected_sha256_hex> <dest_abs_path> <member_path>
 set -eu
 
-die() { echo "ERROR: $*" >&2; exit 1; }
+die() {
+  echo "ERROR: $*" >&2
+  exit 1
+}
 
 [ "${#}" -ge 4 ] || die "need: URL SHA256_HEX DEST_ABS MEMBER_PATH"
 DL_URL="$1"

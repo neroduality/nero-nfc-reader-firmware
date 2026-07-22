@@ -26,8 +26,40 @@ fi
 _NERO_NFC_BIND_MOUNT_DIR="$(cd -- "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 _NERO_NFC_BIND_MOUNT_RESTORE_DONE=0
 
-# Relative repo paths root may touch during bind-mounted local container CI.
+# Relative repo paths bind-mounted local container CI may write (restored on exit).
 _NERO_NFC_BIND_MOUNT_RESTORE_PATHS=(
+  .lint-kit-org
+  build
+  third-party
+  tests/build
+  tests/build-scan
+  tests/scan-build-report
+)
+
+# Subtrees created before drop so host UID owns them from the first write.
+# mkdir -p as root leaves intermediate dirs (e.g. build/lint) root-owned; always
+# chown the top-level trees below after all mkdirs — never only the leaf path.
+_NERO_NFC_BIND_MOUNT_PREPARE_PATHS=(
+  .lint-kit-org
+  build
+  build/lint
+  build/lint/firmware
+  build/lint/tests
+  build/lint/userspace
+  build/lint/openssf-probe-verify
+  build/lint-overrides
+  build/clang-tidy-compile-db
+  build/codeql
+  build/userspace
+  third-party
+  tests/build
+  tests/build-scan
+  tests/scan-build-report
+)
+
+# Top-level bind-mount trees to chown -R after prepare mkdirs (covers intermediates).
+_NERO_NFC_BIND_MOUNT_CHOWN_ROOTS=(
+  .lint-kit-org
   build
   third-party
   tests/build
@@ -51,10 +83,13 @@ nero_nfc_prepare_bind_mount_paths() {
   local uid="${HOST_UID}"
   local gid="${HOST_GID:-${uid}}"
   local rel
-  mkdir -p "${repo_root}/build" "${repo_root}/tests/build" "${repo_root}/third-party"
-  for rel in build third-party tests/build tests/build-scan tests/scan-build-report; do
-    if [[ -e "${repo_root}/${rel}" ]]; then
-      chown -R "${uid}:${gid}" "${repo_root}/${rel}" 2>/dev/null || true
+  for rel in "${_NERO_NFC_BIND_MOUNT_PREPARE_PATHS[@]}"; do
+    mkdir -p "${repo_root}/${rel}"
+  done
+  # Chown top-level trees only after every mkdir -p so intermediates are not left root-owned.
+  for rel in "${_NERO_NFC_BIND_MOUNT_CHOWN_ROOTS[@]}"; do
+    if [[ -e ${repo_root}/${rel} ]]; then
+      chown -R "${uid}:${gid}" "${repo_root}/${rel}"
     fi
   done
 }
@@ -99,14 +134,32 @@ nero_nfc_drop_to_host_user() {
     return 1
   fi
   nero_nfc_ensure_host_user
-  exec runuser -u nero_nfc_ci -- env \
-    NERO_NFC_CI_AS_USER=1 \
-    AUTO_INSTALL_LINUX_DEPS=0 \
-    INSTALL_DEPS=0 \
-    HOST_UID="${HOST_UID}" \
-    HOST_GID="${HOST_GID:-${HOST_UID}}" \
-    HOME="${NERO_NFC_CI_HOME:-/tmp/nero-nfc-ci}" \
-    "$@"
+  local -a drop_env=(
+    NERO_NFC_CI_AS_USER=1
+    AUTO_INSTALL_LINUX_DEPS=0
+    INSTALL_DEPS=0
+    HOST_UID="${HOST_UID}"
+    HOST_GID="${HOST_GID:-${HOST_UID}}"
+    HOME="${NERO_NFC_CI_HOME:-/tmp/nero-nfc-ci}"
+  )
+  if [[ -n ${FIRMWARE_ROOT:-} ]]; then
+    drop_env+=(FIRMWARE_ROOT="${FIRMWARE_ROOT}")
+  fi
+  if [[ -n ${LINT_KIT:-} ]]; then
+    drop_env+=(LINT_KIT="${LINT_KIT}")
+  fi
+  if [[ -n ${CI_SKIP_CHECKOUT_PREREQUISITES:-} ]]; then
+    drop_env+=(CI_SKIP_CHECKOUT_PREREQUISITES="${CI_SKIP_CHECKOUT_PREREQUISITES}")
+  fi
+  if [[ -n ${NERO_CI_LOCAL_IN_VM:-} ]]; then
+    drop_env+=(NERO_CI_LOCAL_IN_VM="${NERO_CI_LOCAL_IN_VM}")
+  fi
+  # Forward CodeQL local/CI knobs into the dropped-user re-exec.
+  local _k
+  for _k in $(compgen -e CODEQL_ || true); do
+    drop_env+=("${_k}=${!_k}")
+  done
+  exec runuser -u nero_nfc_ci -- env "${drop_env[@]}" "$@"
 }
 
 nero_nfc_require_drop_to_host_user() {

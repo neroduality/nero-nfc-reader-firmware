@@ -26,11 +26,13 @@ extern "C" {
 void reader_security_key_utest_reset(void);
 void reader_security_key_utest_set_open_session_ok(bool ok);
 void reader_security_key_utest_set_copy_atr_ok(bool ok);
-void reader_security_key_utest_set_apdu_response(const uint8_t *rsp, uint16_t len);
+void reader_security_key_utest_set_apdu_response(const uint8_t* rsp,
+                                                 uint16_t len);
 uint16_t reader_security_key_utest_last_apdu_rsp_cap(void);
 void reader_security_key_utest_set_select_fido_probe_ok(bool ok);
-
-void reader_ccid_utest_setup(void);
+uint16_t reader_security_key_utest_select_fido_probe_count(void);
+void reader_security_key_utest_set_abort_during_exchange(bool enabled);
+uint16_t reader_security_key_utest_time_extension_binding_count(void);
 
 #ifdef __cplusplus
 }

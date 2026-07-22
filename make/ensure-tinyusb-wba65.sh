@@ -45,10 +45,10 @@ write_stamp() {
   printf '%s' "${TINYUSB_WANT}" >"${STAMP}"
 }
 
-if [[ "${FORCE_EXTERNAL}" != "1" ]] &&
-   [[ -f "${STAMP}" ]] &&
-   [[ "$(cat "${STAMP}")" == "${TINYUSB_WANT}" ]] &&
-   tinyusb_ok; then
+if [[ ${FORCE_EXTERNAL} != "1" ]] &&
+  [[ -f ${STAMP} ]] &&
+  [[ "$(cat "${STAMP}")" == "${TINYUSB_WANT}" ]] &&
+  tinyusb_ok; then
   exit 0
 fi
 
@@ -61,7 +61,7 @@ checkout_tinyusb_rev() {
   git -C "${TINYUSB_DIR}" checkout --detach FETCH_HEAD >/dev/null
 }
 
-if [[ "${FORCE_EXTERNAL}" == "1" ]] || [[ ! -d "${TINYUSB_DIR}/.git" ]]; then
+if [[ ${FORCE_EXTERNAL} == "1" ]] || [[ ! -d "${TINYUSB_DIR}/.git" ]]; then
   echo "── Cloning TinyUSB (${TINYUSB_REV}) for WBA65 CCID ──" >&2
   rm -rf "${TINYUSB_DIR}"
   git clone --filter=blob:none --no-checkout https://github.com/hathach/tinyusb.git \

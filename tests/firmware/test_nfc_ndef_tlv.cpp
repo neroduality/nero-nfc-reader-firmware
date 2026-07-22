@@ -16,12 +16,27 @@
 
 #include <gtest/gtest.h>
 
+namespace {
+enum {
+  kTestLit0xBeeFu = 0xBEEFu,
+  kTestLit0xFBu = 0xFBu,
+  kTestLit0xFFu = 0xFFu,
+  kTestLit2 = 2,
+  kTestLit2u = 2u,
+  kTestLit3 = 3,
+  kTestLit32 = 32,
+  kTestLit4 = 4,
+};
+}  // namespace
+
 #include <array>
 #include <vector>
 
 extern "C" {
 #include "nero_nfc_null.h"
 #include "nfc_ndef_tlv.h"
+
+#include "nero_nfc_mem_util.h"
 }
 
 TEST(NfcNdefTlv, EnvelopeLenShortAndExtended) {
@@ -32,71 +47,81 @@ TEST(NfcNdefTlv, EnvelopeLenShortAndExtended) {
 }
 
 TEST(NfcNdefTlv, NextSkipsNullTlv) {
-  static const uint8_t kArea[] = {0x00u, 0x00u, 0x00u, 0x03u, 0x01u, 0xAAu, 0xFEu};
+  static const uint8_t kArea[] = {0x00u, 0x00u, 0x00u, 0x03u,
+                                  0x01u, 0xAAu, 0xFEu};
   nfc_ndef_tlv_t tlv{};
   uint16_t next = 0u;
-  EXPECT_EQ(nfc_ndef_tlv_next(kArea, sizeof(kArea), 0u, &tlv, &next), NFC_NDEF_TLV_OK);
+  EXPECT_EQ(nfc_ndef_tlv_next(&kArea[0], sizeof(kArea), 0u, &tlv, &next),
+            NFC_NDEF_TLV_OK);
   EXPECT_EQ(tlv.type, NFC_NDEF_TLV_MESSAGE);
   EXPECT_EQ(tlv.value_len, 1u);
-  EXPECT_EQ(kArea[tlv.value_offset], 0xAAu);
+  EXPECT_EQ(nero_nfc_u8_at(&kArea[0], sizeof(kArea), tlv.value_offset), 0xAAu);
 }
 
 TEST(NfcNdefTlv, FindMessageSkipsUnknownTlv) {
-  static const uint8_t kArea[] = {0x01u, 0x01u, 0x00u, 0x03u, 0x02u, 0xBBu, 0xCCu, 0xFEu};
+  static const uint8_t kArea[] = {0x01u, 0x01u, 0x00u, 0x03u,
+                                  0x02u, 0xBBu, 0xCCu, 0xFEu};
   nfc_ndef_tlv_t tlv{};
-  EXPECT_EQ(nfc_ndef_find_message_tlv(kArea, sizeof(kArea), 0u, &tlv), NFC_NDEF_TLV_OK);
+  EXPECT_EQ(nfc_ndef_find_message_tlv(&kArea[0], sizeof(kArea), 0u, &tlv),
+            NFC_NDEF_TLV_OK);
   EXPECT_EQ(tlv.value_len, 2u);
 }
 
 TEST(NfcNdefTlv, BuildMessageTlvRoundTrip) {
   static const uint8_t kNdef[] = {0xD1u, 0x01u, 0x03u, 'U', 'R', 'I'};
-  std::array<uint8_t, 32> out{};
+  std::array<uint8_t, kTestLit32> out{};
   uint16_t out_len = 0u;
-  ASSERT_TRUE(nfc_ndef_build_message_tlv(kNdef, (uint16_t)sizeof(kNdef), out.data(),
-                                         (uint16_t)out.size(), &out_len));
+  ASSERT_TRUE(nfc_ndef_build_message_tlv(&kNdef[0], (uint16_t)sizeof(kNdef),
+                                         out.data(), (uint16_t)out.size(),
+                                         &out_len));
   nfc_ndef_tlv_t tlv{};
   uint16_t next = 0u;
-  ASSERT_EQ(nfc_ndef_tlv_next(out.data(), out_len, 0u, &tlv, &next), NFC_NDEF_TLV_OK);
+  ASSERT_EQ(nfc_ndef_tlv_next(out.data(), out_len, 0u, &tlv, &next),
+            NFC_NDEF_TLV_OK);
   EXPECT_EQ(tlv.type, NFC_NDEF_TLV_MESSAGE);
   EXPECT_EQ(tlv.value_len, sizeof(kNdef));
 }
 
 TEST(NfcNdefTlv, BuildRejectsUndersizedBuffer) {
   static const uint8_t kNdef[] = {0x01u, 0x02u, 0x03u};
-  std::array<uint8_t, 4> tiny{};
+  std::array<uint8_t, kTestLit4> tiny{};
   uint16_t need = 0u;
-  EXPECT_FALSE(nfc_ndef_build_message_tlv(kNdef, (uint16_t)sizeof(kNdef), tiny.data(),
-                                           (uint16_t)tiny.size(), &need));
+  EXPECT_FALSE(nfc_ndef_build_message_tlv(&kNdef[0], (uint16_t)sizeof(kNdef),
+                                          tiny.data(), (uint16_t)tiny.size(),
+                                          &need));
   EXPECT_GT(need, (uint16_t)tiny.size());
 }
 
 TEST(NfcNdefTlv, BuildClearsLengthOnInvalidArgument) {
-  std::array<uint8_t, 4> out{};
-  uint16_t out_len = 0xBEEFu;
+  std::array<uint8_t, kTestLit4> out{};
+  uint16_t out_len = kTestLit0xBeeFu;
 
-  EXPECT_FALSE(nfc_ndef_build_message_tlv(NERO_NFC_NULL, 1u, out.data(), (uint16_t)out.size(),
-                                          &out_len));
+  EXPECT_FALSE(nfc_ndef_build_message_tlv(NERO_NFC_NULL, 1u, out.data(),
+                                          (uint16_t)out.size(), &out_len));
   EXPECT_EQ(out_len, 0u);
 }
 
 TEST(NfcNdefTlv, RejectsWrappedExtendedLengthHeader) {
-  std::vector<uint8_t> kArea(UINT16_MAX, 0x00u);
+  std::vector<uint8_t> k_area(UINT16_MAX, 0x00u);
   nfc_ndef_tlv_t tlv{};
   uint16_t next = 0u;
 
-  kArea[UINT16_MAX - 2u] = NFC_NDEF_TLV_MESSAGE;
-  kArea[UINT16_MAX - 1u] = NFC_NDEF_TLV_EXTENDED_LEN;
+  k_area[UINT16_MAX - kTestLit2u] = NFC_NDEF_TLV_MESSAGE;
+  k_area[UINT16_MAX - 1u] = NFC_NDEF_TLV_EXTENDED_LEN;
 
-  EXPECT_EQ(nfc_ndef_tlv_next(kArea.data(), (uint16_t)kArea.size(), UINT16_MAX - 2u, &tlv, &next),
+  EXPECT_EQ(nfc_ndef_tlv_next(k_area.data(), (uint16_t)k_area.size(),
+                              UINT16_MAX - 2u, &tlv, &next),
             NFC_NDEF_TLV_TRUNCATED);
 }
 
 TEST(NfcNdefTlv, RejectsTruncatedExtendedLengthHeaderFixture) {
-  static const uint8_t kArea[] = {NFC_NDEF_TLV_MESSAGE, NFC_NDEF_TLV_EXTENDED_LEN, 0x01u};
+  static const uint8_t kArea[] = {NFC_NDEF_TLV_MESSAGE,
+                                  NFC_NDEF_TLV_EXTENDED_LEN, 0x01u};
   nfc_ndef_tlv_t tlv{};
   uint16_t next = 0u;
 
-  EXPECT_EQ(nfc_ndef_tlv_next(kArea, sizeof(kArea), 0u, &tlv, &next), NFC_NDEF_TLV_TRUNCATED);
+  EXPECT_EQ(nfc_ndef_tlv_next(&kArea[0], sizeof(kArea), 0u, &tlv, &next),
+            NFC_NDEF_TLV_TRUNCATED);
 }
 
 TEST(NfcNdefTlv, InvalidInputClearsPreviousOutput) {
@@ -105,12 +130,14 @@ TEST(NfcNdefTlv, InvalidInputClearsPreviousOutput) {
   nfc_ndef_tlv_t tlv{};
   uint16_t next = 0u;
 
-  ASSERT_EQ(nfc_ndef_tlv_next(kValid, sizeof(kValid), 0u, &tlv, &next), NFC_NDEF_TLV_OK);
+  ASSERT_EQ(nfc_ndef_tlv_next(&kValid[0], sizeof(kValid), 0u, &tlv, &next),
+            NFC_NDEF_TLV_OK);
   ASSERT_EQ(tlv.type, NFC_NDEF_TLV_MESSAGE);
   ASSERT_NE(next, 0u);
 
-  EXPECT_EQ(nfc_ndef_tlv_next(kTruncated, sizeof(kTruncated), 0u, &tlv, &next),
-            NFC_NDEF_TLV_TRUNCATED);
+  EXPECT_EQ(
+      nfc_ndef_tlv_next(&kTruncated[0], sizeof(kTruncated), 0u, &tlv, &next),
+      NFC_NDEF_TLV_TRUNCATED);
   EXPECT_EQ(tlv.type, 0u);
   EXPECT_EQ(tlv.value_offset, 0u);
   EXPECT_EQ(tlv.value_len, 0u);
@@ -118,16 +145,17 @@ TEST(NfcNdefTlv, InvalidInputClearsPreviousOutput) {
 }
 
 TEST(NfcNdefTlv, AcceptsLargestExtendedTlvThatFitsUint16Buffer) {
-  std::vector<uint8_t> kArea(UINT16_MAX, 0x00u);
+  std::vector<uint8_t> k_area(UINT16_MAX, 0x00u);
   nfc_ndef_tlv_t tlv{};
   uint16_t next = 0u;
 
-  kArea[0] = NFC_NDEF_TLV_MESSAGE;
-  kArea[1] = NFC_NDEF_TLV_EXTENDED_LEN;
-  kArea[2] = 0xFFu;
-  kArea[3] = 0xFBu;
+  k_area[0] = NFC_NDEF_TLV_MESSAGE;
+  k_area[1] = NFC_NDEF_TLV_EXTENDED_LEN;
+  k_area[kTestLit2] = kTestLit0xFFu;
+  k_area[kTestLit3] = kTestLit0xFBu;
 
-  ASSERT_EQ(nfc_ndef_tlv_next(kArea.data(), (uint16_t)kArea.size(), 0u, &tlv, &next),
+  ASSERT_EQ(nfc_ndef_tlv_next(k_area.data(), (uint16_t)k_area.size(), 0u, &tlv,
+                              &next),
             NFC_NDEF_TLV_OK);
   EXPECT_EQ(tlv.value_offset, 4u);
   EXPECT_EQ(tlv.value_len, 65531u);

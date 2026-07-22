@@ -1,0 +1,485 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (C) 2026 Nero Duality, LLC.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# Consumer lint manifest for the org kit.
+
+compile_db:
+  firmware:
+    - commands:
+        - make TARGET=arduino_uno_r4wifi FIRMWARE_PRODUCT=nfc NFC_USB_MODE=cdc INSTALL_DEPS=0 AUTO_INSTALL_LINUX_DEPS=0 firmware-compile-db
+      compile_commands_json: build/lint/firmware/arduino_uno_r4wifi/nfc/cdc/compile_commands.json
+      source: firmware
+    - commands:
+        - make TARGET=arduino_uno_r4wifi FIRMWARE_PRODUCT=reader NFC_USB_MODE=ccid INSTALL_DEPS=0 AUTO_INSTALL_LINUX_DEPS=0 firmware-compile-db
+      compile_commands_json: build/lint/firmware/arduino_uno_r4wifi/reader/ccid/compile_commands.json
+      source: firmware
+    - commands:
+        - make TARGET=arduino_uno_r4wifi FIRMWARE_PRODUCT=reader NFC_USB_MODE=cdc INSTALL_DEPS=0 AUTO_INSTALL_LINUX_DEPS=0 firmware-compile-db
+      compile_commands_json: build/lint/firmware/arduino_uno_r4wifi/reader/cdc/compile_commands.json
+      source: firmware
+    - commands:
+        - make TARGET=arduino_uno_r4wifi FIRMWARE_PRODUCT=writer NFC_USB_MODE=cdc INSTALL_DEPS=0 AUTO_INSTALL_LINUX_DEPS=0 firmware-compile-db
+      compile_commands_json: build/lint/firmware/arduino_uno_r4wifi/writer/cdc/compile_commands.json
+      source: firmware
+    - commands:
+        - make TARGET=nucleo_wba65ri FIRMWARE_PRODUCT=nfc NFC_USB_MODE=cdc INSTALL_DEPS=0 AUTO_INSTALL_LINUX_DEPS=0 firmware-compile-db
+      compile_commands_json: build/lint/firmware/nucleo_wba65ri/nfc/cdc/compile_commands.json
+      source: firmware
+    - commands:
+        - make TARGET=nucleo_wba65ri FIRMWARE_PRODUCT=reader NFC_USB_MODE=ccid INSTALL_DEPS=0 AUTO_INSTALL_LINUX_DEPS=0 firmware-compile-db
+      compile_commands_json: build/lint/firmware/nucleo_wba65ri/reader/ccid/compile_commands.json
+      source: firmware
+    - commands:
+        - make TARGET=nucleo_wba65ri FIRMWARE_PRODUCT=reader NFC_USB_MODE=cdc INSTALL_DEPS=0 AUTO_INSTALL_LINUX_DEPS=0 firmware-compile-db
+      compile_commands_json: build/lint/firmware/nucleo_wba65ri/reader/cdc/compile_commands.json
+      source: firmware
+    - commands:
+        - make TARGET=nucleo_wba65ri FIRMWARE_PRODUCT=writer NFC_USB_MODE=cdc INSTALL_DEPS=0 AUTO_INSTALL_LINUX_DEPS=0 firmware-compile-db
+      compile_commands_json: build/lint/firmware/nucleo_wba65ri/writer/cdc/compile_commands.json
+      source: firmware
+  userspace:
+    - cmake_args:
+        - -DCMAKE_BUILD_TYPE=Release
+        - -DNERO_TESTS_ENABLE_PCSC=ON
+      compile_commands_json: build/lint/tests/compile_commands.json
+      source: tests
+    - cmake_args:
+        - -DCMAKE_BUILD_TYPE=Release
+      compile_commands_json: build/lint/userspace/compile_commands.json
+      source: userspace
+
+enabled_lint_jobs:
+  - banned_cxx_heap
+  - banned_libc_io
+  - clang_tidy
+  - compile_db
+  - cppcheck
+  - duplicate_includes
+  - firmware_build
+  - firmware_compile_db
+  - format
+  - guard_clause_style
+  - license
+  - magic_literals
+  - markdownlint
+  - nolint_audit
+  - null_nodiscard
+  - openssf
+  - pointer_bounds
+  - raii_lifetime
+  - relative_includes
+  - shared_constant_dupes
+  - spec_traceability
+  - yamllint
+
+firmware_build:
+  commands:
+    - make TARGET=arduino_uno_r4wifi FIRMWARE_PRODUCT=nfc NFC_USB_MODE=cdc INSTALL_DEPS=0 AUTO_INSTALL_LINUX_DEPS=0 firmware
+    - make TARGET=arduino_uno_r4wifi FIRMWARE_PRODUCT=reader NFC_USB_MODE=ccid INSTALL_DEPS=0 AUTO_INSTALL_LINUX_DEPS=0 firmware
+    - make TARGET=arduino_uno_r4wifi FIRMWARE_PRODUCT=reader NFC_USB_MODE=cdc INSTALL_DEPS=0 AUTO_INSTALL_LINUX_DEPS=0 firmware
+    - make TARGET=arduino_uno_r4wifi FIRMWARE_PRODUCT=writer NFC_USB_MODE=cdc INSTALL_DEPS=0 AUTO_INSTALL_LINUX_DEPS=0 firmware
+    - make TARGET=nucleo_wba65ri FIRMWARE_PRODUCT=nfc NFC_USB_MODE=cdc INSTALL_DEPS=0 AUTO_INSTALL_LINUX_DEPS=0 firmware
+    - make TARGET=nucleo_wba65ri FIRMWARE_PRODUCT=reader NFC_USB_MODE=ccid INSTALL_DEPS=0 AUTO_INSTALL_LINUX_DEPS=0 firmware
+    - make TARGET=nucleo_wba65ri FIRMWARE_PRODUCT=reader NFC_USB_MODE=cdc INSTALL_DEPS=0 AUTO_INSTALL_LINUX_DEPS=0 firmware
+    - make TARGET=nucleo_wba65ri FIRMWARE_PRODUCT=writer NFC_USB_MODE=cdc INSTALL_DEPS=0 AUTO_INSTALL_LINUX_DEPS=0 firmware
+
+license_header: |
+  # SPDX-License-Identifier: Apache-2.0
+  #
+  # Copyright (C) 2026 Nero Duality, LLC.
+  #
+  # Licensed under the Apache License, Version 2.0 (the "License");
+  # you may not use this file except in compliance with the License.
+  # You may obtain a copy of the License at
+  #
+  #     http://www.apache.org/licenses/LICENSE-2.0
+  #
+  # Unless required by applicable law or agreed to in writing, software
+  # distributed under the License is distributed on an "AS IS" BASIS,
+  # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  # See the License for the specific language governing permissions and
+  # limitations under the License.
+
+policy:
+  constants_headers:
+    - ccid_usb_desc.h
+    - nero_nfc_frontend.h
+    - nero_nfc_limits.h
+    - nfc_pcsc_contactless.h
+    - nfc_tag_geometry_limits.h
+    - nfc_tag_info.h
+    - reader_ccid_internal.h
+    - reader_context.h
+    - reader_tags_internal.h
+    - writer_payload.h
+  nolint_allowed: null
+  overrides:
+    clang-format:
+      add: null
+      by_compile_db: null
+      remove: null
+    clang-tidy-c:
+      add: null
+      by_compile_db: null
+      remove: null
+    clang-tidy-cxx:
+      add: null
+      by_compile_db: null
+      remove: null
+    clang-tidy-shared-c-cxx:
+      add: null
+      by_compile_db: null
+      remove: null
+    clang-tidy-unsafe-c:
+      add: null
+      by_compile_db: null
+      remove: null
+    clang-tidy-unsafe-cxx:
+      add: null
+      by_compile_db: null
+      remove: null
+    cppcheck:
+      add: null
+      by_compile_db: null
+      remove: null
+    openssf-hardening:
+      add: null
+      by_compile_db:
+        - add: null
+          compile_commands_json: build/lint/firmware/arduino_uno_r4wifi/nfc/cdc/compile_commands.json
+          remove:
+            - -D_FORTIFY_SOURCE=3
+            - -O2
+            - -U_FORTIFY_SOURCE
+            - -Wbidi-chars=any
+            - -Werror
+            - -Werror=format-security
+            - -Whardened
+            - -fPIC
+            - -fPIE
+            - -fcf-protection=full
+            - -fexceptions
+            - -fhardened
+            - -fstack-clash-protection
+            - -fstrict-flex-arrays=3
+            - -ftrivial-auto-var-init=zero
+            - -fzero-init-padding-bits=all
+            - -fzero-init-padding-bits=union
+            - -mbranch-protection=standard
+            - -pie
+            - -shared
+            - "LINKER:--as-needed"
+            - "LINKER:--no-copy-dt-needed-entries"
+            - "LINKER:-z,nodlopen"
+            - "LINKER:-z,noexecstack"
+            - "LINKER:-z,now"
+            - "LINKER:-z,relro"
+            - _GLIBCXX_ASSERTIONS
+            - _GLIBCXX_DEBUG
+            - _LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG
+            - _LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE
+            - _LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_FAST
+        - add: null
+          compile_commands_json: build/lint/firmware/arduino_uno_r4wifi/reader/ccid/compile_commands.json
+          remove:
+            - -D_FORTIFY_SOURCE=3
+            - -O2
+            - -U_FORTIFY_SOURCE
+            - -Wbidi-chars=any
+            - -Werror
+            - -Werror=format-security
+            - -Whardened
+            - -fPIC
+            - -fPIE
+            - -fcf-protection=full
+            - -fexceptions
+            - -fhardened
+            - -fstack-clash-protection
+            - -fstrict-flex-arrays=3
+            - -ftrivial-auto-var-init=zero
+            - -fzero-init-padding-bits=all
+            - -fzero-init-padding-bits=union
+            - -mbranch-protection=standard
+            - -pie
+            - -shared
+            - "LINKER:--as-needed"
+            - "LINKER:--no-copy-dt-needed-entries"
+            - "LINKER:-z,nodlopen"
+            - "LINKER:-z,noexecstack"
+            - "LINKER:-z,now"
+            - "LINKER:-z,relro"
+            - _GLIBCXX_ASSERTIONS
+            - _GLIBCXX_DEBUG
+            - _LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG
+            - _LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE
+            - _LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_FAST
+        - add: null
+          compile_commands_json: build/lint/firmware/arduino_uno_r4wifi/reader/cdc/compile_commands.json
+          remove:
+            - -D_FORTIFY_SOURCE=3
+            - -O2
+            - -U_FORTIFY_SOURCE
+            - -Wbidi-chars=any
+            - -Werror
+            - -Werror=format-security
+            - -Whardened
+            - -fPIC
+            - -fPIE
+            - -fcf-protection=full
+            - -fexceptions
+            - -fhardened
+            - -fstack-clash-protection
+            - -fstrict-flex-arrays=3
+            - -ftrivial-auto-var-init=zero
+            - -fzero-init-padding-bits=all
+            - -fzero-init-padding-bits=union
+            - -mbranch-protection=standard
+            - -pie
+            - -shared
+            - "LINKER:--as-needed"
+            - "LINKER:--no-copy-dt-needed-entries"
+            - "LINKER:-z,nodlopen"
+            - "LINKER:-z,noexecstack"
+            - "LINKER:-z,now"
+            - "LINKER:-z,relro"
+            - _GLIBCXX_ASSERTIONS
+            - _GLIBCXX_DEBUG
+            - _LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG
+            - _LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE
+            - _LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_FAST
+        - add: null
+          compile_commands_json: build/lint/firmware/arduino_uno_r4wifi/writer/cdc/compile_commands.json
+          remove:
+            - -D_FORTIFY_SOURCE=3
+            - -O2
+            - -U_FORTIFY_SOURCE
+            - -Wbidi-chars=any
+            - -Werror
+            - -Werror=format-security
+            - -Whardened
+            - -fPIC
+            - -fPIE
+            - -fcf-protection=full
+            - -fexceptions
+            - -fhardened
+            - -fstack-clash-protection
+            - -fstrict-flex-arrays=3
+            - -ftrivial-auto-var-init=zero
+            - -fzero-init-padding-bits=all
+            - -fzero-init-padding-bits=union
+            - -mbranch-protection=standard
+            - -pie
+            - -shared
+            - "LINKER:--as-needed"
+            - "LINKER:--no-copy-dt-needed-entries"
+            - "LINKER:-z,nodlopen"
+            - "LINKER:-z,noexecstack"
+            - "LINKER:-z,now"
+            - "LINKER:-z,relro"
+            - _GLIBCXX_ASSERTIONS
+            - _GLIBCXX_DEBUG
+            - _LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG
+            - _LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE
+            - _LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_FAST
+        - add: null
+          compile_commands_json: build/lint/firmware/nucleo_wba65ri/nfc/cdc/compile_commands.json
+          remove:
+            - -D_FORTIFY_SOURCE=3
+            - -O2
+            - -U_FORTIFY_SOURCE
+            - -Wbidi-chars=any
+            - -Werror
+            - -Werror=format-security
+            - -fPIC
+            - -fPIE
+            - -fcf-protection=full
+            - -fexceptions
+            - -fhardened
+            - -fstack-clash-protection
+            - -fstrict-flex-arrays=3
+            - -fzero-init-padding-bits=all
+            - -fzero-init-padding-bits=union
+            - -mbranch-protection=standard
+            - -pie
+            - -shared
+            - "LINKER:--as-needed"
+            - "LINKER:--no-copy-dt-needed-entries"
+            - "LINKER:-z,nodlopen"
+            - "LINKER:-z,noexecstack"
+            - "LINKER:-z,now"
+            - "LINKER:-z,relro"
+            - _GLIBCXX_ASSERTIONS
+            - _GLIBCXX_DEBUG
+            - _LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG
+            - _LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE
+            - _LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_FAST
+        - add: null
+          compile_commands_json: build/lint/firmware/nucleo_wba65ri/reader/ccid/compile_commands.json
+          remove:
+            - -D_FORTIFY_SOURCE=3
+            - -O2
+            - -U_FORTIFY_SOURCE
+            - -Wbidi-chars=any
+            - -Werror
+            - -Werror=format-security
+            - -fPIC
+            - -fPIE
+            - -fcf-protection=full
+            - -fexceptions
+            - -fhardened
+            - -fstack-clash-protection
+            - -fstrict-flex-arrays=3
+            - -fzero-init-padding-bits=all
+            - -fzero-init-padding-bits=union
+            - -mbranch-protection=standard
+            - -pie
+            - -shared
+            - "LINKER:--as-needed"
+            - "LINKER:--no-copy-dt-needed-entries"
+            - "LINKER:-z,nodlopen"
+            - "LINKER:-z,noexecstack"
+            - "LINKER:-z,now"
+            - "LINKER:-z,relro"
+            - _GLIBCXX_ASSERTIONS
+            - _GLIBCXX_DEBUG
+            - _LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG
+            - _LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE
+            - _LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_FAST
+        - add: null
+          compile_commands_json: build/lint/firmware/nucleo_wba65ri/reader/cdc/compile_commands.json
+          remove:
+            - -D_FORTIFY_SOURCE=3
+            - -O2
+            - -U_FORTIFY_SOURCE
+            - -Wbidi-chars=any
+            - -Werror
+            - -Werror=format-security
+            - -fPIC
+            - -fPIE
+            - -fcf-protection=full
+            - -fexceptions
+            - -fhardened
+            - -fstack-clash-protection
+            - -fstrict-flex-arrays=3
+            - -fzero-init-padding-bits=all
+            - -fzero-init-padding-bits=union
+            - -mbranch-protection=standard
+            - -pie
+            - -shared
+            - "LINKER:--as-needed"
+            - "LINKER:--no-copy-dt-needed-entries"
+            - "LINKER:-z,nodlopen"
+            - "LINKER:-z,noexecstack"
+            - "LINKER:-z,now"
+            - "LINKER:-z,relro"
+            - _GLIBCXX_ASSERTIONS
+            - _GLIBCXX_DEBUG
+            - _LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG
+            - _LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE
+            - _LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_FAST
+        - add: null
+          compile_commands_json: build/lint/firmware/nucleo_wba65ri/writer/cdc/compile_commands.json
+          remove:
+            - -D_FORTIFY_SOURCE=3
+            - -O2
+            - -U_FORTIFY_SOURCE
+            - -Wbidi-chars=any
+            - -Werror
+            - -Werror=format-security
+            - -fPIC
+            - -fPIE
+            - -fcf-protection=full
+            - -fexceptions
+            - -fhardened
+            - -fstack-clash-protection
+            - -fstrict-flex-arrays=3
+            - -fzero-init-padding-bits=all
+            - -fzero-init-padding-bits=union
+            - -mbranch-protection=standard
+            - -pie
+            - -shared
+            - "LINKER:--as-needed"
+            - "LINKER:--no-copy-dt-needed-entries"
+            - "LINKER:-z,nodlopen"
+            - "LINKER:-z,noexecstack"
+            - "LINKER:-z,now"
+            - "LINKER:-z,relro"
+            - _GLIBCXX_ASSERTIONS
+            - _GLIBCXX_DEBUG
+            - _LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG
+            - _LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE
+            - _LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_FAST
+      remove: null
+  resource_lifetime: null
+  shared_c_cxx_source_roots: null
+  unsafe_api:
+    header: nero_nfc_null.h
+    include_headers:
+      - nero_nfc_attrs.h
+      - nero_nfc_mem_util.h
+    wrapper_files:
+      - firmware/libraries/NeroNfc/src/core/nero_nfc_format.c
+      - firmware/libraries/NeroNfc/src/nero_nfc_format.h
+      - firmware/libraries/NeroNfc/src/nero_nfc_mem_util.h
+      - firmware/libraries/NeroNfc/src/nero_nfc_null.h
+      - firmware/libraries/NeroNfc/src/nero_nfc_parse.h
+      - userspace/app/nero_nfc_io.cpp
+
+scan:
+  c_api_prefix: nero_nfc
+  c_macro_prefix: NERO_NFC
+  exclude_gitignore: true
+  public_headers_dir: firmware/libraries/NeroNfc/src
+  source_roots:
+    - firmware
+    - tests
+    - userspace
+
+spec_traceability:
+  manifest: docs/spec-traceability.yaml
+
+toolchain:
+  lint_kit:
+    path: lint-c-cpp
+    ref: v0.2.0
+    repository: neroduality/.github
+  script: .github/scripts/helper-toolchain.sh
+
+workflow:
+  bare_vm_waivers:
+    - job: publish
+      workflow: release.yml
+    - job: audit
+      workflow: zizmor_actionlint.yml
+
+yamllint:
+  default:
+    schema: yaml
+  files:
+    - path: .github/lint-c-cpp.yaml
+      schema: lint_config
+      sort_by: key
+    - path: docs/spec-traceability.yaml
+      required_fields:
+        - ref
+        - source
+        - spec_prefix
+        - spec_value
+        - symbol
+      schema: spec_traceability
+      sort_by:
+        - spec_prefix
+        - symbol

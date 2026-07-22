@@ -21,7 +21,8 @@ BOARD_HOST_BANNER ?= Nucleo-WBA65RI, X-NUCLEO-NFC08A1
 BOARD_TARGET_DRIVER := arduino_cli
 ARDUINO_ISYSTEM_PROFILE := wba65
 
-# stm32duino newlib lacks ssp.h required by -fstack-protector-strong / _FORTIFY_SOURCE.
+# stm32duino newlib lacks ssp.h for _FORTIFY_SOURCE (Makefile COMMON_HARDENING).
+# -fstack-protector-strong is OK: NeroNfc provides __stack_chk_* (stack_protector.c).
 BOARD_SKIP_HOST_HARDENING := 1
 
 FQBN := STMicroelectronics:stm32:Nucleo_64:pnum=NUCLEO_WBA65RI,upload_method=OpenOCDSTLink
@@ -31,8 +32,11 @@ BOARD_DEFAULT_NFC_USB_MODE := ccid
 BOARD_SUPPORTED_NFC_USB_MODES := cdc ccid
 BOARD_DEFAULT_NFC_FRONTEND := st25r3916
 BOARD_CCID_USB_SYNC_REQUIRED := 0
-BOARD_CCID_EXTRA_DEPS := third-party-tinyusb-wba65
+# vendor-tinyusb-wba65 archives pinned TinyUSB TUs (§6); pulls third-party pin.
+BOARD_CCID_EXTRA_DEPS := vendor-tinyusb-wba65
 BOARD_NFC_EXTRA_DEPS := third-party-wba65-openocd
+# Recursive: TINYUSB_WBA65_LINK_FLAGS is defined after vendor-tinyusb-wba65.mk.
+BOARD_CCID_LIBRARIES_LDFLAGS = $(TINYUSB_WBA65_LINK_FLAGS)
 
 TINYUSB_WBA65_SRC := $(CURDIR)/third-party/tinyusb/src
 BOARD_CCID_INCLUDES := \
@@ -79,8 +83,3 @@ BOARD_PORT_DISCOVERY_SECONDS := 15
 
 # X-NUCLEO-NFC08A1 on Arduino Uno V3 header — see WBA65_NFC_PINS above.
 BOARD_CDC_BUILD_EXTRA_FLAGS := $(WBA65_NFC_PINS) -DNFC_HAL_RXBUF_CAP=$(NFC_CDC_SERIAL_LINE_CAP)u
-
-PORT_LIB_DIR := $(CURDIR)/firmware/port/arduino_spi_serial
-BOARD_READER_HAL_UNIT := reader_hal_board.cpp
-BOARD_WRITER_HAL_UNIT := writer_hal_board.cpp
-BOARD_NFC_HAL_UNIT := nfc_hal_board.cpp

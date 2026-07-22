@@ -28,7 +28,7 @@ VERSION="$4"
 FETCH_SCRIPT="$5"
 FORCE_EXTERNAL="${6:-}"
 
-if [[ "${FORCE_EXTERNAL}" == "1" ]]; then
+if [[ ${FORCE_EXTERNAL} == "1" ]]; then
   echo "-- FORCE_EXTERNAL: clearing ${DEP_DIR}" >&2
   rm -rf "${DEP_DIR}"
   rm -f "${STAMP}"
@@ -36,15 +36,15 @@ fi
 
 want="${VERSION}"
 marker="${DEP_DIR}/arduino-cli"
-tree_ok() { [[ -x "${marker}" ]]; }
+tree_ok() { [[ -x ${marker} ]]; }
 
-if [[ -f "${STAMP}" ]] && [[ "$(cat "${STAMP}")" == "${want}" ]] && tree_ok; then
+if [[ -f ${STAMP} ]] && [[ "$(cat "${STAMP}")" == "${want}" ]] && tree_ok; then
   echo "── arduino-cli ${VERSION} already present ──"
   touch "${STAMP}"
   exit 0
 fi
 
-if [[ -f "${STAMP}" ]] && ! tree_ok; then
+if [[ -f ${STAMP} ]] && ! tree_ok; then
   echo "── stale arduino-cli stamp; re-fetching ──" >&2
   rm -f "${STAMP}"
   rm -rf "${DEP_DIR}"

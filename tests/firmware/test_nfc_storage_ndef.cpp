@@ -55,24 +55,38 @@ TEST(NfcStorageNdef, Type2ReadAndWriteSpansUseSamePageCaps) {
 }
 
 TEST(NfcStorageNdef, Type2ScanLimitCapsLargeTags) {
-  const uint16_t capped = nfc_storage_type2_read_unit_limit(
-    3u, NFC_STORAGE_TYPE2_UNIT_SIZE, 4u, 1016u, NERO_NFC_TYPE2_STORAGE_NDEF_SCAN_MAX);
+  const uint16_t kCapped = nfc_storage_type2_read_unit_limit(
+      3u, NFC_STORAGE_TYPE2_UNIT_SIZE, 4u, 1016u,
+      NERO_NFC_TYPE2_STORAGE_NDEF_SCAN_MAX);
 
-  EXPECT_EQ(capped, 223u);
+  EXPECT_EQ(kCapped, 223u);
 }
 
 TEST(NfcStorageNdef, Type5CcLengthAndDataBlocksCoverFourAndEightByteCc) {
-  const uint8_t short_cc[] = {0xE1u, 0x40u, 0x08u, 0x00u};
-  const uint8_t extended_cc[] = {0xE2u, 0x40u, 0x00u, 0x00u, 0x00u, 0x00u, 0x20u, 0x00u};
+  const uint8_t kShortCc[] = {0xE1u, 0x40u, 0x08u, 0x00u};
+  const uint8_t kExtendedCc[] = {0xE2u, 0x40u, 0x00u, 0x00u,
+                                 0x00u, 0x00u, 0x20u, 0x00u};
   uint16_t first = 0u;
   uint16_t last = 0u;
 
-  EXPECT_EQ(nfc_storage_type5_cc_len_or_default(0u, short_cc, sizeof(short_cc)), 4u);
-  EXPECT_EQ(nfc_storage_type5_cc_len_or_default(0u, extended_cc, sizeof(extended_cc)), 8u);
-  EXPECT_EQ(nfc_storage_type5_cc_len_or_default(8u, short_cc, sizeof(short_cc)), 8u);
-  EXPECT_EQ(nfc_storage_type5_declared_cc_len_from_first_block(short_cc, sizeof(short_cc)), 4u);
-  EXPECT_EQ(nfc_storage_type5_declared_cc_len_from_first_block(extended_cc, 4u), 8u);
-  EXPECT_EQ(nfc_storage_type5_declared_cc_len_from_first_block(NERO_NFC_NULL, 4u), 0u);
+  EXPECT_EQ(
+      nfc_storage_type5_cc_len_or_default(0u, &kShortCc[0], sizeof(kShortCc)),
+      4u);
+  EXPECT_EQ(nfc_storage_type5_cc_len_or_default(0u, &kExtendedCc[0],
+                                                sizeof(kExtendedCc)),
+            8u);
+  EXPECT_EQ(
+      nfc_storage_type5_cc_len_or_default(8u, &kShortCc[0], sizeof(kShortCc)),
+      8u);
+  EXPECT_EQ(nfc_storage_type5_declared_cc_len_from_first_block(
+                &kShortCc[0], sizeof(kShortCc)),
+            4u);
+  EXPECT_EQ(
+      nfc_storage_type5_declared_cc_len_from_first_block(&kExtendedCc[0], 4u),
+      8u);
+  EXPECT_EQ(
+      nfc_storage_type5_declared_cc_len_from_first_block(NERO_NFC_NULL, 4u),
+      0u);
 
   ASSERT_TRUE(nfc_storage_type5_data_blocks(4u, 320u, 4u, 80u, &first, &last));
   EXPECT_EQ(first, 1u);
@@ -95,8 +109,11 @@ TEST(NfcStorageNdef, Type5ReadsMayIncludeCcButWritesStartAtDataBlocks) {
 }
 
 TEST(NfcStorageNdef, Type5ReadBlockLimitIsSharedWithHostScan) {
-  EXPECT_EQ(nfc_storage_type5_read_block_limit(8u, 2048u, NERO_NFC_TYPE5_STORAGE_READ_MAX), 514u);
-  EXPECT_EQ(nfc_storage_type5_read_block_limit(NERO_NFC_TYPE5_STORAGE_READ_MAX, 4u,
+  EXPECT_EQ(nfc_storage_type5_read_block_limit(8u, 2048u,
                                                NERO_NFC_TYPE5_STORAGE_READ_MAX),
-            0u);
+            514u);
+  EXPECT_EQ(
+      nfc_storage_type5_read_block_limit(NERO_NFC_TYPE5_STORAGE_READ_MAX, 4u,
+                                         NERO_NFC_TYPE5_STORAGE_READ_MAX),
+      0u);
 }

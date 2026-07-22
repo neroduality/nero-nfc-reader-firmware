@@ -30,7 +30,7 @@ if [[ "$(uname -s)" != "Linux" ]]; then
 fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-if [[ -n "${NERO_NFC_FW_ROOT:-}" ]]; then
+if [[ -n ${NERO_NFC_FW_ROOT:-} ]]; then
   REPO_ROOT="$(cd "${NERO_NFC_FW_ROOT}" && pwd)"
 else
   REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
@@ -79,7 +79,7 @@ echo "── nero-nfc flash toolchain — repo: ${REPO_ROOT} ──"
 need_os=false
 have make || need_os=true
 
-if [[ "${need_os}" == true ]]; then
+if [[ ${need_os} == true ]]; then
   echo "── OS packages (make — plus unzip recommended for STM ZIP fetch speed) ──" >&2
   if have apt-get; then
     priv apt-get update -qq

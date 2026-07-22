@@ -23,7 +23,10 @@
 #                   (e.g. "library.properties" for Arduino/ST libs)
 set -eu
 
-die() { echo "ERROR: $*" >&2; exit 1; }
+die() {
+  echo "ERROR: $*" >&2
+  exit 1
+}
 
 [ "${#}" -ge 3 ] || die "need: URL SHA256_HEX DEST_ABS [CHECK_FILE_REL]"
 DL_URL="$1"
@@ -39,7 +42,6 @@ fi
 if ! printf '%s\n' "${EXPECT_SHA}" | LC_ALL=C grep -qxE '[0-9A-Fa-f]{64}'; then
   die "SHA256 contains non-hexadecimal characters"
 fi
-
 
 tmp="$(mktemp -d "${TMPDIR:-/tmp}/archive-dl.XXXXXX")"
 cleanup() {
@@ -76,11 +78,11 @@ echo "-- Extract (to scratch) ..."
 unzip -q "$arc" -d "$staging"
 
 shopt -s nullglob
-subs=( "$staging"/* )
+subs=("$staging"/*)
 shopt -u nullglob
 case "${#subs[@]}" in
-  (1) ;;
-  (*) die "expected one top-level dir in ZIP, got: ${subs[*]}" ;;
+  1) ;;
+  *) die "expected one top-level dir in ZIP, got: ${subs[*]}" ;;
 esac
 
 src="${subs[0]}"
@@ -91,7 +93,7 @@ fi
 
 mkdir -p "$(dirname "$DEST")"
 
-if [[ -e "$DEST" ]] || [[ -L "$DEST" ]]; then
+if [[ -e $DEST ]] || [[ -L $DEST ]]; then
   rm -rf "$DEST"
 fi
 

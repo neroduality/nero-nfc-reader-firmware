@@ -30,11 +30,9 @@ set(CMAKE_C_STANDARD 23)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
-if(UNIX AND NOT APPLE)
-  add_compile_options(-fPIE)
-  add_link_options(-pie)
-endif()
+# Required so FetchContent gtest/gtest_main (static) can link into -pie test executables
+# from cmake/Hardening.cmake. Matches userspace/CMakeLists.txt.
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 option(NERO_ENABLE_COVERAGE "Compile with GCC/Clang coverage flags (--coverage)" OFF)
 option(NERO_ENABLE_SANITIZER_ADDRESS "Enable AddressSanitizer" OFF)
@@ -152,6 +150,7 @@ else()
   FetchContent_MakeAvailable(googletest)
   foreach(_nero_gtest_target IN ITEMS gtest gtest_main)
     if(TARGET ${_nero_gtest_target})
+      set_property(TARGET ${_nero_gtest_target} PROPERTY POSITION_INDEPENDENT_CODE ON)
       target_compile_options(${_nero_gtest_target} PRIVATE
         $<$<CXX_COMPILER_ID:GNU>:-Wno-maybe-uninitialized>)
     endif()
@@ -166,20 +165,133 @@ find_package(PkgConfig QUIET)
 
 set(NERO_STRIP_HOST_SYMBOLS OFF CACHE BOOL "Strip debug symbols from Release host binaries" FORCE)
 
-include("${CMAKE_CURRENT_SOURCE_DIR}/../cmake/HostHardening.cmake")
-include("${CMAKE_CURRENT_SOURCE_DIR}/../cmake/NeroThirdParty.cmake")
-include("${CMAKE_CURRENT_SOURCE_DIR}/../cmake/VerifyCompiler.cmake")
+include("${CMAKE_CURRENT_SOURCE_DIR}/../cmake/Hardening.cmake")
+define_hardening(
+  TARGET hardening
+  C_STANDARD 23
+  CXX_STANDARD 23)
+
+# Vendored trees as SYSTEM includes (host unit-test / lint CMake targets only).
+# ST25R3916 + NFC-RFAL are required (make third-party-nfc-libs). TinyUSB is
+# optional until a WBA CCID host path needs it.
+function(nero_add_third_party_system_includes target)
+  if(NOT TARGET ${target})
+    message(FATAL_ERROR "nero_add_third_party_system_includes: no target ${target}")
+  endif()
+  if(NOT DEFINED NERO_FIRMWARE_ROOT)
+    message(FATAL_ERROR "nero_add_third_party_system_includes: NERO_FIRMWARE_ROOT is not set")
+  endif()
+  set(_root "${NERO_FIRMWARE_ROOT}/third-party")
+  foreach(_dir "${_root}/ST25R3916/src" "${_root}/NFC-RFAL/src")
+    if(NOT EXISTS "${_dir}")
+      message(
+        FATAL_ERROR
+        "nero_add_third_party_system_includes: missing ${_dir}\n"
+        "  Fetch pinned ST libs first: make third-party-nfc-libs")
+    endif()
+    target_include_directories(${target} SYSTEM PUBLIC "${_dir}")
+  endforeach()
+  if(EXISTS "${_root}/tinyusb/src")
+    target_include_directories(${target} SYSTEM PUBLIC "${_root}/tinyusb/src")
+  endif()
+endfunction()
+
+# Host-side ISO C23 probes for unit-test C objects (MCU firmware stays on gnu11).
+function(nero_try_compile_c_silent result_var std source)
+  set(_probe_dir "${CMAKE_BINARY_DIR}/CMakeFiles/nero-silent-probes")
+  file(MAKE_DIRECTORY "${_probe_dir}")
+  set(_probe_file "${_probe_dir}/${result_var}.c")
+  set(_probe_obj "${_probe_dir}/${result_var}.o")
+  file(WRITE "${_probe_file}" "${source}")
+  execute_process(
+    COMMAND "${CMAKE_C_COMPILER}" -std=${std} -Werror=implicit-function-declaration -c
+            "${_probe_file}" -o "${_probe_obj}"
+    RESULT_VARIABLE _compile_rc
+    ERROR_QUIET
+    OUTPUT_QUIET)
+  if(_compile_rc EQUAL 0)
+    set(${result_var} TRUE PARENT_SCOPE)
+  else()
+    set(${result_var} FALSE PARENT_SCOPE)
+  endif()
+endfunction()
+
+if(CMAKE_C_COMPILER_ID MATCHES "GNU")
+  if(CMAKE_C_COMPILER_VERSION VERSION_LESS "15.0")
+    message(FATAL_ERROR
+      "nero-nfc host tests require GCC 15+ (found ${CMAKE_C_COMPILER_VERSION})")
+  endif()
+elseif(CMAKE_C_COMPILER_ID MATCHES "Clang")
+  if(CMAKE_C_COMPILER_VERSION VERSION_LESS "16.0")
+    message(FATAL_ERROR
+      "nero-nfc host C tests require Clang 16+ for ISO C23 (found ${CMAKE_C_COMPILER_VERSION})")
+  endif()
+else()
+  message(WARNING "nero-nfc: untested C compiler ${CMAKE_C_COMPILER_ID}; C23 support not verified")
+endif()
+
+set(_nero_c23_std_candidates c23 c2x gnu2x)
+set(_nero_c23_probe_source
+  "#include <stddef.h>\nint main(void){ void *p = nullptr; (void)p; return 0; }\n")
+
+set(NERO_C23_NULLPTR_OK FALSE)
+foreach(_std IN LISTS _nero_c23_std_candidates)
+  nero_try_compile_c_silent(_nero_c23_nullptr_ok "${_std}" "${_nero_c23_probe_source}")
+  if(_nero_c23_nullptr_ok)
+    set(NERO_C23_NULLPTR_OK TRUE)
+    break()
+  endif()
+endforeach()
+
+if(NOT NERO_C23_NULLPTR_OK)
+  message(FATAL_ERROR
+    "Host C compiler does not accept ISO C23 nullptr (tried -std=c23, -std=c2x, -std=gnu2x)")
+endif()
+
+set(_nero_ckd_probe_source
+  "#include <stdckdint.h>\n#include <stddef.h>\nint main(void){ size_t r; return ckd_add(&r,(size_t)1,(size_t)2)?1:0; }\n")
+set(NERO_HAVE_STDCKDINT FALSE)
+foreach(_std IN LISTS _nero_c23_std_candidates)
+  nero_try_compile_c_silent(_nero_have_stdckdint "${_std}" "${_nero_ckd_probe_source}")
+  if(_nero_have_stdckdint)
+    set(NERO_HAVE_STDCKDINT TRUE)
+    break()
+  endif()
+endforeach()
+
+set(_nero_memset_probe_source
+  "#include <string.h>\nint main(void){ char b[4]; memset_explicit(b,0,sizeof b); return 0; }\n")
+set(NERO_HAVE_MEMSET_EXPLICIT FALSE)
+foreach(_std IN LISTS _nero_c23_std_candidates)
+  nero_try_compile_c_silent(_nero_have_memset_explicit "${_std}" "${_nero_memset_probe_source}")
+  if(_nero_have_memset_explicit)
+    set(NERO_HAVE_MEMSET_EXPLICIT TRUE)
+    break()
+  endif()
+endforeach()
+
+if(NERO_HAVE_STDCKDINT)
+  message(STATUS "nero-nfc: ISO C23 stdckdint.h available for host C tests")
+else()
+  message(STATUS "nero-nfc: stdckdint.h unavailable; host C tests use overflow fallbacks")
+endif()
+if(NERO_HAVE_MEMSET_EXPLICIT)
+  message(STATUS "nero-nfc: C23 memset_explicit available for host secure clear")
+  add_compile_definitions(NERO_NFC_HAVE_MEMSET_EXPLICIT=1)
+else()
+  message(STATUS "nero-nfc: memset_explicit unavailable; secure clear uses volatile-byte fallback")
+endif()
 
 # Object library compiled once; linked into both test executables.
 add_library(
   nero_under_test OBJECT
-  "${NERO_FIRMWARE_ROOT}/firmware/nfc_core/common/nero_nfc_format.c"
-  "${NERO_FIRMWARE_ROOT}/firmware/nfc_core/common/nfc_mode_line_scan.c"
-  "${NERO_FIRMWARE_ROOT}/firmware/nfc_core/common/nfc_ctap_codec.c"
-  "${NERO_FIRMWARE_ROOT}/firmware/nfc_core/common/nfc_ccid_frame.c"
-  "${NERO_FIRMWARE_ROOT}/firmware/nfc_core/common/nfc_ndef_record_decode.c"
-  "${NERO_FIRMWARE_ROOT}/firmware/writer/src/writer_payload.cpp"
-  "${NERO_FIRMWARE_ROOT}/firmware/reader/src/reader_cbor.cpp"
+  "${NERO_FIRMWARE_ROOT}/firmware/libraries/NeroNfc/src/core/nero_nfc_format.c"
+  "${NERO_FIRMWARE_ROOT}/firmware/libraries/NeroNfc/src/protocol/nfc_mode_line_scan.c"
+  "${NERO_FIRMWARE_ROOT}/firmware/libraries/NeroNfc/src/protocol/nfc_ctap_codec.c"
+  "${NERO_FIRMWARE_ROOT}/firmware/libraries/NeroNfc/src/protocol/nfc_ccid_frame.c"
+  "${NERO_FIRMWARE_ROOT}/firmware/libraries/NeroNfc/src/protocol/nfc_ndef_record_decode.c"
+  "${NERO_FIRMWARE_ROOT}/firmware/libraries/NeroNfc/src/writer/writer_payload.c"
+  "${NERO_FIRMWARE_ROOT}/firmware/libraries/NeroNfc/src/reader/reader_cbor.c"
   "${NERO_FIRMWARE_ROOT}/userspace/app/nero_nfc_bridge.cpp"
   "${NERO_FIRMWARE_ROOT}/userspace/app/nero_nfc_detect.cpp"
   "${NERO_FIRMWARE_ROOT}/userspace/app/nero_nfc_line_pump.cpp"
@@ -201,14 +313,18 @@ add_library(
 
 target_include_directories(
   nero_under_test
-  PUBLIC "${NERO_FIRMWARE_ROOT}/firmware/nfc_core/common"
-         "${NERO_FIRMWARE_ROOT}/firmware/port/include"
-         "${NERO_FIRMWARE_ROOT}/firmware/writer/src"
-         "${NERO_FIRMWARE_ROOT}/firmware/reader/src"
+  PUBLIC "${NERO_FIRMWARE_ROOT}/firmware/libraries/NeroNfc/src"
+  "${NERO_FIRMWARE_ROOT}/firmware/libraries/NeroNfc/src"
+         "${NERO_FIRMWARE_ROOT}/firmware/libraries/NeroNfc/src/port"
+         "${NERO_FIRMWARE_ROOT}/firmware/libraries/NeroNfc/src/writer"
+  "${NERO_FIRMWARE_ROOT}/firmware/libraries/NeroNfc/src/frontend"
+         "${NERO_FIRMWARE_ROOT}/firmware/libraries/NeroNfc/src/reader"
+  "${NERO_FIRMWARE_ROOT}/firmware/libraries/NeroNfc/src/frontend"
          "${NERO_FIRMWARE_ROOT}/userspace/app")
 
-target_compile_definitions(nero_under_test PRIVATE NERO_HOST_UNIT_TEST_HOOKS=1)
-target_link_libraries(nero_under_test PUBLIC Threads::Threads nero_host_hardening)
+target_compile_definitions(nero_under_test PRIVATE NERO_HOST_UNIT_TEST_HOOKS=1
+                                                   NERO_NFC_BUILD_COMBINED=1)
+target_link_libraries(nero_under_test PUBLIC Threads::Threads hardening)
 nero_add_third_party_system_includes(nero_under_test)
 set(_nero_test_pcsc_found OFF)
 set(_nero_test_pcsc_target "")
@@ -249,17 +365,19 @@ set(NERO_TESTS_HAVE_PCSC "${_nero_test_pcsc_found}" CACHE INTERNAL "libpcsclite 
 # Compile-only TUs for clang-tidy compile_commands.json (not linked into test binaries).
 add_library(
   nero_firmware_lint OBJECT
-  "${NERO_FIRMWARE_ROOT}/firmware/reader/src/reader_security_key_webauthn_select.cpp")
+  "${NERO_FIRMWARE_ROOT}/firmware/libraries/NeroNfc/src/reader/reader_security_key_webauthn_select.c")
 
 target_include_directories(
   nero_firmware_lint
-  PUBLIC "${NERO_FIRMWARE_ROOT}/firmware/nfc_core/common"
-         "${NERO_FIRMWARE_ROOT}/firmware/port/include"
-         "${NERO_FIRMWARE_ROOT}/firmware/reader/src"
+  PUBLIC "${NERO_FIRMWARE_ROOT}/firmware/libraries/NeroNfc/src"
+  "${NERO_FIRMWARE_ROOT}/firmware/libraries/NeroNfc/src"
+         "${NERO_FIRMWARE_ROOT}/firmware/libraries/NeroNfc/src/port"
+         "${NERO_FIRMWARE_ROOT}/firmware/libraries/NeroNfc/src/reader"
+  "${NERO_FIRMWARE_ROOT}/firmware/libraries/NeroNfc/src/frontend"
          "${CMAKE_CURRENT_SOURCE_DIR}/firmware/support")
 
 target_compile_definitions(nero_firmware_lint PRIVATE NERO_HOST_UNIT_TEST_HOOKS=1 NERO_CCID_USB_BUILD=1)
-target_link_libraries(nero_firmware_lint PUBLIC nero_host_hardening Threads::Threads)
+target_link_libraries(nero_firmware_lint PUBLIC hardening Threads::Threads)
 
 add_subdirectory(firmware)
 add_subdirectory(userspace)

@@ -18,8 +18,19 @@
 
 #include "nero_nfc_attrs.h"
 
-#include <cstdint>
+#include <stdbool.h>
+#include <stdint.h>
 
-NERO_NFC_NODISCARD bool writer_payload_utest_wifi_wsc_encode(uint8_t *blob, uint16_t blob_cap,
-                                          uint16_t *out_len, const char *ssid,
-                                          const char *psk);
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+NERO_NFC_NODISCARD bool writer_payload_utest_wifi_wsc_encode(uint8_t* blob,
+                                                             uint16_t blob_cap,
+                                                             uint16_t* out_len,
+                                                             const char* ssid,
+                                                             const char* psk);
+
+#ifdef __cplusplus
+}
+#endif

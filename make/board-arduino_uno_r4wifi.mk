@@ -40,9 +40,3 @@ ARDUINO_CORE_PACKAGE := arduino:renesas_uno
 
 # Pinned Arduino core semver for `arduino-cli core install`; UNO R4 WiFi inherits Renesas default.
 ARDUINO_MIN_BOARD_CORE_VERSION ?= $(ARDUINO_MIN_RENESAS_CORE)
-
-# Implementation units selected through firmware/*/src/*_hal.cpp stubs (see NFC_BOARD_*_HAL_INC).
-PORT_LIB_DIR := $(CURDIR)/firmware/port/arduino_spi_serial
-BOARD_READER_HAL_UNIT := reader_hal_board.cpp
-BOARD_WRITER_HAL_UNIT := writer_hal_board.cpp
-BOARD_NFC_HAL_UNIT := nfc_hal_board.cpp

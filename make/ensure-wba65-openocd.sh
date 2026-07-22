@@ -63,7 +63,7 @@ OPENOCD_SPINNER_ACTIVE=0
 OPENOCD_ROTATE_PID=""
 
 openocd_spinner_stop_rotate() {
-  if [[ -n "${OPENOCD_ROTATE_PID}" ]]; then
+  if [[ -n ${OPENOCD_ROTATE_PID} ]]; then
     kill "${OPENOCD_ROTATE_PID}" 2>/dev/null || true
     wait "${OPENOCD_ROTATE_PID}" 2>/dev/null || true
     OPENOCD_ROTATE_PID=""
@@ -73,10 +73,10 @@ openocd_spinner_stop_rotate() {
 openocd_spinner_rotate() {
   local started="${1}"
   local phase="${2:-build}"
-  while [[ "${OPENOCD_SPINNER_ACTIVE}" -eq 1 ]]; do
+  while [[ ${OPENOCD_SPINNER_ACTIVE} -eq 1 ]]; do
     sleep 5
     local elapsed=$((SECONDS - started))
-    if [[ "${phase}" == "clone" ]]; then
+    if [[ ${phase} == "clone" ]]; then
       if ((elapsed < 60)); then
         cli_spinner_set_message "Processing — cloning OpenOCD source"
       else
@@ -118,7 +118,7 @@ run_openocd_step_with_spinner() {
   openocd_spinner_stop_rotate
   cli_spinner_finish
 
-  if [[ -s "${log}" ]]; then
+  if [[ -s ${log} ]]; then
     cat "${log}"
   fi
   rm -f "${log}"
@@ -147,10 +147,10 @@ build_openocd_tree() {
     git submodule update --init --recursive jimtcl
     apply_openocd_patches
 
-    if [[ -x "${OPENOCD_BIN}" ]] &&
-       [[ -f "${IDCODE_SRC}" ]] &&
-       [[ "${OPENOCD_BIN}" -nt "${IDCODE_SRC}" ]] &&
-       openocd_config_matches; then
+    if [[ -x ${OPENOCD_BIN} ]] &&
+      [[ -f ${IDCODE_SRC} ]] &&
+      [[ ${OPENOCD_BIN} -nt ${IDCODE_SRC} ]] &&
+      openocd_config_matches; then
       echo "── WBA65 OpenOCD binary up to date, skipping compile ──" >&2
       exit 0
     fi
@@ -171,7 +171,7 @@ build_openocd_tree() {
 }
 
 patch_signature() {
-  if [[ -d "${PATCH_DIR}" ]]; then
+  if [[ -d ${PATCH_DIR} ]]; then
     sha256sum "${PATCH_DIR}"/*.patch 2>/dev/null | sha256sum | awk '{print $1}'
   else
     echo "none"
@@ -184,20 +184,20 @@ openocd_config_matches() {
   local cfg=""
   [[ -f "${OPENOCD_SRC}/config.status" ]] || return 1
   cfg="$(grep -m1 '^ac_cs_config=' "${OPENOCD_SRC}/config.status" | sed "s/^ac_cs_config='//; s/'$//")"
-  [[ "${cfg}" == *"--prefix=${OPENOCD_PREFIX}"* ]] || return 1
-  [[ "${cfg}" == *"--enable-stlink"* ]] || return 1
-  [[ "${cfg}" == *"--disable-ftdi"* ]] || return 1
-  [[ "${cfg}" == *"--disable-jlink"* ]] || return 1
+  [[ ${cfg} == *"--prefix=${OPENOCD_PREFIX}"* ]] || return 1
+  [[ ${cfg} == *"--enable-stlink"* ]] || return 1
+  [[ ${cfg} == *"--disable-ftdi"* ]] || return 1
+  [[ ${cfg} == *"--disable-jlink"* ]] || return 1
 }
 
 openocd_has_wba6() {
-  [[ -x "${OPENOCD_BIN}" ]] &&
+  [[ -x ${OPENOCD_BIN} ]] &&
     [[ -f "${OPENOCD_PREFIX}/share/openocd/scripts/target/stm32wba6x.cfg" ]] &&
     grep -aqF 'STM32WBA6x' "${OPENOCD_BIN}" 2>/dev/null
 }
 
 openocd_idcode_patch_applied() {
-  [[ -f "${IDCODE_SRC}" ]] &&
+  [[ -f ${IDCODE_SRC} ]] &&
     grep -qF "${IDCODE_PATCH_MARKER}" "${IDCODE_SRC}"
 }
 
@@ -206,7 +206,7 @@ apply_openocd_patches() {
     echo "stm32-openocd: idcode probe-order patch already applied" >&2
     return 0
   fi
-  [[ -d "${PATCH_DIR}" ]] || return 0
+  [[ -d ${PATCH_DIR} ]] || return 0
   local patch name
   shopt -s nullglob
   for patch in "${PATCH_DIR}"/*.patch; do
@@ -224,26 +224,31 @@ write_stamp() {
 }
 
 # Fast path: installed binary matches current patch set.
-if [[ "${FORCE_EXTERNAL}" != "1" ]] &&
-   [[ -f "${STAMP}" ]] &&
-   [[ "$(cat "${STAMP}")" == "${OPENOCD_WANT}" ]] &&
-   openocd_has_wba6; then
+if [[ ${FORCE_EXTERNAL} != "1" ]] &&
+  [[ -f ${STAMP} ]] &&
+  [[ "$(cat "${STAMP}")" == "${OPENOCD_WANT}" ]] &&
+  openocd_has_wba6; then
   exit 0
 fi
 
 wba65_openocd_build_tools_ok() {
-  for tool in git make gcc pkg-config autoreconf automake libtool; do
+  # Debian: package "libtool" ships libtoolize; "libtool-bin" ships /usr/bin/libtool.
+  # OpenOCD bootstrap uses autoreconf/libtoolize; either libtool or libtoolize is enough.
+  # GNU patch applies patches/openocd/*.patch (sid-slim does not ship it by default).
+  for tool in git make pkg-config autoreconf automake patch; do
     command -v "${tool}" >/dev/null 2>&1 || return 1
   done
+  { command -v gcc >/dev/null 2>&1 || command -v g++ >/dev/null 2>&1; } || return 1
+  { command -v libtool >/dev/null 2>&1 || command -v libtoolize >/dev/null 2>&1; } || return 1
   pkg-config --exists libusb-1.0
 }
 
 if ! wba65_openocd_build_tools_ok; then
-  if [[ "${INSTALL_DEPS:-0}" == "1" ]]; then
+  if [[ ${INSTALL_DEPS:-0} == "1" ]]; then
     INSTALL_DEPS=1 AUTO_INSTALL_LINUX_DEPS=1 FIRMWARE_ROOT="${REPO_ROOT}" \
       bash "${REPO_ROOT}/make/install-linux-deps.sh"
   else
-    die "missing WBA65 OpenOCD build tools (autoconf/automake/libtool/libusb). Run: make deps  (or INSTALL_DEPS=1 TARGET=nucleo_wba65ri make)"
+    die "missing WBA65 OpenOCD build tools (autoconf/automake/libtool/patch/libusb). Run: make deps  (or INSTALL_DEPS=1 TARGET=nucleo_wba65ri make)"
   fi
 fi
 wba65_openocd_build_tools_ok || die "WBA65 OpenOCD build tools still missing after install"

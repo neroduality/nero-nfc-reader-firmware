@@ -29,7 +29,7 @@ VERSION="$4"
 EXPECT_SHA_HEX="$5"
 ARCHIVE_URL="$6"
 FETCH_SCRIPT="$7"
-CHECK_FILE="${8:-}"      # relative path inside DEP_DIR to validate presence
+CHECK_FILE="${8:-}" # relative path inside DEP_DIR to validate presence
 FORCE_EXTERNAL="${9:-}"
 
 if [ "${#EXPECT_SHA_HEX}" -ne 64 ]; then
@@ -70,7 +70,7 @@ do_stamp() {
   fi
 
   if [ "${FORCE_EXTERNAL}" != 1 ] && tree_ok && [ ! -f "${STAMP}" ]; then
-    printf '%s' "${want}" > "${STAMP}"
+    printf '%s' "${want}" >"${STAMP}"
     echo "── $(basename "${DEP_DIR}") ${VERSION} present (wrote stamp) ──"
     return 0
   fi
@@ -80,7 +80,7 @@ do_stamp() {
   echo "── Fetching $(basename "${DEP_DIR}") ${VERSION} (release ZIP + SHA256) ──"
   bash "${FETCH_SCRIPT}" "${ARCHIVE_URL}" "${EXPECT_SHA_HEX}" "${DEP_DIR}" "${CHECK_FILE}"
 
-  printf '%s' "${want}" > "${STAMP}"
+  printf '%s' "${want}" >"${STAMP}"
   if [ -n "${CHECK_FILE}" ]; then
     test -e "${DEP_DIR}/${CHECK_FILE}"
   fi
@@ -88,7 +88,10 @@ do_stamp() {
 }
 
 if command -v flock >/dev/null 2>&1; then
-  ( flock 200 || exit 1; do_stamp ) 200>"${lock}"
+  (
+    flock 200 || exit 1
+    do_stamp
+  ) 200>"${lock}"
 else
   do_stamp
 fi

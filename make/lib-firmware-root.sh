@@ -25,7 +25,7 @@ fi
 # Echo the absolute firmware root: the optional $1 if given, else the parent of
 # this helper's directory (this file lives in make/, so ".." is the repo root).
 nero_resolve_firmware_root() {
-  if [[ -n "${1:-}" ]]; then
+  if [[ -n ${1:-} ]]; then
     (cd "${1}" && pwd)
   else
     (cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)

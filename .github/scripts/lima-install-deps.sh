@@ -16,6 +16,7 @@
 # limitations under the License.
 
 # CI deps install inside the Lima guest (root via sudo).
+# Lint runs in debian:sid-slim via run-ci-locally.sh — do not install lint tools on the VM host.
 set -euo pipefail
 
 FIRMWARE_ROOT="${1:-/src}"
@@ -25,17 +26,27 @@ FIRMWARE_ROOT="${1:-/src}"
   exit 1
 }
 
+: "${LINT_KIT:=/opt/lint-kit}"
+export LINT_KIT
+if [[ ! -x ${LINT_KIT}/lint-c-cpp.sh ]]; then
+  printf 'error: lint kit missing lint-c-cpp.sh: %s\n' "${LINT_KIT}" >&2
+  exit 1
+fi
+
 export HOME=/root DEBIAN_FRONTEND=noninteractive
 apt-get install -y --no-install-recommends make
 export INSTALL_DEPS=1
+export INSTALL_LINT_DEPS=0
+export AUTO_INSTALL_LINUX_DEPS=1
 bash "${FIRMWARE_ROOT}/make/install-linux-deps.sh"
 
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=helper-host-toolchain.sh
-source "${script_dir}/helper-host-toolchain.sh"
-nero_nfc_host_toolchain_activate
+# shellcheck source=helper-toolchain.sh
+source "${script_dir}/helper-toolchain.sh"
+nero_nfc_toolchain_activate
 cat >/etc/profile.d/nero-nfc-ci-path.sh <<EOF
 export PATH="${PATH}"
 export CC="${CC:-gcc}"
 export CXX="${CXX:-g++}"
+export LINT_KIT="${LINT_KIT}"
 EOF

@@ -15,18 +15,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Traced build for CodeQL: CMake host tests + userspace, then Arduino combined NFC firmware (\`make nfc\`).
+# Traced build for CodeQL: CMake host tests + userspace, then Arduino combined NFC
+# firmware (`make nfc`) for each supported board.
 #
 # Mirrors .github/scripts/ci-run-tests.sh for CMake (without coverage / sanitizers / scan-build).
 #
-# Requires: cmake ≥ 3.20, C++23 toolchain, ninja or make; network for googletest FetchContent (CMake).
-# With CODEQL_INCLUDE_ARDUINO=1 (default): arduino-cli and Arduino core via `make third-party-host-tools`,
-# and front-end-specific third-party NFC fetch (`make third-party-nfc-libs` prerequisite of `nfc`).
+# Requires: cmake ≥ 3.20, C++23 toolchain, ninja or make; network for googletest FetchContent (CMake)
+# and `make third-party-nfc-libs` (ST25R3916 + NFC-RFAL headers for host firmware tests).
+# With CODEQL_INCLUDE_FIRMWARE=1 (default): arduino-cli and per-board Arduino cores via
+# `make third-party-host-tools`, then traced `make nfc`.
 #
 # Environment:
 #   FIRMWARE_ROOT               Repo root (default: pwd)
 #   CODEQL_INSTALL_LINUX_DEPS   If 1 on Linux, run make/install-linux-deps.sh before CMake builds (default: 0).
-#   CODEQL_INCLUDE_ARDUINO      If 1 (default), run traced \`make nfc\` after CMake builds.
+#   CODEQL_INCLUDE_FIRMWARE     If 1 (default), run traced \`make nfc\` after CMake builds.
+#   CODEQL_FIRMWARE_TARGETS     Space-separated TARGET list (default: both boards).
 set -euo pipefail
 
 repo_root="${FIRMWARE_ROOT:-$(pwd)}"
@@ -37,7 +40,7 @@ fi
 
 if [[ "$(uname -s)" == "Linux" && ${CODEQL_INSTALL_LINUX_DEPS:-0} == "1" ]]; then
   export FIRMWARE_ROOT="${repo_root}"
-  INSTALL_DEPS=1 AUTO_INSTALL_LINUX_DEPS=1 \
+  INSTALL_DEPS=1 AUTO_INSTALL_LINUX_DEPS=1 INSTALL_LINT_DEPS=0 \
     bash "${repo_root}/make/install-linux-deps.sh"
 fi
 
@@ -52,6 +55,9 @@ if command -v ninja >/dev/null 2>&1; then
 fi
 
 jobs="$(bash "${repo_root}/make/cpu-jobs.sh")"
+
+# Host tests compile ST25 frontend TUs; headers live under third-party/.
+make -C "${repo_root}" third-party-nfc-libs
 
 cmake -S "${repo_root}/tests" -B "${build_dir_tests}" \
   -DCMAKE_BUILD_TYPE=Release \
@@ -69,16 +75,23 @@ cmake -S "${repo_root}/userspace" -B "${build_dir_userspace}" \
 
 cmake --build "${build_dir_userspace}" --parallel "${jobs}"
 
-if [[ ${CODEQL_INCLUDE_ARDUINO:-1} == "1" ]]; then
-  printf '\n── CodeQL traced Arduino firmware (make nfc, combined sketch) ──\n'
-  make -C "${repo_root}" third-party-host-tools third-party-nfc-libs
-  arduino_cli="$(bash "${repo_root}/make/resolve-arduino-cli.sh" "${repo_root}")"
-  arduino_cli_dir="$(dirname "${arduino_cli}")"
+if [[ ${CODEQL_INCLUDE_FIRMWARE:-1} == "1" ]]; then
+  printf '\n── CodeQL traced Arduino firmware (make nfc, both boards) ──\n'
   eval "$(bash "${repo_root}/make/export-arduino-isolated-env.sh" "${repo_root}")"
-  export PATH="${arduino_cli_dir}:${PATH}"
-  make -C "${repo_root}" nfc \
-    BUILD_DIR="${repo_root}/build" \
-    NFC_BUILD_DIR="${repo_root}/build/nfc-codeql"
+  # Isolate under build/nfc-codeql (FIRMWARE_BUILD_DIR = $(BUILD_DIR)/firmware/$(TARGET)/...).
+  # NFC_BUILD_DIR is not a Make variable — do not pass it.
+  # shellcheck disable=SC2086 # intentional word-split of space-separated TARGET list
+  for target in ${CODEQL_FIRMWARE_TARGETS:-arduino_uno_r4wifi nucleo_wba65ri}; do
+    printf '\n── CodeQL traced make nfc TARGET=%s ──\n' "${target}"
+    # Host tools must land before resolve-arduino-cli (fresh CI has no third-party/).
+    make -C "${repo_root}" third-party-host-tools TARGET="${target}"
+    arduino_cli="$(bash "${repo_root}/make/resolve-arduino-cli.sh" "${repo_root}")"
+    PATH="$(dirname "${arduino_cli}"):${PATH}"
+    export PATH
+    make -C "${repo_root}" nfc \
+      TARGET="${target}" \
+      BUILD_DIR="${repo_root}/build/nfc-codeql"
+  done
 fi
 
-printf '── CodeQL traced build complete (CMake + optional Arduino) ──\n'
+printf '── CodeQL traced build complete (CMake + optional firmware) ──\n'

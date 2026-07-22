@@ -144,6 +144,7 @@ The following external references apply.
 | ISO/IEC 7816-3 (ATR / historical bytes) | `[ISO7816-3]` | [ISO/IEC 7816-3:2006](https://www.iso.org/standard/38770.html) |
 | ISO/IEC 7816-4 (APDU / status words) | `[ISO7816-4]` | [ISO/IEC 7816-4:2020](https://www.iso.org/standard/77180.html) (SELECT / READ BINARY / UPDATE BINARY; Tables 5–6 SW1/SW2) |
 | ISO/IEC 7816-6 (application identifiers / RID) | `[ISO7816-6]` | [ISO/IEC 7816-6:2023](https://www.iso.org/standard/77181.html) |
+| ISO/IEC JTC 1/SC 17 IC manufacturer register | `[SC17-ICM]` | [SC 17 Standing Document 5 — Register of IC Manufacturers](https://www.aimglobal.org/wp-content/uploads/2022/04/ISO_IEC_JTC1_SC17_Standing_Document_5_Register_of_IC_Manufacturers.pdf) (UID manufacturer codes such as ST `02h`, NXP `04h`) |
 | PC/SC host model (Part 1) | `[PCSC-P1]` | [PC/SC Part 1 v2.01.01](https://pcscworkgroup.com/Download/Specifications/pcsc1_v2.01.01.pdf) (host `SCard*` API; reader selection) |
 | PC/SC contactless storage (Part 3) | `[PCSC-P3]` | [PC/SC Part 3 v2.01.09](https://pcscworkgroup.com/Download/Specifications/pcsc3_v2.01.09.pdf) (storage ATR, GET DATA, Type 2/4/5 tag access over PC/SC) |
 | NFC Forum tag operations | `[NDEF]` | [NFC Forum specifications](https://nfc-forum.org/build/specifications) |
@@ -157,7 +158,7 @@ The following external references apply.
 | NFC Forum Type 4 | `[T4T-ISO14443-4]` | [Type 4 Tag Specification](https://nfc-forum.org/build/specifications/type-4-tag-specification/) |
 | NXP NTAG424 DNA | `[T4T-ISO14443-4-NT4H424]` | [NT4H2421Gx datasheet](https://www.nxp.com/docs/en/data-sheet/NT4H2421Gx.pdf) (plain NDEF only; Secure Messaging not supported) |
 | ISO/IEC 15693 (Type 5 vicinity RF) | `[T5T-ISO15693]` | [ISO/IEC 15693-3:2026](https://www.iso.org/standard/90286.html) |
-| NFC Forum Type 5 | `[T5T-ISO15693]` | [Type 5 Tag Specification](https://nfc-forum.org/build/specifications/type-5-tag-specification/) |
+| NFC Forum Type 5 | `[T5T-NFCFORUM]` | [Type 5 Tag Specification](https://nfc-forum.org/build/specifications/type-5-tag-specification/) |
 | ST dynamic Type 5 tags | `[T5T-ISO15693-ST25DV]` | [ST25DV04KC/16KC/64KC datasheet](https://www.st.com/resource/en/datasheet/st25dv04kc.pdf) |
 | ST Type 5 tags | `[T5T-ISO15693-ST25TV]` | [ST25TV02KC datasheet](https://www.st.com/resource/en/datasheet/st25tv02kc.pdf) |
 | Wi‑Fi Simple Configuration (WSC) | `[WSC]` | [Wi‑Fi Protected Setup / WSC specification](https://www.wi-fi.org/file/wi-fi-protected-setup-specification) (`--wifi` credential TLV) |

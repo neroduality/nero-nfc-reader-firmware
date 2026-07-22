@@ -32,7 +32,7 @@ ARDUINO_CLI="$2"
 STAMP="$3"
 FORCE_EXTERNAL="$4"
 
-[[ -x "${ARDUINO_CLI}" ]] || die "arduino-cli missing at ${ARDUINO_CLI}"
+[[ -x ${ARDUINO_CLI} ]] || die "arduino-cli missing at ${ARDUINO_CLI}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ENSURE_CORE="${SCRIPT_DIR}/ensure-arduino-core.sh"
@@ -40,7 +40,7 @@ SYNC_BOARD="${REPO_ROOT}/scripts/stm32-sync-wba65-board.sh"
 PATCH_DIR="${REPO_ROOT}/patches/arduino/stm32/wba65"
 REPO_ARDUINO_USER_DIR="${REPO_ROOT}/third-party/arduino-user"
 ARDUINO_USER_DIR="${ARDUINO_USER_DIR:-${ARDUINO_DIRECTORIES_DATA:-${ARDUINO_DIRECTORIES_USER:-${REPO_ARDUINO_USER_DIR}}}}"
-if [[ "${ARDUINO_USER_DIR}" == "${REPO_ARDUINO_USER_DIR}" ]]; then
+if [[ ${ARDUINO_USER_DIR} == "${REPO_ARDUINO_USER_DIR}" ]]; then
   WBA65_STAMP="${REPO_ROOT}/third-party/.wba65-board-patch-version"
 else
   WBA65_STAMP="${ARDUINO_USER_DIR}/.wba65-board-patch-version"
@@ -51,7 +51,7 @@ CORE_VERSION="${WBA65_STM32_CORE_VERSION:-2.12.0}"
 BOARD_MANAGER_URLS="${WBA65_STM32_BOARD_MANAGER_URLS:-https://github.com/stm32duino/BoardManagerFiles/raw/main/package_stmicroelectronics_index.json}"
 
 patch_signature() {
-  if [[ -d "${PATCH_DIR}" ]]; then
+  if [[ -d ${PATCH_DIR} ]]; then
     sha256sum "${PATCH_DIR}"/* 2>/dev/null | sha256sum | awk '{print $1}'
   else
     echo "none"
@@ -66,13 +66,13 @@ BOARDS_TXT="${CORE_TREE}/boards.txt"
 want_wba65="${CORE_PACKAGE}@${CORE_VERSION}|wba65-board-patch|$(patch_signature)"
 
 wba65_board_ok() {
-  [[ -f "${BOARDS_TXT}" ]] && grep -q 'NUCLEO_WBA65RI' "${BOARDS_TXT}"
+  [[ -f ${BOARDS_TXT} ]] && grep -q 'NUCLEO_WBA65RI' "${BOARDS_TXT}"
 }
 
-if [[ "${FORCE_EXTERNAL}" != "1" ]] &&
-   [[ -f "${WBA65_STAMP}" ]] &&
-   [[ "$(cat "${WBA65_STAMP}")" == "${want_wba65}" ]] &&
-   wba65_board_ok; then
+if [[ ${FORCE_EXTERNAL} != "1" ]] &&
+  [[ -f ${WBA65_STAMP} ]] &&
+  [[ "$(cat "${WBA65_STAMP}")" == "${want_wba65}" ]] &&
+  wba65_board_ok; then
   bash "${ENSURE_CORE}" "${REPO_ROOT}" "${ARDUINO_CLI}" "${STAMP}" \
     "${CORE_PACKAGE}" "${CORE_VERSION}" "${BOARD_MANAGER_URLS}" \
     "${FORCE_EXTERNAL}" "${ARDUINO_USER_DIR}"

@@ -30,7 +30,7 @@
 #   Fetch:    tar, unzip, coreutils (sha256sum)
 #   Test:     lcov ≥ 2.0 / genhtml, valgrind, libgtest-dev, libasan, libubsan
 #   Analysis: clang-tools (scan-build), clang-tidy (≥21.0.0), clang-format (≥20.0.0), cppcheck (≥2.19.1), perf
-#   Lint:    shellcheck, shfmt, codespell (≥2.4.0), markdownlint-cli (≥0.48.0; Node.js ≥20)
+#   Lint:    shellcheck, shfmt, codespell (≥2.4.0), markdownlint-cli (≥0.48.0; Node.js ≥20), uv (ruff/mypy via uvx)
 #
 # Environment (all optional):
 #   AUTO_INSTALL_LINUX_DEPS=0   skip this script entirely (Makefile default via INSTALL_DEPS=0)
@@ -70,20 +70,27 @@ fi
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 : "${FIRMWARE_ROOT:=$(cd "${SCRIPT_DIR}/.." && pwd)}"
 
-# shellcheck source=../.github/linters/helper-cppcheck.sh
-source "${SCRIPT_DIR}/../.github/linters/helper-cppcheck.sh"
-# shellcheck source=../.github/linters/helper-codespell.sh
-source "${SCRIPT_DIR}/../.github/linters/helper-codespell.sh"
-# shellcheck source=../.github/linters/helper-markdownlint.sh
-source "${SCRIPT_DIR}/../.github/linters/helper-markdownlint.sh"
-# shellcheck source=../.github/linters/helper-clang-tidy.sh
-source "${SCRIPT_DIR}/../.github/linters/helper-clang-tidy.sh"
+# Resolve the org lint kit (neroduality/.github → lint-c-cpp); its toolchain
+# helpers replace the retired .github/linters/helper-*.sh install helpers.
+resolve_lint_kit_root() {
+  local candidate="${LINT_KIT:-${FIRMWARE_ROOT}/.lint-kit-org/lint-c-cpp}"
+  if [[ -z ${candidate} ]]; then
+    echo "ERROR: INSTALL_LINT_DEPS=1 requires LINT_KIT" >&2
+    echo "fix: make deps LINT_KIT=/path/to/lint-c-cpp" >&2
+    exit 1
+  fi
+  candidate="$(cd "${candidate}" && pwd)" || {
+    echo "ERROR: lint kit not found: ${candidate}" >&2
+    exit 1
+  }
+  printf '%s\n' "${candidate}"
+}
 
 NERO_NFC_GXX_MIN_VERSION=15.0
 NERO_NFC_LCOV_MIN_VERSION=2.0
 
-# shellcheck source=../.github/scripts/helper-host-toolchain.sh
-source "${SCRIPT_DIR}/../.github/scripts/helper-host-toolchain.sh"
+# shellcheck source=../.github/scripts/helper-toolchain.sh
+source "${SCRIPT_DIR}/../.github/scripts/helper-toolchain.sh"
 
 # ---------------------------------------------------------------------------
 # Utility
@@ -107,6 +114,95 @@ have_fuser() {
   [[ -x /usr/sbin/fuser ]] && return 0
   [[ -x /sbin/fuser ]] && return 0
   return 1
+}
+
+python3_yaml_ok() {
+  have python3 && python3 -c 'import yaml' 2>/dev/null
+}
+
+bootstrap_python_for_lint_tooling() {
+  python3_yaml_ok && return 0
+  echo "── install-linux-deps: bootstrap python3 for lint kit tool-versions ──" >&2
+  if have apt-get; then
+    export DEBIAN_FRONTEND=noninteractive
+    priv apt-get update -qq
+    priv apt-get install -y --no-install-recommends python3 python3-yaml python3-venv
+  elif have dnf; then
+    priv dnf install -y python3 python3-pyyaml
+  elif have microdnf; then
+    priv microdnf install -y python3 python3-pyyaml
+  elif have yum; then
+    priv yum install -y python3 python3-pyyaml
+  elif have zypper; then
+    priv zypper install -y python3 python3-PyYAML
+  elif have pacman; then
+    priv pacman -Sy --noconfirm python python-yaml
+  elif have apk; then
+    priv apk add python3 py3-yaml
+  else
+    echo "ERROR: python3 + PyYAML required for lint kit tooling" >&2
+    return 1
+  fi
+  python3_yaml_ok
+}
+
+LINT_KIT_TOOLCHAINS_LOADED=0
+
+load_lint_kit_toolchains() {
+  if [[ ${LINT_KIT_TOOLCHAINS_LOADED} -eq 1 ]]; then
+    return 0
+  fi
+  if ! lint_deps_enabled; then
+    return 0
+  fi
+  bootstrap_python_for_lint_tooling || {
+    echo "ERROR: python3 + PyYAML required before loading lint kit toolchains" >&2
+    exit 1
+  }
+  : "${LINT_KIT:=$(resolve_lint_kit_root)}"
+  export LINT_KIT
+  # shellcheck source=../../.github/lint-c-cpp/lib/helpers/toolchain/cppcheck_toolchain.sh
+  source "${LINT_KIT}/lib/helpers/toolchain/cppcheck_toolchain.sh"
+  # shellcheck source=../../.github/lint-c-cpp/lib/helpers/toolchain/codespell.sh
+  source "${LINT_KIT}/lib/helpers/toolchain/codespell.sh"
+  # shellcheck source=../../.github/lint-c-cpp/lib/helpers/toolchain/markdownlint_toolchain.sh
+  source "${LINT_KIT}/lib/helpers/toolchain/markdownlint_toolchain.sh"
+  # shellcheck source=../../.github/lint-c-cpp/lib/helpers/toolchain/clang_toolchain.sh
+  source "${LINT_KIT}/lib/helpers/toolchain/clang_toolchain.sh"
+
+  nero_nfc_cppcheck_version_ge() { lint_kit_cppcheck_version_ge "$@"; }
+  nero_nfc_cppcheck_version_raw() { lint_kit_cppcheck_version_raw; }
+  nero_nfc_cppcheck_hint() { lint_kit_cppcheck_hint; }
+  nero_nfc_ensure_cppcheck() { lint_kit_ensure_cppcheck; }
+  nero_nfc_codespell_supports_multiline_regex() { lint_kit_codespell_supports_multiline_regex; }
+  nero_nfc_codespell_hint() { lint_kit_codespell_hint; }
+  nero_nfc_ensure_codespell() { lint_kit_ensure_codespell; }
+  nero_nfc_markdownlint_version_ge() { lint_kit_markdownlint_version_ge "$@"; }
+  nero_nfc_markdownlint_version_raw() { lint_kit_markdownlint_version_raw; }
+  nero_nfc_markdownlint_hint() { lint_kit_markdownlint_hint; }
+  nero_nfc_ensure_markdownlint() { lint_kit_ensure_markdownlint; }
+  nero_nfc_prepend_npm_global_bin() { lint_kit_prepend_npm_global_bin; }
+  nero_nfc_node_ok() { lint_kit_node_ok; }
+  nero_nfc_node_version_major() { lint_kit_node_version_major; }
+  nero_nfc_node_hint() { lint_kit_node_hint; }
+  nero_nfc_ensure_node_symlink() { lint_kit_ensure_node_symlink; }
+  nero_nfc_ensure_clang_tidy() { lint_kit_ensure_clang_tidy; }
+  nero_nfc_ensure_clang_format() { lint_kit_ensure_clang_format; }
+  nero_nfc_ensure_scan_build() { lint_kit_ensure_scan_build; }
+  nero_nfc_clang_tidy_version_raw() { lint_kit_clang_tidy_version_raw; }
+  nero_nfc_clang_format_version_raw() { lint_kit_clang_format_version_raw; }
+  nero_nfc_clang_tidy_hint() { lint_kit_clang_tidy_hint; }
+  nero_nfc_clang_format_hint() { lint_kit_clang_format_hint; }
+  nero_nfc_scan_build_hint() { lint_kit_scan_build_hint; }
+  NERO_NFC_CPPCHECK_MIN_VERSION="${LINT_KIT_CPPCHECK_MIN_VERSION}"
+  NERO_NFC_CODESPELL_MIN_VERSION="${LINT_KIT_CODESPELL_MIN_VERSION}"
+  NERO_NFC_MARKDOWNLINT_MIN_VERSION="${LINT_KIT_MARKDOWNLINT_MIN_VERSION}"
+  NERO_NFC_NODE_MIN_MAJOR="${LINT_KIT_NODE_MIN_MAJOR}"
+  NERO_NFC_CLANG_TIDY_MIN_VERSION="${LINT_KIT_CLANG_TIDY_MIN_VERSION}"
+  NERO_NFC_CLANG_FORMAT_MIN_VERSION="${LINT_KIT_CLANG_FORMAT_MIN_VERSION}"
+  NERO_NFC_SCAN_BUILD_MIN_VERSION="${LINT_KIT_SCAN_BUILD_MIN_VERSION}"
+  NERO_NFC_CLANG_TIDY_PREFERRED_MAJOR="${LINT_KIT_CLANG_TIDY_PREFERRED_MAJOR}"
+  LINT_KIT_TOOLCHAINS_LOADED=1
 }
 
 version_normalize() {
@@ -134,7 +230,7 @@ cmake_ok() {
 }
 
 gxx_ok() {
-  nero_nfc_host_toolchain_ok
+  nero_nfc_toolchain_ok
 }
 
 apt_install_gcc15() {
@@ -144,8 +240,25 @@ apt_install_gcc15() {
     return 0
   fi
   apt_is_ubuntu || return 1
-  priv apt-get install -y --no-install-recommends software-properties-common ca-certificates
-  priv add-apt-repository -y -u ppa:ubuntu-toolchain-r/test
+  local codename keyring sources
+  codename="$(apt_codename)" || return 1
+  keyring="/usr/share/keyrings/ubuntu-toolchain-r-test.gpg"
+  sources="/etc/apt/sources.list.d/ubuntu-toolchain-r-test.sources"
+  priv apt-get install -y --no-install-recommends ca-certificates gnupg
+  if [[ ! -f ${keyring} ]]; then
+    curl -fsSL --retry 3 \
+      'https://keyserver.ubuntu.com/pks/lookup?op=get&search=0xC8EC952E2A0E1FBDC5090F6A2C277A0A352154E5' |
+      priv gpg --dearmor -o "${keyring}"
+  fi
+  if [[ ! -f ${sources} ]]; then
+    priv tee "${sources}" >/dev/null <<EOF
+Types: deb
+URIs: http://ppa.launchpad.net/ubuntu-toolchain-r/test/ubuntu
+Suites: ${codename}
+Components: main
+Signed-By: ${keyring}
+EOF
+  fi
   priv apt-get update -qq
   priv apt-get install -y g++-15 gcc-15
 }
@@ -171,12 +284,7 @@ clang_format_ok() {
 
 fetch_tool_ok() { have curl || have wget; }
 scan_build_ok() {
-  local v
-  if have scan-build; then return 0; fi
-  for v in 21 20 19 18 17 16; do
-    have "scan-build-${v}" && return 0
-  done
-  return 1
+  nero_nfc_ensure_scan_build
 }
 
 openocd_build_tools_ok() {
@@ -184,6 +292,7 @@ openocd_build_tools_ok() {
     have autoreconf &&
     have automake &&
     (have libtool || have libtoolize) &&
+    have patch &&
     pkg-config --exists libusb-1.0
 }
 
@@ -207,6 +316,8 @@ lint_cli_ok() {
   have shellcheck &&
     have shfmt &&
     node_ok &&
+    have uv &&
+    have uvx &&
     codespell_ok &&
     markdownlint_ok
 }
@@ -227,7 +338,8 @@ build_packages_ok() {
     lcov_ok &&
     have genhtml &&
     have valgrind &&
-    have python3
+    have python3 &&
+    openocd_build_tools_ok
 }
 
 lint_packages_ok() {
@@ -237,10 +349,11 @@ lint_packages_ok() {
     have cppcheck &&
     cppcheck_ok &&
     have perf &&
-    openocd_build_tools_ok &&
     have shellcheck &&
     have shfmt &&
     node_ok &&
+    have uv &&
+    have uvx &&
     codespell_ok &&
     markdownlint_ok
 }
@@ -282,17 +395,61 @@ install_codespell() {
   return 1
 }
 
+# uv provides `uvx`, used by the lint kit's format job to run ruff + mypy.
+# Root installs go to /usr/local/bin so they remain on PATH after CI drops from
+# root to the bind-mount host user (HOME becomes /tmp/...; ~/.local/bin is lost).
+install_uv() {
+  if have uv && have uvx; then
+    return 0
+  fi
+  if ! fetch_tool_ok; then
+    printf 'warning: need curl or wget to install uv (ruff/mypy via uvx)\n' >&2
+    return 1
+  fi
+  local install_dir
+  if [[ "$(id -u)" -eq 0 ]]; then
+    install_dir=/usr/local/bin
+  else
+    install_dir="${HOME}/.local/bin"
+  fi
+  echo "── install uv (astral-sh) — provides uvx for ruff/mypy → ${install_dir} ──" >&2
+  if have curl; then
+    curl -LsSf https://astral.sh/uv/install.sh |
+      env UV_INSTALL_DIR="${install_dir}" UV_NO_MODIFY_PATH=1 sh
+  else
+    wget -qO- https://astral.sh/uv/install.sh |
+      env UV_INSTALL_DIR="${install_dir}" UV_NO_MODIFY_PATH=1 sh
+  fi
+  case ":${PATH}:" in
+    *":${install_dir}:"*) : ;;
+    *)
+      PATH="${install_dir}:${PATH}"
+      export PATH
+      ;;
+  esac
+  have uv && have uvx
+}
+
 install_markdownlint() {
   if nero_nfc_ensure_markdownlint; then
     return 0
   fi
+  install_node || return 1
   if ! have npm; then
-    printf 'warning: markdownlint not installed (install nodejs npm, then re-run install-linux-deps.sh)\n' >&2
-  else
-    printf 'warning: markdownlint >= %s required; found %s\n' \
-      "$NERO_NFC_MARKDOWNLINT_MIN_VERSION" \
-      "$(nero_nfc_markdownlint_version_raw 2>/dev/null || echo unknown)" >&2
+    printf 'warning: npm not available for markdownlint-cli install\n' >&2
+    nero_nfc_markdownlint_hint
+    return 1
   fi
+  nero_nfc_ensure_node_symlink || true
+  echo "── npm: markdownlint-cli (>= ${NERO_NFC_MARKDOWNLINT_MIN_VERSION}) ──" >&2
+  priv npm install -g "markdownlint-cli@>=${NERO_NFC_MARKDOWNLINT_MIN_VERSION}"
+  nero_nfc_prepend_npm_global_bin
+  if nero_nfc_ensure_markdownlint; then
+    return 0
+  fi
+  printf 'warning: markdownlint >= %s required; found %s\n' \
+    "$NERO_NFC_MARKDOWNLINT_MIN_VERSION" \
+    "$(nero_nfc_markdownlint_version_raw 2>/dev/null || echo unknown)" >&2
   nero_nfc_markdownlint_hint
   return 1
 }
@@ -320,16 +477,16 @@ install_node() {
 }
 
 install_gxx() {
-  if nero_nfc_host_toolchain_system_ok; then
+  if nero_nfc_toolchain_system_ok; then
     echo "── host toolchain: system GCC ${NERO_NFC_GXX_MIN_MAJOR}+ OK ──"
     return 0
   fi
   if have apt-get; then
     priv apt-get update -qq
     apt_install_gcc15 || return 1
-    nero_nfc_host_toolchain_ensure_symlinks || return 1
-    [[ -n ${GITHUB_PATH:-} ]] && printf '%s\n' "${NERO_NFC_HOST_TOOLCHAIN_PREFIX}" >>"${GITHUB_PATH}"
-    nero_nfc_host_toolchain_activate || return 1
+    nero_nfc_toolchain_ensure_symlinks || return 1
+    [[ -n ${GITHUB_PATH:-} ]] && printf '%s\n' "${NERO_NFC_TOOLCHAIN_PREFIX}" >>"${GITHUB_PATH}"
+    nero_nfc_toolchain_activate || return 1
     return 0
   fi
   if have dnf || have microdnf || have yum; then
@@ -347,7 +504,7 @@ install_gxx() {
   elif have apk; then
     priv apk add g++
   fi
-  nero_nfc_host_toolchain_ok || {
+  nero_nfc_toolchain_ok || {
     printf 'warning: g++ >= %s required\n' "${NERO_NFC_GXX_MIN_VERSION}" >&2
     return 1
   }
@@ -561,39 +718,19 @@ install_clang_tidy() {
   return 1
 }
 
-install_github_actions_llvm_shims() {
-  local install_dir tidy_bin format_bin run_bin
-
-  [[ ${GITHUB_ACTIONS:-} == "true" ]] || return 0
-
-  install_dir="/usr/local/bin"
-  tidy_bin="$(nero_nfc_find_clang_tidy)" || return 1
-  format_bin="$(nero_nfc_find_clang_format)" || return 1
-
-  echo "── GitHub Actions: LLVM tool shims in ${install_dir} ──" >&2
-  priv mkdir -p "${install_dir}"
-  if [[ ${tidy_bin} != "${install_dir}/clang-tidy" ]]; then
-    priv ln -sf "${tidy_bin}" "${install_dir}/clang-tidy"
-  fi
-  if [[ ${format_bin} != "${install_dir}/clang-format" ]]; then
-    priv ln -sf "${format_bin}" "${install_dir}/clang-format"
-  fi
-  if run_bin="$(nero_nfc_find_run_clang_tidy "${tidy_bin}")"; then
-    if [[ ${run_bin} != "${install_dir}/run-clang-tidy" ]]; then
-      priv ln -sf "${run_bin}" "${install_dir}/run-clang-tidy"
-    fi
-  fi
-
-  if [[ -n ${GITHUB_PATH:-} ]] &&
-    { [[ ! -f ${GITHUB_PATH} ]] || ! grep -Fxq "${install_dir}" "${GITHUB_PATH}" 2>/dev/null; }; then
-    printf '%s\n' "${install_dir}" >>"${GITHUB_PATH}"
-  fi
+install_llvm_tool_shims() {
+  echo "── LLVM tool shims (clang-tidy/clang-format/scan-build/run-clang-tidy) ──" >&2
+  nero_nfc_ensure_clang_tidy &&
+    nero_nfc_ensure_clang_format &&
+    nero_nfc_ensure_scan_build
 }
+
+load_lint_kit_toolchains
 
 if system_packages_ok; then
   if lint_deps_enabled; then
-    install_github_actions_llvm_shims || {
-      echo "ERROR: failed to install GitHub Actions LLVM tool shims." >&2
+    install_llvm_tool_shims || {
+      echo "ERROR: failed to install LLVM tool shims." >&2
       exit 1
     }
   fi
@@ -631,9 +768,10 @@ install_packages() {
         echo "ERROR: no perf package found (tried linux-perf, perf, linux-tools-generic)." >&2
         return 1
       fi
+      # libtool-bin: Debian splits /usr/bin/libtool out of the libtool package.
       priv apt-get install -y \
         cmake ninja-build g++ make git pkg-config \
-        autoconf automake libtool libusb-1.0-0-dev libpcsclite-dev \
+        autoconf automake libtool libtool-bin patch libusb-1.0-0-dev libpcsclite-dev \
         curl ca-certificates \
         util-linux psmisc procps bash tar unzip coreutils \
         lcov valgrind libgtest-dev \
@@ -644,6 +782,7 @@ install_packages() {
       echo "── apt-get: build + unit-test dev tools ──" >&2
       priv apt-get install -y \
         cmake ninja-build g++ make git pkg-config \
+        autoconf automake libtool libtool-bin patch libusb-1.0-0-dev \
         libpcsclite-dev curl ca-certificates \
         util-linux psmisc procps bash tar unzip coreutils \
         lcov valgrind libgtest-dev python3
@@ -660,7 +799,7 @@ install_packages() {
       echo "── dnf: build + lint dev tools ──" >&2
       priv dnf install -y \
         cmake ninja-build gcc-c++ make git pkgconf-pkg-config \
-        autoconf automake libtool libusb1-devel pcsc-lite-devel \
+        autoconf automake libtool patch libusb1-devel pcsc-lite-devel \
         curl ca-certificates \
         util-linux psmisc procps-ng bash tar unzip coreutils \
         lcov valgrind gtest-devel libasan libubsan \
@@ -670,6 +809,7 @@ install_packages() {
       echo "── dnf: build + unit-test dev tools ──" >&2
       priv dnf install -y \
         cmake ninja-build gcc-c++ make git pkgconf-pkg-config \
+        autoconf automake libtool patch libusb1-devel \
         pcsc-lite-devel curl ca-certificates \
         util-linux psmisc procps-ng bash tar unzip coreutils \
         lcov valgrind gtest-devel libasan libubsan python3
@@ -678,7 +818,7 @@ install_packages() {
     echo "── microdnf: all dev tools ──" >&2
     priv microdnf install -y \
       cmake ninja-build gcc-c++ make git pkgconf-pkg-config \
-      autoconf automake libtool libusb1-devel \
+      autoconf automake libtool patch libusb1-devel \
       curl ca-certificates \
       util-linux psmisc procps-ng bash tar unzip coreutils \
       lcov valgrind gtest-devel libasan libubsan \
@@ -687,7 +827,7 @@ install_packages() {
     echo "── yum: all dev tools ──" >&2
     priv yum install -y \
       cmake ninja-build gcc-c++ make git pkgconfig \
-      autoconf automake libtool libusb1-devel \
+      autoconf automake libtool patch libusb1-devel \
       curl ca-certificates \
       util-linux psmisc procps-ng bash tar unzip coreutils \
       lcov valgrind gtest-devel libasan libubsan \
@@ -697,7 +837,7 @@ install_packages() {
     priv zypper refresh
     priv zypper install -y \
       cmake ninja gcc-c++ make git pkg-config \
-      autoconf automake libtool libusb-1_0-devel \
+      autoconf automake libtool patch libusb-1_0-devel \
       curl ca-certificates \
       util-linux psmisc procps bash tar unzip coreutils \
       lcov valgrind gtest clang-tools clang clang-format cppcheck perf
@@ -705,7 +845,7 @@ install_packages() {
     echo "── pacman: all dev tools ──" >&2
     priv pacman -Sy --noconfirm \
       cmake ninja gcc make git pkgconf \
-      autoconf automake libtool libusb \
+      autoconf automake libtool patch libusb \
       curl ca-certificates \
       util-linux psmisc procps-ng bash tar unzip coreutils \
       lcov valgrind gtest clang llvm clang-format cppcheck perf
@@ -713,13 +853,13 @@ install_packages() {
     echo "── apk: all dev tools ──" >&2
     priv apk add \
       cmake ninja g++ make git pkgconf \
-      autoconf automake libtool libusb-dev \
+      autoconf automake libtool patch libusb-dev \
       curl ca-certificates \
       util-linux psmisc procps bash tar unzip coreutils \
       lcov valgrind gtest-dev clang clang-extra-tools clang-format cppcheck || true
   else
     echo "ERROR: No supported package manager (apt-get, dnf, microdnf, yum, zypper, pacman, apk)." >&2
-    echo "Install manually: cmake ninja g++ make git pkg-config autoconf automake libtool libusb-1.0 curl ca-certificates util-linux psmisc procps bash" >&2
+    echo "Install manually: cmake ninja g++ make git pkg-config autoconf automake libtool patch libusb-1.0 curl ca-certificates util-linux psmisc procps bash" >&2
     echo "  tar unzip coreutils lcov valgrind clang-tools clang-tidy clang-format cppcheck perf libgtest-dev" >&2
     return 1
   fi
@@ -738,7 +878,7 @@ install_gxx || {
   echo "ERROR: g++ ≥ ${NERO_NFC_GXX_MIN_VERSION} required after install." >&2
   exit 1
 }
-nero_nfc_host_toolchain_verify
+nero_nfc_toolchain_verify
 fetch_tool_ok || {
   echo "ERROR: curl or wget required after install." >&2
   exit 1
@@ -787,9 +927,13 @@ have valgrind || {
   echo "ERROR: valgrind required after install." >&2
   exit 1
 }
+openocd_build_tools_ok || {
+  echo "ERROR: autoconf/automake/libtool/patch/libusb-1.0 required after install (WBA65 OpenOCD build)." >&2
+  exit 1
+}
 if lint_deps_enabled; then
   scan_build_ok || {
-    echo "ERROR: scan-build required after install (clang-tools package)." >&2
+    echo "ERROR: scan-build >= ${NERO_NFC_SCAN_BUILD_MIN_VERSION} required after install." >&2
     exit 1
   }
   install_clang_tidy || {
@@ -800,8 +944,8 @@ if lint_deps_enabled; then
     echo "ERROR: clang-format >= ${NERO_NFC_CLANG_FORMAT_MIN_VERSION} required after install." >&2
     exit 1
   }
-  install_github_actions_llvm_shims || {
-    echo "ERROR: failed to install GitHub Actions LLVM tool shims." >&2
+  install_llvm_tool_shims || {
+    echo "ERROR: failed to install LLVM tool shims." >&2
     exit 1
   }
   have cppcheck || {
@@ -824,6 +968,10 @@ if lint_deps_enabled; then
     echo "ERROR: codespell >= ${NERO_NFC_CODESPELL_MIN_VERSION} required after install." >&2
     exit 1
   }
+  install_uv || {
+    echo "ERROR: uv required after install (provides uvx for ruff/mypy)." >&2
+    exit 1
+  }
   install_node || {
     echo "ERROR: Node.js >= ${NERO_NFC_NODE_MIN_MAJOR} required after install." >&2
     exit 1
@@ -834,10 +982,6 @@ if lint_deps_enabled; then
   }
   have perf || {
     echo "ERROR: perf required after install." >&2
-    exit 1
-  }
-  openocd_build_tools_ok || {
-    echo "ERROR: autoconf/automake/libtool/libusb-1.0 required after install (WBA65 OpenOCD build)." >&2
     exit 1
   }
 fi

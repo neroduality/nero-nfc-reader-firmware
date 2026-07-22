@@ -30,13 +30,13 @@ BOARD_MANAGER_URLS="${6:-}"
 FORCE_EXTERNAL="${7:-}"
 ARDUINO_USER_DIR="${8:-${ARDUINO_DIRECTORIES_DATA:-${ARDUINO_DIRECTORIES_USER:-${SETUP_ROOT}/third-party/arduino-user}}}"
 
-[[ -x "${CLI_BIN}" ]] || {
+[[ -x ${CLI_BIN} ]] || {
   echo "ERROR: arduino-cli missing at ${CLI_BIN}" >&2
   exit 1
 }
 
 case "${ARDUINO_USER_DIR}" in
-  "${HOME}/.arduino15"|"${HOME}/.arduino15"/*)
+  "${HOME}/.arduino15" | "${HOME}/.arduino15"/*)
     echo "ERROR: refusing system Arduino data dir ${ARDUINO_USER_DIR}" >&2
     echo "  Board Manager cores must install under ${SETUP_ROOT}/third-party/arduino-user" >&2
     exit 1
@@ -62,28 +62,28 @@ core_ok() {
   local v tree
   tree="$(core_tree)"
   v="$("${CLI_BIN}" core list 2>/dev/null | awk -v pkg="${CORE_PACKAGE}" '$1 == pkg { print $2; exit }')"
-  [[ "${v}" == "${CORE_VERSION}" ]] && [[ -d "${tree}" ]]
+  [[ ${v} == "${CORE_VERSION}" ]] && [[ -d ${tree} ]]
 }
 
 do_core() {
-  if [[ "${FORCE_EXTERNAL}" == "1" ]]; then
+  if [[ ${FORCE_EXTERNAL} == "1" ]]; then
     rm -f "${STAMP}"
   fi
 
-  if [[ -f "${STAMP}" ]] && [[ "$(cat "${STAMP}")" == "${want}" ]] && core_ok; then
+  if [[ -f ${STAMP} ]] && [[ "$(cat "${STAMP}")" == "${want}" ]] && core_ok; then
     echo "── Arduino core ${CORE_PACKAGE}@${CORE_VERSION} already present (${ARDUINO_USER_DIR}) ──"
     touch "${STAMP}"
     return 0
   fi
 
-  if [[ -f "${STAMP}" ]] && ! core_ok; then
+  if [[ -f ${STAMP} ]] && ! core_ok; then
     echo "── stale Arduino core stamp; refreshing ──" >&2
     rm -f "${STAMP}"
   fi
 
   mkdir -p "${SETUP_ROOT}/third-party"
   arduino_url_args=()
-  if [[ -n "${BOARD_MANAGER_URLS}" ]]; then
+  if [[ -n ${BOARD_MANAGER_URLS} ]]; then
     arduino_url_args=(--additional-urls "${BOARD_MANAGER_URLS}")
   fi
 
@@ -105,7 +105,10 @@ do_core() {
 }
 
 if command -v flock >/dev/null 2>&1; then
-  ( flock 200 || exit 1; do_core ) 200>"${lock}"
+  (
+    flock 200 || exit 1
+    do_core
+  ) 200>"${lock}"
 else
   do_core
 fi

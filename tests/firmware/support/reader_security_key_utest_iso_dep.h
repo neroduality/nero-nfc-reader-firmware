@@ -23,12 +23,13 @@
 extern "C" {
 #endif
 
-typedef int (*reader_security_key_utest_iso_dep_transceive_fn)(const uint8_t *tx, uint16_t tx_len,
-                                                         uint8_t *rx, uint16_t rx_max,
-                                                         bool with_crc, uint16_t timeout_ms);
+typedef int (*reader_security_key_utest_iso_dep_transceive_fn_t)(
+    const uint8_t* tx, uint16_t tx_len, uint8_t* rx, uint16_t rx_max,
+    bool with_crc, uint16_t timeout_ms);
 
 void reader_security_key_utest_reset_iso_dep(void);
-void reader_security_key_utest_set_iso_dep_transceive(reader_security_key_utest_iso_dep_transceive_fn fn);
+void reader_security_key_utest_set_iso_dep_transceive(
+    reader_security_key_utest_iso_dep_transceive_fn_t fn);
 
 #ifdef __cplusplus
 }

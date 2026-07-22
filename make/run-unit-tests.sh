@@ -58,7 +58,7 @@ profile_file="${build_dir}/.nero_unit_test_profile"
 sanitize_address_defaulted=0
 sanitize_undefined_defaulted=0
 debug_sanitizers_default=1
-if [[ "${COVERAGE:-0}" == "1" || "${VALGRIND:-0}" == "1" ]]; then
+if [[ ${COVERAGE:-0} == "1" || ${VALGRIND:-0} == "1" ]]; then
   SANITIZE_ADDRESS=0
   SANITIZE_UNDEFINED=0
   SANITIZE_THREAD=0
@@ -77,20 +77,20 @@ else
   fi
 fi
 
-if [[ "${SANITIZE_THREAD:-0}" == "1" ]]; then
+if [[ ${SANITIZE_THREAD:-0} == "1" ]]; then
   SANITIZE_ADDRESS=0
   SANITIZE_UNDEFINED=0
   debug_sanitizers_default=0
 fi
 
-if [[ "${COVERAGE:-0}" == "1" ]]; then
+if [[ ${COVERAGE:-0} == "1" ]]; then
   build_type="Debug"
-elif [[ -n "${NERO_TESTS_BUILD_TYPE:-}" ]]; then
+elif [[ -n ${NERO_TESTS_BUILD_TYPE:-} ]]; then
   build_type="${NERO_TESTS_BUILD_TYPE}"
   debug_sanitizers_default=0
-elif [[ "${sanitize_address_defaulted}" == "1" && "${sanitize_undefined_defaulted}" == "1" ]]; then
+elif [[ ${sanitize_address_defaulted} == "1" && ${sanitize_undefined_defaulted} == "1" ]]; then
   build_type="Debug"
-elif [[ "${SANITIZE_ADDRESS:-0}" == "1" || "${SANITIZE_UNDEFINED:-0}" == "1" || "${SANITIZE_THREAD:-0}" == "1" ]]; then
+elif [[ ${SANITIZE_ADDRESS:-0} == "1" || ${SANITIZE_UNDEFINED:-0} == "1" || ${SANITIZE_THREAD:-0} == "1" ]]; then
   build_type="RelWithDebInfo"
 else
   build_type="Debug"
@@ -134,6 +134,7 @@ Environment (optional):
                           Non-fatal if perf is missing or lacks permission (try: sysctl kernel.perf_event_paranoid).
   NERO_USE_SYSTEM_GTEST=1 Pass -DNERO_USE_SYSTEM_GTEST=ON (requires distro libgtest-dev / gtest-devel).
 
+Fetches make third-party-nfc-libs (ST25R3916 + NFC-RFAL headers) before CMake.
 On Linux, this script runs make/install-linux-deps.sh only when
 AUTO_INSTALL_LINUX_DEPS=1 (or INSTALL_DEPS=1). Makefile targets default to
 INSTALL_DEPS=0; use `make deps` or `INSTALL_DEPS=1 make test` on a fresh host.
@@ -152,8 +153,8 @@ EOF
 }
 
 nero_check_line_coverage_threshold() {
-  [[ -n "${COVERAGE_MIN_LINES:-}" ]] || return 0
-  if ! [[ "${COVERAGE_MIN_LINES}" =~ ^[0-9]+([.][0-9]+)?$ ]]; then
+  [[ -n ${COVERAGE_MIN_LINES:-} ]] || return 0
+  if ! [[ ${COVERAGE_MIN_LINES} =~ ^[0-9]+([.][0-9]+)?$ ]]; then
     printf 'error: COVERAGE_MIN_LINES must be a numeric percentage, got: %s\n' "${COVERAGE_MIN_LINES}" >&2
     exit 2
   fi
@@ -163,7 +164,7 @@ nero_check_line_coverage_threshold() {
     LC_ALL=C lcov --summary "${lcov_info}" 2>/dev/null |
       awk -F'[:%]' '/lines\.*:/ { gsub(/[[:space:]]/, "", $2); print $2; exit }'
   )"
-  if [[ -z "${actual}" ]]; then
+  if [[ -z ${actual} ]]; then
     printf 'error: unable to read line coverage from %s\n' "${lcov_info}" >&2
     exit 1
   fi
@@ -192,7 +193,7 @@ nero_wipe_gcda_profiles() {
   find "${build_dir}" -name '*.gcda' -delete 2>/dev/null || true
 }
 
-if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+if [[ ${1:-} == "-h" || ${1:-} == "--help" ]]; then
   usage
   exit 0
 fi
@@ -209,42 +210,42 @@ cmake_args=(
   -G "${generator}"
 )
 
-if [[ "${COVERAGE:-0}" == "1" ]]; then
+if [[ ${COVERAGE:-0} == "1" ]]; then
   cmake_args+=(-DNERO_ENABLE_COVERAGE=ON)
 else
   cmake_args+=(-DNERO_ENABLE_COVERAGE=OFF)
 fi
 
-if [[ "${NERO_USE_SYSTEM_GTEST:-0}" == "1" ]]; then
+if [[ ${NERO_USE_SYSTEM_GTEST:-0} == "1" ]]; then
   cmake_args+=(-DNERO_USE_SYSTEM_GTEST=ON)
 else
   cmake_args+=(-DNERO_USE_SYSTEM_GTEST=OFF)
 fi
 
-if [[ "${SANITIZE_ADDRESS:-0}" == "1" ]]; then
+if [[ ${SANITIZE_ADDRESS:-0} == "1" ]]; then
   cmake_args+=(-DNERO_ENABLE_SANITIZER_ADDRESS=ON)
 else
   cmake_args+=(-DNERO_ENABLE_SANITIZER_ADDRESS=OFF)
 fi
-if [[ "${SANITIZE_UNDEFINED:-0}" == "1" ]]; then
+if [[ ${SANITIZE_UNDEFINED:-0} == "1" ]]; then
   cmake_args+=(-DNERO_ENABLE_SANITIZER_UNDEFINED=ON)
 else
   cmake_args+=(-DNERO_ENABLE_SANITIZER_UNDEFINED=OFF)
 fi
-if [[ "${SANITIZE_THREAD:-0}" == "1" ]]; then
+if [[ ${SANITIZE_THREAD:-0} == "1" ]]; then
   cmake_args+=(-DNERO_ENABLE_SANITIZER_THREAD=ON)
 else
   cmake_args+=(-DNERO_ENABLE_SANITIZER_THREAD=OFF)
 fi
-if [[ "${NERO_ENABLE_EXTENDED_SANITIZERS:-1}" == "0" ]]; then
+if [[ ${NERO_ENABLE_EXTENDED_SANITIZERS:-1} == "0" ]]; then
   cmake_args+=(-DNERO_ENABLE_EXTENDED_SANITIZERS=OFF)
 fi
-if [[ "${NERO_TESTS_ENABLE_PCSC:-0}" == "1" ]]; then
+if [[ ${NERO_TESTS_ENABLE_PCSC:-0} == "1" ]]; then
   cmake_args+=(-DNERO_TESTS_ENABLE_PCSC=ON)
 else
   cmake_args+=(-DNERO_TESTS_ENABLE_PCSC=OFF)
 fi
-if [[ "${debug_sanitizers_default}" == "1" ]]; then
+if [[ ${debug_sanitizers_default} == "1" ]]; then
   cmake_args+=(-DNERO_TESTS_DEBUG_SANITIZERS=ON)
 else
   cmake_args+=(-DNERO_TESTS_DEBUG_SANITIZERS=OFF)
@@ -255,7 +256,7 @@ invoke_linux_unit_test_install() {
     return 0
   fi
   : "${AUTO_INSTALL_LINUX_DEPS:=${INSTALL_DEPS:-0}}"
-  if [[ "${AUTO_INSTALL_LINUX_DEPS}" == "0" ]]; then
+  if [[ ${AUTO_INSTALL_LINUX_DEPS} == "0" ]]; then
     return 0
   fi
   FIRMWARE_ROOT="${repo_root}" \
@@ -267,6 +268,10 @@ invoke_linux_unit_test_install() {
 invoke_linux_unit_test_install
 nero_resolve_tests_enable_pcsc
 
+# Firmware host tests compile ST25 frontend TUs; headers live under third-party/.
+# Main CI calls this script directly (not ``make test``), so fetch here too.
+make -C "${repo_root}" third-party-nfc-libs
+
 mkdir -p "${build_dir}"
 if command -v flock >/dev/null 2>&1; then
   exec 9>"${build_lock_file}"
@@ -277,7 +282,7 @@ fi
 nero_lcov_modern_ignore_flags() {
   local v
   v="$(lcov --version 2>/dev/null | head -n1 | sed -n 's/.*version \([0-9][0-9]*\.[0-9][0-9.]*\).*/\1/p' | head -n1)"
-  [[ -n "${v}" ]] || return 1
+  [[ -n ${v} ]] || return 1
   [[ "$(printf '%s\n2.0\n' "${v}" | sort -V | tail -n1)" == "${v}" ]]
 }
 
@@ -287,19 +292,19 @@ if ! command -v cmake >/dev/null 2>&1; then
 fi
 
 previous_profile=""
-if [[ -f "${profile_file}" ]]; then
+if [[ -f ${profile_file} ]]; then
   IFS= read -r previous_profile <"${profile_file}" || previous_profile=""
 fi
 current_profile="$(nero_unit_test_profile)"
 need_clean=""
-if [[ -n "${previous_profile}" && "${previous_profile}" != "${current_profile}" ]]; then
+if [[ -n ${previous_profile} && ${previous_profile} != "${current_profile}" ]]; then
   printf '── unit tests: CMake profile changed (%s -> %s); forcing clean rebuild ──\n' \
     "${previous_profile}" "${current_profile}" >&2
   need_clean=1
 fi
 
 want_cache_on() {
-  [[ "${1:-0}" == "1" ]] && printf 'ON' || printf 'OFF'
+  [[ ${1:-0} == "1" ]] && printf 'ON' || printf 'OFF'
 }
 
 if [[ -f "${build_dir}/CMakeCache.txt" ]]; then
@@ -318,43 +323,43 @@ if [[ -f "${build_dir}/CMakeCache.txt" ]]; then
   w_st="$(want_cache_on "${SANITIZE_THREAD:-0}")"
   w_gt="$(want_cache_on "${NERO_USE_SYSTEM_GTEST:-0}")"
   w_dbg="$(want_cache_on "${debug_sanitizers_default}")"
-  if [[ -n "${c_cov}" && "${c_cov}" != "${w_cov}" ]] ||
-    [[ -n "${c_sa}" && "${c_sa}" != "${w_sa}" ]] ||
-    [[ -n "${c_su}" && "${c_su}" != "${w_su}" ]] ||
-    [[ -n "${c_st}" && "${c_st}" != "${w_st}" ]] ||
-    [[ -n "${c_gt}" && "${c_gt}" != "${w_gt}" ]] ||
-    [[ -n "${c_dbg}" && "${c_dbg}" != "${w_dbg}" ]]; then
+  if [[ -n ${c_cov} && ${c_cov} != "${w_cov}" ]] ||
+    [[ -n ${c_sa} && ${c_sa} != "${w_sa}" ]] ||
+    [[ -n ${c_su} && ${c_su} != "${w_su}" ]] ||
+    [[ -n ${c_st} && ${c_st} != "${w_st}" ]] ||
+    [[ -n ${c_gt} && ${c_gt} != "${w_gt}" ]] ||
+    [[ -n ${c_dbg} && ${c_dbg} != "${w_dbg}" ]]; then
     printf '── unit tests: CMakeCache out of sync with this run; forcing clean rebuild ──\n' >&2
     need_clean=1
   fi
 fi
 
 cmake "${cmake_args[@]}"
-if [[ "${COVERAGE:-0}" == "1" ]]; then
+if [[ ${COVERAGE:-0} == "1" ]]; then
   nero_wipe_gcda_profiles
 fi
-if [[ -n "${need_clean}" ]]; then
+if [[ -n ${need_clean} ]]; then
   env -u MAKEFLAGS cmake --build "${build_dir}" --clean-first -j "$(bash "${script_dir}/cpu-jobs.sh")"
 else
   env -u MAKEFLAGS cmake --build "${build_dir}" -j "$(bash "${script_dir}/cpu-jobs.sh")"
 fi
 printf '%s' "${current_profile}" >"${profile_file}"
 
-if [[ "${SANITIZE_ADDRESS:-0}" == "1" || "${SANITIZE_UNDEFINED:-0}" == "1" || "${SANITIZE_THREAD:-0}" == "1" ]]; then
-  if [[ "${SANITIZE_ADDRESS:-0}" == "1" ]]; then
+if [[ ${SANITIZE_ADDRESS:-0} == "1" || ${SANITIZE_UNDEFINED:-0} == "1" || ${SANITIZE_THREAD:-0} == "1" ]]; then
+  if [[ ${SANITIZE_ADDRESS:-0} == "1" ]]; then
     export ASAN_OPTIONS="${ASAN_OPTIONS:-detect_odr_violation=2:detect_stack_use_after_return=1:strict_string_checks=1:verify_asan_link_order=1:abort_on_error=1:halt_on_error=1:strict_init_order=1:detect_invalid_pointer_pairs=1}"
     export LSAN_OPTIONS="${LSAN_OPTIONS:-report_objects=1:abort_on_error=1}"
   fi
-  if [[ "${SANITIZE_UNDEFINED:-0}" == "1" ]]; then
+  if [[ ${SANITIZE_UNDEFINED:-0} == "1" ]]; then
     export UBSAN_OPTIONS="${UBSAN_OPTIONS:-print_stacktrace=1:abort_on_error=1:halt_on_error=1}"
   fi
-  if [[ "${SANITIZE_THREAD:-0}" == "1" ]]; then
+  if [[ ${SANITIZE_THREAD:-0} == "1" ]]; then
     export TSAN_OPTIONS="${TSAN_OPTIONS:-halt_on_error=1:abort_on_error=1}"
   fi
 fi
 
-if [[ "${SKIP_CTEST:-0}" != "1" ]]; then
-  if [[ "${COVERAGE:-0}" == "1" ]]; then
+if [[ ${SKIP_CTEST:-0} != "1" ]]; then
+  if [[ ${COVERAGE:-0} == "1" ]]; then
     nero_wipe_gcda_profiles
   fi
   ctest --test-dir "${build_dir}" --output-on-failure
@@ -363,7 +368,7 @@ else
   exit 0
 fi
 
-if [[ "${COVERAGE:-0}" == "1" ]]; then
+if [[ ${COVERAGE:-0} == "1" ]]; then
   if command -v lcov >/dev/null 2>&1 && command -v genhtml >/dev/null 2>&1; then
     rm -rf "${coverage_dir}"
     coverage_capture_log="${build_dir}/coverage-capture.log"
@@ -401,13 +406,13 @@ if [[ "${COVERAGE:-0}" == "1" ]]; then
     printf '  lcov: %s\n' "${lcov_info}"
   else
     printf 'skip: lcov/genhtml missing (install distro lcov package for HTML coverage)\n' >&2
-    if [[ "${COVERAGE_STRICT:-0}" == "1" || -n "${COVERAGE_MIN_LINES:-}" ]]; then
+    if [[ ${COVERAGE_STRICT:-0} == "1" || -n ${COVERAGE_MIN_LINES:-} ]]; then
       exit 1
     fi
   fi
 fi
 
-if [[ "${VALGRIND:-0}" == "1" ]]; then
+if [[ ${VALGRIND:-0} == "1" ]]; then
   if ! command -v valgrind >/dev/null 2>&1; then
     printf 'error: VALGRIND=1 but valgrind not found\n' >&2
     exit 1
@@ -415,7 +420,7 @@ if [[ "${VALGRIND:-0}" == "1" ]]; then
   for _test_bin in \
     "${build_dir}/firmware/nero_firmware_tests" \
     "${build_dir}/userspace/nero_userspace_tests"; do
-    [[ -x "$_test_bin" ]] || continue
+    [[ -x $_test_bin ]] || continue
     _bin_name="$(basename "$_test_bin")"
     _valgrind_log="${build_dir}/${_bin_name}.valgrind.log"
     if valgrind --quiet --error-exitcode=1 --leak-check=full --track-origins=yes \
@@ -428,12 +433,12 @@ if [[ "${VALGRIND:-0}" == "1" ]]; then
   done
 fi
 
-if [[ "${PERF_RECORD:-0}" == "1" ]]; then
+if [[ ${PERF_RECORD:-0} == "1" ]]; then
   if command -v perf >/dev/null 2>&1; then
     for _test_bin in \
       "${build_dir}/firmware/nero_firmware_tests" \
       "${build_dir}/userspace/nero_userspace_tests"; do
-      [[ -x "$_test_bin" ]] || continue
+      [[ -x $_test_bin ]] || continue
       _bin_name="$(basename "$_test_bin")"
       perf_data="${build_dir}/${_bin_name}.perf.data"
       rm -f "${perf_data}"

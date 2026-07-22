@@ -14,9 +14,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "reader_security_key_utest_stub.h"
+#include "reader_ccid_utest.h"
 
 #include "reader_hal_utest.h"
+
+void reader_security_key_utest_reset(void);
 
 void reader_ccid_utest_setup(void) {
   reader_hal_utest_reset();

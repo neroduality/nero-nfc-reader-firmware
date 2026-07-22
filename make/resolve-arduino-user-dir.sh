@@ -21,7 +21,7 @@
 # Usage: bash make/resolve-arduino-user-dir.sh [FIRMWARE_ROOT]
 set -euo pipefail
 
-if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+if [[ ${1:-} == "-h" || ${1:-} == "--help" ]]; then
   cat <<'EOF'
 Usage: bash make/resolve-arduino-user-dir.sh [FIRMWARE_ROOT]
 

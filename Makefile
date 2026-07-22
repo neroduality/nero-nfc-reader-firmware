@@ -90,10 +90,14 @@ NFC_USB_MODE ?= $(BOARD_DEFAULT_NFC_USB_MODE)
 # (~7–8 KiB program flash in typical builds): drops _FORTIFY_SOURCE /
 # -fstack-protector-strong from this Makefile and adds -UBACKTRACE_SUPPORT
 # (see arduino:renesas_uno build.defines).
+#
+# Fortify: define once here (-U then -D). OpenSSF Hardening.flags.by-*.mk sorts
+# alphabetically (-D before -U), so firmware openssf dials remove fortify and
+# this Makefile owns the single define (avoids clang-tidy macro-redefined).
 FIRMWARE_MIN_SIZE ?= 0
 C_STD  ?= gnu11
 CPP_STD ?= gnu++17
-COMMON_HARDENING_FLAGS_DEFAULT := -D_FORTIFY_SOURCE=2 -fstack-protector-strong -fno-delete-null-pointer-checks -fno-strict-overflow
+COMMON_HARDENING_FLAGS_DEFAULT := -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=3 -fstack-protector-strong -fno-delete-null-pointer-checks -fno-strict-overflow
 ifeq ($(FIRMWARE_MIN_SIZE),1)
   COMMON_HARDENING_FLAGS :=
 else ifeq ($(BOARD_SKIP_HOST_HARDENING),1)
@@ -119,27 +123,40 @@ else
   ARDUINO_VENDOR_ISYSTEM_FLAGS := $(shell bash $(CURDIR)/make/arduino-third-party-isystem.sh $(CURDIR) $(ARDUINO_ISYSTEM_PROFILE) 2>/dev/null | tr '\n' ' ')
 endif
 
-C_SECURITY_FLAGS ?= $(COMMON_HARDENING_FLAGS) $(C_WARNING_FLAGS)
-CPP_SECURITY_FLAGS ?= $(COMMON_HARDENING_FLAGS) $(CPP_WARNING_FLAGS)
+# Kit-generated OpenSSF hardening dials for the firmware compile DBs (per TARGET).
+include $(CURDIR)/make/openssf-hardening.mk
 
-# firmware/nfc_core/common/ — shared helpers · firmware/nfc_core/frontends/$(NFC_FRONTEND)/ — ST25 reader IC glue only
-NFC_CORE_COMMON_INC := $(CURDIR)/firmware/nfc_core/common
-NFC_CORE_ARDUINO_INC := $(CURDIR)/firmware/nfc_core/arduino
-NFC_CORE_FRONTEND_INC := $(CURDIR)/firmware/nfc_core/frontends/$(NFC_FRONTEND)
-# firmware/port/include/ — stable HAL interface headers shared by target ports
-PORT_INC := $(CURDIR)/firmware/port/include
+C_SECURITY_FLAGS ?= $(COMMON_HARDENING_FLAGS) $(C_WARNING_FLAGS) $(NERO_OPENSSF_CFLAGS)
+CPP_SECURITY_FLAGS ?= $(COMMON_HARDENING_FLAGS) $(CPP_WARNING_FLAGS) $(NERO_OPENSSF_CXXFLAGS)
 
-# Board HAL .cpp files live under $(PORT_LIB_DIR); firmware/*/src/*_hal.cpp are thin #include stubs.
-BOARD_HAL_CPPFLAGS := \
-	-DNFC_BOARD_READER_HAL_INC=$(BOARD_READER_HAL_UNIT) \
-	-DNFC_BOARD_WRITER_HAL_INC=$(BOARD_WRITER_HAL_UNIT) \
-	-DNFC_BOARD_NFC_HAL_INC=$(BOARD_NFC_HAL_UNIT)
+# NeroNfc library clusters (Arduino discovers src/; subdirs need -I for flat includes).
+NERO_NFC_LIB_SRC_INC := $(CURDIR)/firmware/libraries/NeroNfc/src
+NERO_NFC_READER_INC := $(NERO_NFC_LIB_SRC_INC)/reader
+NERO_NFC_WRITER_INC := $(NERO_NFC_LIB_SRC_INC)/writer
+NERO_NFC_FRONTEND_INC := $(NERO_NFC_LIB_SRC_INC)/frontend
+NERO_NFC_ST25_INC := $(NERO_NFC_FRONTEND_INC)/st25r3916
+NERO_NFC_PORT_INC := $(NERO_NFC_LIB_SRC_INC)/port
+NERO_NFC_APP_INC := $(NERO_NFC_LIB_SRC_INC)/app
+NERO_NFC_RUNTIME_INC := $(NERO_NFC_LIB_SRC_INC)/runtime
+NERO_NFC_USB_INC := $(NERO_NFC_LIB_SRC_INC)/usb
+NERO_NFC_PROTOCOL_INC := $(NERO_NFC_LIB_SRC_INC)/protocol
+NERO_NFC_CORE_INC := $(NERO_NFC_LIB_SRC_INC)/core
 
+# Do not add -I$(NERO_NFC_LIB_SRC_INC): that pre-resolves <NeroNfc.h> and
+# prevents arduino-cli from compiling NeroNfc library translation units.
+# Cluster -I paths keep private headers discoverable with flat #include names.
 ARDUINO_PROJECT_INCLUDES := $(NFC_FRONTEND_CPPFLAGS) \
 	$(VENDOR_PROJECT_INCLUDES) \
-	-I$(NFC_CORE_COMMON_INC) -I$(NFC_CORE_ARDUINO_INC) -I$(NFC_CORE_FRONTEND_INC) \
-	-I$(PORT_INC) -I$(PORT_LIB_DIR) \
-	$(BOARD_HAL_CPPFLAGS)
+	-I$(NERO_NFC_CORE_INC) \
+	-I$(NERO_NFC_PROTOCOL_INC) \
+	-I$(NERO_NFC_READER_INC) \
+	-I$(NERO_NFC_WRITER_INC) \
+	-I$(NERO_NFC_FRONTEND_INC) \
+	-I$(NERO_NFC_ST25_INC) \
+	-I$(NERO_NFC_PORT_INC) \
+	-I$(NERO_NFC_APP_INC) \
+	-I$(NERO_NFC_RUNTIME_INC) \
+	-I$(NERO_NFC_USB_INC)
 
 # Paths
 BUILD_DIR = build
@@ -166,12 +183,10 @@ FORCE_EXTERNAL ?=
 # Pinned third-party trees (arduino-cli, NFC-RFAL, …) are fetched by build targets.
 
 FIRMWARE_DIR  = firmware
-NFC_DIR       = $(FIRMWARE_DIR)/nfc
-NFC_BUILD_DIR = $(BUILD_DIR)/nfc
 
 .DEFAULT_GOAL := all
 
-.PHONY: all build help clean install install-userspace require-userspace-binaries install-udev install-pcsc-driver test verify asan ubsan tsan valgrind lint lint-self-test security-lint ci-local lima userspace deps maybe-deps
+.PHONY: all build help clean install install-userspace require-userspace-binaries install-udev install-pcsc-driver test verify asan ubsan tsan valgrind require-lint-kit lint lint-self-test security-lint ci-local codeql-local lima userspace deps maybe-deps check-architecture
 
 define RUN_LINUX_DEPS
 @INSTALL_DEPS=1 AUTO_INSTALL_LINUX_DEPS=1 \
@@ -267,28 +282,31 @@ install-pcsc-driver:
 		sudo bash "$(CURDIR)/scripts/install-pcsc-driver.sh"; \
 	fi
 
-test: maybe-deps
+check-architecture:
+	@python3 "$(CURDIR)/scripts/check-firmware-architecture.py" --repo-root "$(CURDIR)"
+
+test: maybe-deps third-party-nfc-libs check-architecture
 	@bash "$(CURDIR)/make/wipe-host-build-trees.sh" test
 	@INSTALL_DEPS="$(INSTALL_DEPS)" AUTO_INSTALL_LINUX_DEPS="$(AUTO_INSTALL_LINUX_DEPS)" \
 	  SANITIZE_ADDRESS=0 SANITIZE_UNDEFINED=0 NERO_TESTS_BUILD_TYPE=Release \
 	  bash "$(CURDIR)/make/run-unit-tests.sh"
 
-asan: maybe-deps
+asan: maybe-deps third-party-nfc-libs
 	@bash "$(CURDIR)/make/wipe-host-build-trees.sh" test
 	@INSTALL_DEPS="$(INSTALL_DEPS)" AUTO_INSTALL_LINUX_DEPS="$(AUTO_INSTALL_LINUX_DEPS)" \
 	  SANITIZE_ADDRESS=1 SANITIZE_UNDEFINED=0 bash "$(CURDIR)/make/run-unit-tests.sh"
 
-ubsan: maybe-deps
+ubsan: maybe-deps third-party-nfc-libs
 	@bash "$(CURDIR)/make/wipe-host-build-trees.sh" test
 	@INSTALL_DEPS="$(INSTALL_DEPS)" AUTO_INSTALL_LINUX_DEPS="$(AUTO_INSTALL_LINUX_DEPS)" \
 	  SANITIZE_ADDRESS=0 SANITIZE_UNDEFINED=1 bash "$(CURDIR)/make/run-unit-tests.sh"
 
-tsan: maybe-deps
+tsan: maybe-deps third-party-nfc-libs
 	@bash "$(CURDIR)/make/wipe-host-build-trees.sh" test
 	@INSTALL_DEPS="$(INSTALL_DEPS)" AUTO_INSTALL_LINUX_DEPS="$(AUTO_INSTALL_LINUX_DEPS)" \
 	  SANITIZE_THREAD=1 bash "$(CURDIR)/make/run-unit-tests.sh"
 
-valgrind: maybe-deps
+valgrind: maybe-deps third-party-nfc-libs
 	@if ! command -v valgrind >/dev/null 2>&1; then \
 	  printf 'error: valgrind not found (install via: make deps or INSTALL_DEPS=1 make valgrind)\n' >&2; \
 	  exit 1; \
@@ -297,12 +315,12 @@ valgrind: maybe-deps
 	@INSTALL_DEPS="$(INSTALL_DEPS)" AUTO_INSTALL_LINUX_DEPS="$(AUTO_INSTALL_LINUX_DEPS)" \
 	  VALGRIND=1 bash "$(CURDIR)/make/run-unit-tests.sh"
 
-coverage: maybe-deps
+coverage: maybe-deps third-party-nfc-libs
 	@bash "$(CURDIR)/make/wipe-host-build-trees.sh" test
 	@INSTALL_DEPS="$(INSTALL_DEPS)" AUTO_INSTALL_LINUX_DEPS="$(AUTO_INSTALL_LINUX_DEPS)" \
 	  COVERAGE=1 bash "$(CURDIR)/make/run-unit-tests.sh"
 
-verify: maybe-deps
+verify: maybe-deps third-party-nfc-libs
 	@bash "$(CURDIR)/make/wipe-host-build-trees.sh" verify
 	@NERO_KEEP_HOST_BUILDS=1 $(MAKE) asan INSTALL_DEPS=0
 	@NERO_KEEP_HOST_BUILDS=1 $(MAKE) ubsan INSTALL_DEPS=0
@@ -314,9 +332,37 @@ verify: maybe-deps
 	@bash "$(CURDIR)/make/verify-host-binary-hardening.sh"
 
 CI_LOCAL_FLAGS ?=
+# Honor CI_LOCAL_FLAGS only from the make command line, not the shell environment.
+# (An exported CI_LOCAL_FLAGS=--lint-only from debugging skips the test matrix.)
+_CI_LOCAL_FLAGS :=
+ifeq ($(origin CI_LOCAL_FLAGS),command line)
+  _CI_LOCAL_FLAGS := $(CI_LOCAL_FLAGS)
+endif
 LINT_FLAGS ?=
 
-lint: maybe-deps lint-self-test
+DEFAULT_LINT_KIT := $(CURDIR)/.lint-kit-org/lint-c-cpp
+LINT_KIT ?= $(DEFAULT_LINT_KIT)
+# Capture before := below (which would reset origin to "file").
+_LINT_KIT_ORIGIN := $(origin LINT_KIT)
+export LINT_KIT := $(abspath $(LINT_KIT))
+export NERO_LINT_REPO_ROOT := $(CURDIR)
+
+require-lint-kit:
+	@bash "$(CURDIR)/.github/scripts/lint-kit-config.sh" --prepare-writable "$(CURDIR)" || true
+	@if [ "$(LINT_KIT)" != "$(abspath $(DEFAULT_LINT_KIT))" ] && [ ! -d "$(LINT_KIT)" ]; then \
+	  echo "ERROR: lint kit not found: $(LINT_KIT)" >&2; \
+	  echo "fix: make lint LINT_KIT=/path/to/lint-c-cpp" >&2; \
+	  exit 1; \
+	fi
+	@if [ "$(LINT_KIT)" = "$(abspath $(DEFAULT_LINT_KIT))" ]; then \
+	  bash "$(CURDIR)/.github/scripts/lint-kit-config.sh" --ensure-cloned "$(CURDIR)"; \
+	fi
+	@if [ ! -x "$(LINT_KIT)/lint-c-cpp.sh" ]; then \
+	  echo "ERROR: lint kit missing lint-c-cpp.sh: $(LINT_KIT)" >&2; \
+	  exit 1; \
+	fi
+
+lint: require-lint-kit maybe-deps third-party-nfc-libs lint-self-test
 	@case ' $(LINT_FLAGS) ' in \
 	  *' --custom-lints-only '*) ;; \
 	  *) \
@@ -326,47 +372,57 @@ lint: maybe-deps lint-self-test
 	      bash "$(CURDIR)/make/wipe-host-build-trees.sh" lint; \
 	    fi ;; \
 	esac
-	@bash "$(CURDIR)/.github/linters/ci-lint.sh" $(LINT_FLAGS)
+	@bash "$(LINT_KIT)/lint-c-cpp.sh" precheck
+	@bash "$(LINT_KIT)/lint-c-cpp.sh" lint $(LINT_FLAGS)
 
-lint-self-test:
-	@python3 "$(CURDIR)/.github/linters/lint_self_test.py"
+lint-self-test: require-lint-kit
+	@bash "$(LINT_KIT)/lint-c-cpp.sh" self-test
 
 security-lint:
 	@bash "$(CURDIR)/.github/scripts/run-security-suite-locally.sh"
 
+# Forward LINT_KIT when set on the command line or in the environment; otherwise
+# unset Make's default so scripts clone toolchain.lint_kit from lint-c-cpp.yaml.
+_CI_LOCAL_LINT_ENV := $(if $(filter command line environment,$(_LINT_KIT_ORIGIN)),LINT_KIT=$(LINT_KIT),env -u LINT_KIT)
+
 ci-local:
-	@bash "$(CURDIR)/.github/scripts/run-ci-locally.sh" $(CI_LOCAL_FLAGS)
+	@$(_CI_LOCAL_LINT_ENV) bash "$(CURDIR)/.github/scripts/run-ci-locally.sh" $(_CI_LOCAL_FLAGS)
+
+codeql-local:
+	@bash "$(CURDIR)/.github/scripts/run-codeql-locally.sh" $(_CI_LOCAL_FLAGS)
 
 lima:
-	@bash "$(CURDIR)/.github/scripts/run-ci-locally.sh" --lima $(CI_LOCAL_FLAGS)
+	@$(_CI_LOCAL_LINT_ENV) bash "$(CURDIR)/.github/scripts/run-ci-locally.sh" --lima $(_CI_LOCAL_FLAGS)
 
 help:
 	@printf '\nnero-nfc\n\n'
 	@printf '  %-38s %s\n' 'make' 'Compile nfc firmware + userspace (no upload; use make flash or make flash-cdc)'
+	@printf '  %-38s %s\n' 'make nfc' 'Compile combined reader/writer CDC firmware'
 	@printf '  %-38s %s\n' 'make userspace' 'Compile Linux host CLIs only (reader, writer, nero_nfc_uart)'
 	@printf '  %-38s %s\n' 'make install-userspace' 'Install built userspace CLIs to ~/.local/bin (no rebuild; alias: make install)'
 	@printf '  %-38s %s\n' 'make flash' 'Build + upload USB CCID reader on any supported board (NFC_USB_MODE=ccid)'
 	@printf '  %-38s %s\n' 'make flash-cdc' 'Build + upload serial reader/writer shell (NFC_USB_MODE=cdc)'
 	@printf '  %-38s %s\n' 'make flash-ccid' 'Build + upload USB CCID reader (NFC_USB_MODE=ccid)'
-	@printf '  %-38s %s\n' 'make test' 'Run Release unit tests (wipes tests/build first; no sanitizers)'
+	@printf '  %-38s %s\n' 'make test' 'Architecture check + Release unit tests (wipes tests/build first; no sanitizers)'
 	@printf '  %-38s %s\n' 'make asan' 'Run unit tests with AddressSanitizer only'
 	@printf '  %-38s %s\n' 'make ubsan' 'Run unit tests with UndefinedBehaviorSanitizer only'
 	@printf '  %-38s %s\n' 'make tsan' 'Run unit tests with ThreadSanitizer only (no ASan/UBSan mix)'
 	@printf '  %-38s %s\n' 'make coverage' 'Run unit tests with gcov/lcov HTML (tests/build/coverage-html/)'
 	@printf '  %-38s %s\n' 'make verify' 'Run asan, ubsan, tsan, valgrind, scan-build, userspace hardening (wipes host trees once at start)'
-	@printf '  %-38s %s\n' 'make lint' 'License/format, spec-traceability (symbol+value), cppcheck/clang-tidy, UNO R4+WBA65 sketch smoke (wipes lint trees first)'
-	@printf '  %-38s %s\n' 'make security-lint' 'zizmor and TruffleHog'
-	@printf '  %-38s %s\n' 'make ci-local' 'Reproduce Main CI locally (host lint + Debian/Fedora containers)'
-	@printf '  %-38s %s\n' 'make lima' 'Same as ci-local in a fresh ubuntu-24.04 Lima VM (non-interactive)'
+	@printf '  %-38s %s\n' 'make lint LINT_KIT=...' 'Strict lint via org lint-c-cpp kit on native host (fast iteration; not GHA-identical)'
+	@printf '  %-38s %s\n' 'make security-lint' 'zizmor, actionlint and TruffleHog'
+	@printf '  %-38s %s\n' 'make ci-local' 'Reproduce Main CI in isolated work tree (live repo build/third-party untouched)'
+	@printf '  %-38s %s\n' 'make codeql-local' 'Reproduce CodeQL in debian:sid-slim (same shape as make ci-local)'
+	@printf '  %-38s %s\n' 'make lima' 'Main CI in fresh ubuntu-24.04 Lima VM (isolated guest work tree; no host build/third-party)'
 	@printf '  %-38s %s\n' 'sudo make install-udev' 'Install packaging/70-nero-nfc-arduino.rules (ModemManager + serial permissions)'
 	@printf '  %-38s %s\n' 'sudo make install-pcsc-driver' 'Register MCU board CCID in pcscd (docs/CCID.md)'
-	@printf '  %-38s %s\n' 'make clean' 'Remove build/, tests/build/, and entire third-party/ (refetched on next build)'
+	@printf '  %-38s %s\n' 'make clean' 'Remove build/, tests/build/, third-party/, lint-kit clone, and tool caches'
 	@printf '\nFirst-time host setup (optional):\n\n'
 	@printf '  %-38s %s\n' 'make deps' 'Install missing Linux dev packages (build, test, lint, WBA65 OpenOCD compile tools; same as INSTALL_DEPS=1 make …)'
 	@printf '  %-38s %s\n' 'INSTALL_DEPS=1 make' 'Install missing Linux dev packages, then compile firmware + userspace'
 	@printf '\nmake ci-local (pass flags via CI_LOCAL_FLAGS, not as make arguments):\n\n'
-	@printf '  %-52s %s\n' 'make ci-local' 'Default: native host lint + container matrix'
-	@printf '  %-52s %s\n' 'make lima' 'Main CI in fresh ubuntu-24.04 Lima VM (auto; no limactl editor prompt)'
+	@printf '  %-52s %s\n' 'make ci-local' 'Isolated work tree + lint/test containers (live repo untouched)'
+	@printf '  %-52s %s\n' 'make lima' 'Fresh ubuntu-24.04 VM; VM-local work tree (host /src read-only)'
 	@printf '  %-52s %s\n' 'make ci-local CI_LOCAL_FLAGS=--lima' 'Same as make lima (legacy flag form)'
 	@printf '  %-52s %s\n' 'make ci-local CI_LOCAL_FLAGS=--containers-only' 'Skip host lint'
 	@printf '  %-52s %s\n' 'make ci-local CI_LOCAL_FLAGS=--debian-only' 'Debian container only'
@@ -379,6 +435,8 @@ help:
 	@printf '  %-38s %s\n' 'PORT=' 'Serial port for flash/upload (default: auto-detect)'
 	@printf '  %-38s %s\n' 'USERSPACE_BUILD_TYPE=Release|Debug' 'Host CLI CMake build type (default: $(USERSPACE_BUILD_TYPE))'
 	@printf '  %-38s %s\n' 'INSTALL_DEPS=1' 'Install Linux dev packages via make/install-linux-deps.sh (default: 0; sudo)'
+	@printf '  %-38s %s\n' 'LINT_KIT=...' 'Path to org lint kit (overrides clone from toolchain.lint_kit)'
+	@printf '  %-38s %s\n' 'LINT_KIT_REF=...' 'Override lint kit git ref/tag (e.g. v0.1.0)'
 	@printf '  %-38s %s\n' 'FIRMWARE_MIN_SIZE=1' 'Smaller MCU image; drops FORTIFY/stack-protector and firmware backtraces'
 	@printf '  %-38s %s\n' '(third-party/)' 'Pinned arduino-cli, cores, NFC-RFAL, ST25R3916; WBA65 adds OpenOCD + TinyUSB'
 	@printf '  %-38s %s\n' 'COVERAGE_MIN_LINES=90' 'Fail if line coverage is below N%% (use with make coverage / COVERAGE=1)'
@@ -396,6 +454,11 @@ clean:
 	@pgrep -x arduino-cli | xargs -r kill 2>/dev/null || true
 	@echo "Removing third-party/ (arduino-cli, cores, NFC-RFAL, ST25R3916; WBA65-only: TinyUSB, OpenOCD; refetched on next build)..."
 	rm -rf $(CURDIR)/third-party
+	@echo "Removing .lint-kit-org/ (org lint kit clone; refetched on next lint/verify)..."
+	rm -rf $(CURDIR)/.lint-kit-org
+	@echo "Removing tool caches (.mypy_cache, .ruff_cache, .pytest_cache, .cache)..."
+	rm -rf $(CURDIR)/.mypy_cache $(CURDIR)/.ruff_cache \
+		$(CURDIR)/.pytest_cache $(CURDIR)/.cache
 	@echo "Removing build artifacts..."
 	rm -rf $(BUILD_DIR)
 	rm -rf $(CURDIR)/tests/build $(CURDIR)/tests/build-scan $(CURDIR)/tests/scan-build-report
@@ -405,6 +468,7 @@ clean:
 ifeq ($(TARGET),nucleo_wba65ri)
 include make/third-party-wba65-openocd.mk
 include make/third-party-tinyusb-wba65.mk
+include make/vendor-tinyusb-wba65.mk
 endif
 include make/third-party-host-tools.mk
 include make/third-party-nfc-libs.mk
@@ -412,4 +476,5 @@ include make/target-$(BOARD_TARGET_DRIVER).mk
 
 all: build
 
-build: maybe-deps nfc userspace
+build: maybe-deps userspace
+	@$(MAKE) nfc-cdc

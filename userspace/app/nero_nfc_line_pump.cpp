@@ -14,26 +14,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "nero_nfc_line_pump.h"
+#include "nero_nfc_line_pump.hpp"
 
 #include "nero_nfc_null.h"
 
+#include <span>
 #include <string_view>
 
 namespace nero_nfc {
 
-bool is_browser_line(const std::string &line) {
+bool IsBrowserLine(const std::string& line) {
   return line.starts_with(kBrowserTrigger);
 }
 
-std::string extract_browser_url(const std::string &line) {
-  if (!is_browser_line(line)) {
+std::string ExtractBrowserUrl(const std::string& line) {
+  if (!IsBrowserLine(line)) {
     return {};
   }
   return line.substr(std::string_view(kBrowserTrigger).size());
 }
 
-std::string strip_cr(const std::string &line) {
+std::string StripCr(const std::string& line) {
   if (!line.empty() && line.back() == '\r') {
     return line.substr(0, line.size() - 1);
   }
@@ -42,22 +43,27 @@ std::string strip_cr(const std::string &line) {
 
 LinePump::LinePump(LineCallback cb) : line_callback_(std::move(cb)) {}
 
-void LinePump::feed(const char *data, size_t len) {
+void LinePump::Feed(const char* data, size_t len) {
   if ((data == NERO_NFC_NULL) && (len != 0u)) {
     return;
   }
-  for (size_t i = 0; i < len; ++i) {
-    char c = data[i];
+  const auto kBytes = std::span<const char>(data, len);
+  for (char c : kBytes) {
     if (c == '\n') {
-      line_callback_(strip_cr(line_buffer_));
-      line_buffer_.clear();
-    } else {
-      if (line_buffer_.size() < kMaxBufBytes) {
-        line_buffer_.push_back(c);
+      if (!dropping_oversized_line_ && line_callback_) {
+        line_callback_(StripCr(line_buffer_));
       }
-      // Bytes beyond kMaxBufBytes are silently dropped to prevent OOM.
+      line_buffer_.clear();
+      dropping_oversized_line_ = false;
+    } else {
+      if (!dropping_oversized_line_ && line_buffer_.size() < kMaxBufBytes) {
+        line_buffer_.push_back(c);
+      } else {
+        line_buffer_.clear();
+        dropping_oversized_line_ = true;
+      }
     }
   }
 }
 
-} // namespace nero_nfc
+}  // namespace nero_nfc

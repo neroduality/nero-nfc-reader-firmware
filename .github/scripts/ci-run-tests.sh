@@ -39,7 +39,7 @@ fi
 
 nero_nfc_refuse_root_bind_mount_writes
 
-if [[ "$(uname -s)" == "Linux" ]]; then
+if [[ "$(uname -s)" == "Linux" && $(id -u) -eq 0 ]]; then
   auto_install_linux_deps="${AUTO_INSTALL_LINUX_DEPS:-}"
   if [[ -z ${auto_install_linux_deps} ]]; then
     if [[ ${GITHUB_ACTIONS:-false} == true ]]; then
@@ -57,9 +57,9 @@ if [[ "$(uname -s)" == "Linux" ]]; then
 fi
 
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=helper-host-toolchain.sh
-source "${script_dir}/helper-host-toolchain.sh"
-nero_nfc_host_toolchain_activate
+# shellcheck source=helper-toolchain.sh
+source "${script_dir}/helper-toolchain.sh"
+nero_nfc_toolchain_activate
 
 bash "${repo_root}/make/wipe-host-build-trees.sh" ci
 

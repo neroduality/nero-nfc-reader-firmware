@@ -23,7 +23,7 @@
 # Usage: eval "$(bash make/export-arduino-isolated-env.sh [FIRMWARE_ROOT])"
 set -euo pipefail
 
-if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+if [[ ${1:-} == "-h" || ${1:-} == "--help" ]]; then
   cat <<'EOF'
 Usage: eval "$(bash make/export-arduino-isolated-env.sh [FIRMWARE_ROOT])"
 

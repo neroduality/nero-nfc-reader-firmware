@@ -32,9 +32,9 @@ die() {
   exit 1
 }
 
-[[ -f "${FRAG}" ]] || die "missing fragment ${FRAG}"
-[[ -f "${BOARDS_TXT}" ]] || die "missing boards.txt under ${CORE_TREE}"
-[[ -d "${VARIANT_DIR}" ]] || die "missing variant dir ${VARIANT_DIR} (need stm32 core >= 2.12.0)"
+[[ -f ${FRAG} ]] || die "missing fragment ${FRAG}"
+[[ -f ${BOARDS_TXT} ]] || die "missing boards.txt under ${CORE_TREE}"
+[[ -d ${VARIANT_DIR} ]] || die "missing variant dir ${VARIANT_DIR} (need stm32 core >= 2.12.0)"
 
 if ! grep -q 'NUCLEO_WBA65RI' "${BOARDS_TXT}"; then
   echo "stm32-sync-wba65: appending NUCLEO_WBA65RI to boards.txt" >&2
@@ -53,7 +53,7 @@ install -m 0644 "${PATCH_DIR}/variant_NUCLEO_WBA65RI.cpp" "${VARIANT_DIR}/"
 install -m 0644 "${PATCH_DIR}/ldscript.ld" "${VARIANT_DIR}/"
 
 CMAKE="${VARIANT_DIR}/CMakeLists.txt"
-if [[ -f "${CMAKE}" ]] && ! grep -q 'variant_NUCLEO_WBA65RI.cpp' "${CMAKE}"; then
+if [[ -f ${CMAKE} ]] && ! grep -q 'variant_NUCLEO_WBA65RI.cpp' "${CMAKE}"; then
   echo "stm32-sync-wba65: adding variant_NUCLEO_WBA65RI.cpp to CMakeLists.txt" >&2
   sed -i 's/variant_generic.cpp/variant_generic.cpp\n  variant_NUCLEO_WBA65RI.cpp/' "${CMAKE}"
 fi

@@ -16,21 +16,33 @@
 
 #include "reader_tags_ndef_decode.h"
 
+namespace {
+enum {
+  kTestLit16 = 16,
+  kTestLit32 = 32,
+  kTestLit64 = 64,
+  kTestLit9 = 9,
+};
+}  // namespace
+
 #include <gtest/gtest.h>
 
 #include <cstring>
 
 TEST(ReaderTagsNdefDecode, UriHttpsPrefixCode) {
-  static const uint8_t kPayload[] = {0x04u, 'e', 'x', 'a', 'm', 'p', 'l', 'e', '.', 'c', 'o', 'm'};
-  char out[64]{};
-  ASSERT_TRUE(reader_tags_decode_uri_payload(kPayload, sizeof(kPayload), out, sizeof(out)));
-  EXPECT_STREQ(out, "https://example.com");
+  static const uint8_t kPayload[] = {0x04u, 'e', 'x', 'a', 'm', 'p',
+                                     'l',   'e', '.', 'c', 'o', 'm'};
+  char out[kTestLit64]{};
+  ASSERT_TRUE(reader_tags_decode_uri_payload(&kPayload[0], sizeof(kPayload),
+                                             &out[0], sizeof(out)));
+  EXPECT_STREQ(&out[0], "https://example.com");
 }
 
 TEST(ReaderTagsNdefDecode, UriRejectsUnsafeCharacter) {
   static const uint8_t kPayload[] = {0x00u, 'b', 'a', 'd', ' ', 'x'};
-  char out[32]{};
-  EXPECT_FALSE(reader_tags_decode_uri_payload(kPayload, sizeof(kPayload), out, sizeof(out)));
+  char out[kTestLit32]{};
+  EXPECT_FALSE(reader_tags_decode_uri_payload(&kPayload[0], sizeof(kPayload),
+                                              &out[0], sizeof(out)));
 }
 
 TEST(ReaderTagsNdefDecode, UriRejectsBarePercentEscape) {
@@ -38,64 +50,76 @@ TEST(ReaderTagsNdefDecode, UriRejectsBarePercentEscape) {
   static const uint8_t kBadTail[] = {0x00u, 'a', '%', '1'};
   static const uint8_t kBadNonhex[] = {0x00u, 'a', '%', 'g', '0'};
   static const uint8_t kOkTriplet[] = {0x00u, 'a', '%', '2', '0', 'b'};
-  char out[32]{};
-  EXPECT_FALSE(reader_tags_decode_uri_payload(kBadTail, sizeof(kBadTail), out, sizeof(out)));
-  EXPECT_FALSE(reader_tags_decode_uri_payload(kBadNonhex, sizeof(kBadNonhex), out, sizeof(out)));
-  EXPECT_TRUE(reader_tags_decode_uri_payload(kOkTriplet, sizeof(kOkTriplet), out, sizeof(out)));
+  char out[kTestLit32]{};
+  EXPECT_FALSE(reader_tags_decode_uri_payload(&kBadTail[0], sizeof(kBadTail),
+                                              &out[0], sizeof(out)));
+  EXPECT_FALSE(reader_tags_decode_uri_payload(
+      &kBadNonhex[0], sizeof(kBadNonhex), &out[0], sizeof(out)));
+  EXPECT_TRUE(reader_tags_decode_uri_payload(&kOkTriplet[0], sizeof(kOkTriplet),
+                                             &out[0], sizeof(out)));
 }
 
 TEST(ReaderTagsNdefDecode, TextUtf8Payload) {
   static const uint8_t kPayload[] = {0x02u, 'e', 'n', 'h', 'i'};
-  char out[16]{};
-  ASSERT_TRUE(reader_tags_decode_text_payload(kPayload, sizeof(kPayload), out, sizeof(out)));
-  EXPECT_STREQ(out, "hi");
+  char out[kTestLit16]{};
+  ASSERT_TRUE(reader_tags_decode_text_payload(&kPayload[0], sizeof(kPayload),
+                                              &out[0], sizeof(out)));
+  EXPECT_STREQ(&out[0], "hi");
 }
 
 TEST(ReaderTagsNdefDecode, TextUtf16Placeholder) {
   static const uint8_t kPayload[] = {0x80u, 0x02u, 'e', 'n'};
-  char out[64]{};
-  ASSERT_TRUE(reader_tags_decode_text_payload(kPayload, sizeof(kPayload), out, sizeof(out)));
-  EXPECT_STREQ(out, "UTF-16 text record");
+  char out[kTestLit64]{};
+  ASSERT_TRUE(reader_tags_decode_text_payload(&kPayload[0], sizeof(kPayload),
+                                              &out[0], sizeof(out)));
+  EXPECT_STREQ(&out[0], "UTF-16 text record");
 }
 
 TEST(ReaderTagsNdefDecode, UriRejectsReservedPrefixCode) {
   static const uint8_t kPayload[] = {0x24u, 'e', 'x', 'a', 'm', 'p', 'l', 'e'};
-  char out[32]{};
-  EXPECT_FALSE(reader_tags_decode_uri_payload(kPayload, sizeof(kPayload), out, sizeof(out)));
-  EXPECT_STREQ(out, "");
+  char out[kTestLit32]{};
+  EXPECT_FALSE(reader_tags_decode_uri_payload(&kPayload[0], sizeof(kPayload),
+                                              &out[0], sizeof(out)));
+  EXPECT_STREQ(&out[0], "");
 }
 
 TEST(ReaderTagsNdefDecode, UriRejectsOutputAtCapacity) {
-  static const uint8_t kPayload[] = {0x03u, 'h', 't', 't', 'p', ':', '/', '/', 'a'};
-  char out[9]{};
-  EXPECT_FALSE(reader_tags_decode_uri_payload(kPayload, sizeof(kPayload), out, sizeof(out)));
-  EXPECT_STREQ(out, "");
+  static const uint8_t kPayload[] = {0x03u, 'h', 't', 't', 'p',
+                                     ':',   '/', '/', 'a'};
+  char out[kTestLit9]{};
+  EXPECT_FALSE(reader_tags_decode_uri_payload(&kPayload[0], sizeof(kPayload),
+                                              &out[0], sizeof(out)));
+  EXPECT_STREQ(&out[0], "");
 }
 
 TEST(ReaderTagsNdefDecode, TextRejectsTruncatedLanguageCode) {
   static const uint8_t kPayload[] = {0x05u, 'e', 'n'};
-  char out[16]{};
-  EXPECT_FALSE(reader_tags_decode_text_payload(kPayload, sizeof(kPayload), out, sizeof(out)));
-  EXPECT_STREQ(out, "");
+  char out[kTestLit16]{};
+  EXPECT_FALSE(reader_tags_decode_text_payload(&kPayload[0], sizeof(kPayload),
+                                               &out[0], sizeof(out)));
+  EXPECT_STREQ(&out[0], "");
 }
 
 TEST(ReaderTagsNdefDecode, UriRejectsEmbeddedNul) {
   static const uint8_t kPayload[] = {0x00u, 'o', 'k', '\0', 'x'};
-  char out[32]{};
-  EXPECT_FALSE(reader_tags_decode_uri_payload(kPayload, sizeof(kPayload), out, sizeof(out)));
-  EXPECT_STREQ(out, "");
+  char out[kTestLit32]{};
+  EXPECT_FALSE(reader_tags_decode_uri_payload(&kPayload[0], sizeof(kPayload),
+                                              &out[0], sizeof(out)));
+  EXPECT_STREQ(&out[0], "");
 }
 
 TEST(ReaderTagsNdefDecode, TextRejectsEmbeddedNul) {
   static const uint8_t kPayload[] = {0x02u, 'e', 'n', 'h', '\0', 'i'};
-  char out[16]{};
-  EXPECT_FALSE(reader_tags_decode_text_payload(kPayload, sizeof(kPayload), out, sizeof(out)));
-  EXPECT_STREQ(out, "");
+  char out[kTestLit16]{};
+  EXPECT_FALSE(reader_tags_decode_text_payload(&kPayload[0], sizeof(kPayload),
+                                               &out[0], sizeof(out)));
+  EXPECT_STREQ(&out[0], "");
 }
 
 TEST(ReaderTagsNdefDecode, UriClearsOutputOnReject) {
   static const uint8_t kPayload[] = {0x24u, 'e', 'x', 'a', 'm', 'p', 'l', 'e'};
-  char out[32] = "keep";
-  EXPECT_FALSE(reader_tags_decode_uri_payload(kPayload, sizeof(kPayload), out, sizeof(out)));
-  EXPECT_STREQ(out, "");
+  char out[kTestLit32] = "keep";
+  EXPECT_FALSE(reader_tags_decode_uri_payload(&kPayload[0], sizeof(kPayload),
+                                              &out[0], sizeof(out)));
+  EXPECT_STREQ(&out[0], "");
 }

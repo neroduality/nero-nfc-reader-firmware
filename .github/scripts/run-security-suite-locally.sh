@@ -18,8 +18,9 @@
 # Run host security checks in one shot (same family as individual ``run-*-locally.sh`` helpers).
 #
 # Order:
-#   1. zizmor (GitHub Actions workflow audit)
-#   2. TruffleHog (secret scan)
+#   1. zizmor (GitHub Actions security audit)
+#   2. actionlint (GitHub Actions workflow correctness + embedded shellcheck)
+#   3. TruffleHog (secret scan)
 #
 # SPDX headers are enforced by ``make lint`` (see ci-lint.sh), not here.
 # CodeQL runs via `.github/workflows/codeql.yml` only (not ``make lint`` / ``make verify``).
@@ -32,13 +33,14 @@ set -euo pipefail
 
 usage() {
   cat <<'EOF'
-Run zizmor and TruffleHog locally.
+Run zizmor, actionlint and TruffleHog locally.
 
 Tools (in order):
   1. zizmor                      GitHub Actions workflow security audit
-  2. TruffleHog                  Secret scan
+  2. actionlint                  GitHub Actions workflow correctness (+ shellcheck)
+  3. TruffleHog                  Secret scan
 
-Requires: docker or podman for TruffleHog.
+Requires: docker or podman (zizmor/actionlint fall back to containers; TruffleHog needs one).
 
 Usage:
   bash .github/scripts/run-security-suite-locally.sh [-h|--help]
@@ -101,6 +103,9 @@ fi
 
 banner "zizmor (offline)"
 bash "${SCRIPT_DIR}/run-zizmor-locally.sh" --offline --color=always
+
+banner "actionlint"
+bash "${SCRIPT_DIR}/run-actionlint-locally.sh" -color
 
 banner "TruffleHog"
 bash "${SCRIPT_DIR}/run-trufflehog-locally.sh"

@@ -18,16 +18,19 @@
 # Usage: fetch-arduino-cli.sh <version> <dest_dir_abs>
 set -eu
 
-die() { echo "ERROR: $*" >&2; exit 1; }
+die() {
+  echo "ERROR: $*" >&2
+  exit 1
+}
 
-[[ "${#}" -ge 2 ]] || die "need: VERSION DEST_DIR_ABS"
+[[ ${#} -ge 2 ]] || die "need: VERSION DEST_DIR_ABS"
 VERSION="$1"
 DEST_DIR="$2"
 MEMBER="arduino-cli"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FETCH_TAR="${SCRIPT_DIR}/fetch-tarball.sh"
-[[ -x "${FETCH_TAR}" ]] || die "missing ${FETCH_TAR}"
+[[ -x ${FETCH_TAR} ]] || die "missing ${FETCH_TAR}"
 
 case "$(uname -m)" in
   x86_64 | amd64) cli_arch="64bit" ;;
@@ -39,9 +42,9 @@ case "$(uname -m)" in
 esac
 
 sha_file="${SCRIPT_DIR}/arduino-cli-${VERSION}-Linux_${cli_arch}.sha256"
-[[ -s "${sha_file}" ]] || die "missing SHA256 pin ${sha_file}"
+[[ -s ${sha_file} ]] || die "missing SHA256 pin ${sha_file}"
 expect_sha="$(tr -cd '[:xdigit:]' <"${sha_file}")"
-[[ "${#expect_sha}" -eq 64 ]] || die "bad arduino-cli SHA256 pin in ${sha_file}"
+[[ ${#expect_sha} -eq 64 ]] || die "bad arduino-cli SHA256 pin in ${sha_file}"
 
 cli_asset="arduino-cli_${VERSION}_Linux_${cli_arch}.tar.gz"
 cli_url="https://github.com/arduino/arduino-cli/releases/download/v${VERSION}/${cli_asset}"

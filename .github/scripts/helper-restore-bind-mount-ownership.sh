@@ -77,7 +77,7 @@ if ! "${ENGINE}" run --rm \
   -v "${REPO_ROOT}:/src" \
   -u 0 \
   --entrypoint chown \
-  docker.io/library/alpine:3.21 \
+  docker.io/library/alpine:3.21@sha256:48b0309ca019d89d40f670aa1bc06e426dc0931948452e8491e3d65087abc07d \
   -R "${HOST_UID}:${HOST_GID}" \
   "${mount_targets[@]}" 2>/dev/null; then
   if ! restore_with_host_chown; then
