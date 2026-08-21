@@ -232,7 +232,7 @@ bool nero_nfc_app_bind_active(nero_nfc_app_t* app) {
   return nero_nfc_tinyusb_active_bind(app);
 }
 
-bool nero_nfc_app_unbind_active(nero_nfc_app_t* app) {
+bool nero_nfc_app_unbind_active(const nero_nfc_app_t* app) {
   if ((app == NERO_NFC_NULL) || (nero_nfc_tinyusb_active_get() != app)) {
     return false;
   }

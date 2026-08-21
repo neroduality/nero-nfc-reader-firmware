@@ -70,7 +70,7 @@ jobs:
           persist-credentials: false
 
       # Pin from toolchain.lint_kit in .github/lint-c-cpp.yaml.
-      # After checkout, cwd is the workspace mount — use pwd/relative paths
+      # After checkout, cwd is the workspace mount -- use pwd/relative paths
       # (not ${{ github.workspace }}, which is the host path inside job containers).
       - name: Resolve lint kit version
         id: lint_kit_cfg

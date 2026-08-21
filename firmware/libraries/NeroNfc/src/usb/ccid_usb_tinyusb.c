@@ -368,7 +368,7 @@ static uint16_t nero_ccidd_open(uint8_t rhport,
   arm_bulk_out(rhport);
 
   s_dbg_open_state =
-      K_CCIDD_OPEN_STATE_SUCCESS; /* arm_bulk_out called — fully open */
+      K_CCIDD_OPEN_STATE_SUCCESS; /* arm_bulk_out called -- fully open */
 
   return (uint16_t)(p - desc_start);
 }
@@ -686,7 +686,7 @@ void reader_hal_ccid_notify_slot_change(bool card_present) {
     return;
   }
   /* CCID 1.1 §6.3.1 bmSlotICCState slot 0: bit0=present, bit1=changed.
-   * Arrived → 0x03; left → 0x02. */
+   * Arrived -> 0x03; left -> 0x02. */
   uint8_t bm = card_present ? NFC_CCID_NOTIFY_SLOT_PRESENT_CHANGED
                             : NFC_CCID_NOTIFY_SLOT_ABSENT_CHANGED;
   (void)notify_send(0, bm);
@@ -724,7 +724,7 @@ void reader_hal_ccid_clear_abort_request(uint8_t slot, uint8_t seq) {
 bool reader_hal_ccid_recv(uint8_t* buf, uint16_t* len_io) {
   /* Stub keeps the mutable API of the CCID build; no payload is produced. */
   if (buf != NERO_NFC_NULL) {
-    *buf = *buf;
+    *buf = 0U;
   }
   if (len_io != NERO_NFC_NULL) {
     *len_io = 0U;

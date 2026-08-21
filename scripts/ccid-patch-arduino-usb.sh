@@ -18,7 +18,7 @@
 # Apply or verify the CCID patch series for the Arduino Renesas core USB stack.
 # Firmware must be compiled with NFC_USB_MODE=ccid.
 #
-# Typical workflow: rely on ``make nfc-ccid`` / ``make flash`` — those run
+# Typical workflow: rely on ``make nfc-ccid`` / ``make flash`` -- those run
 # ``scripts/ccid-sync-arduino-usb-cpp.sh`` first.
 #
 # Usage:

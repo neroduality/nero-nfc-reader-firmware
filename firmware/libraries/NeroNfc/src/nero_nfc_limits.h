@@ -21,7 +21,7 @@
 
 #include <stdint.h>
 
-/* CBOR nest depth cap — RFC 8949; prevents stack exhaustion on hostile CTAP
+/* CBOR nest depth cap -- RFC 8949; prevents stack exhaustion on hostile CTAP
  * CBOR. */
 enum {
   NERO_NFC_CBOR_MAX_NEST_DEPTH = 32u,
@@ -40,10 +40,10 @@ enum { NERO_NFC_NDEF_DECODE_OUT_MAX = 256u };
 enum {
   NERO_NFC_NDEF_MAX_RECORDS = 64u,
   NERO_NFC_NDEF_MAX_TOTAL_BYTES = 65536u,
-  /* Short-form NDEF URI record: 1-byte prefix code + suffix ≤ 255 payload
+  /* Short-form NDEF URI record: 1-byte prefix code + suffix <= 255 payload
      bytes. */
   NERO_NFC_NDEF_SHORT_URI_SUFFIX_MAX = 254u,
-  /* NFC Forum RTD Text — short-record payload (status + lang + text). */
+  /* NFC Forum RTD Text -- short-record payload (status + lang + text). */
   NERO_NFC_NDEF_SR_PAYLOAD_MAX = 255u,
   NERO_NFC_NDEF_TEXT_LANG_MAX = 63u,
 };
@@ -67,7 +67,7 @@ enum { NERO_NFC_TYPE2_STORAGE_MAX_PAGE = NFC_TAG_NTAG216_LAST_PAGE };
  * uint16-bounded. */
 enum { NERO_NFC_TYPE5_STORAGE_READ_MAX = 65535u };
 
-/* [PCSC-P1] SCardStatus ATR buffer (typical contactless ATR ≤ 33 bytes; PC/SC
+/* [PCSC-P1] SCardStatus ATR buffer (typical contactless ATR <= 33 bytes; PC/SC
  * allows larger). */
 enum { NERO_NFC_PCSC_ATR_HOST_MAX = 64u };
 
@@ -81,10 +81,10 @@ enum {
   NERO_NFC_PCSC_READER_NAME_MAX = 256u,
 };
 
-/* Userspace serial line pump — matches default firmware SERIAL_LINE_MAX. */
+/* Userspace serial line pump -- matches default firmware SERIAL_LINE_MAX. */
 enum { NERO_NFC_HOST_SERIAL_LINE_MAX = 8192u };
 
-/* NFC Forum RTD URI 1.0 — identifier codes 0x00..0x23 (36 prefix table
+/* NFC Forum RTD URI 1.0 -- identifier codes 0x00..0x23 (36 prefix table
  * entries). */
 enum { NERO_NFC_URI_PREFIX_CODE_COUNT = 36u };
 

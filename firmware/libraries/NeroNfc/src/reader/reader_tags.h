@@ -46,7 +46,7 @@ void reader_tags_read_dynamic_or_static_type5(void);
 
 NERO_NFC_NODISCARD bool reader_tags_get_typea_info(nfc_tag_typea_info_t* info);
 NERO_NFC_NODISCARD bool reader_tags_get_type2_info(nfc_tag_type2_info_t* info);
-/* CC/page-3 only — for PC/SC storage READ BINARY (matches type5 CC probe
+/* CC/page-3 only -- for PC/SC storage READ BINARY (matches type5 CC probe
  * weight). */
 NERO_NFC_NODISCARD bool reader_tags_get_type2_storage_info(
     nfc_tag_type2_info_t* info);

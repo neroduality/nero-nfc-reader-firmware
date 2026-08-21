@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// USB OTG HS init for NUCLEO-WBA65RI — verbatim sequence from TinyUSB BSP:
+// USB OTG HS init for NUCLEO-WBA65RI -- verbatim sequence from TinyUSB BSP:
 // third-party/tinyusb/hw/bsp/stm32wba/family.c (board_init, USB_OTG_HS block).
 // Arduino/stm32duino owns system clock via SystemClock_Config (matching
 // board.h).
@@ -56,7 +56,8 @@ void nero_wba65_board_usb_init(void) {
                         SYSCFG_OTGHSPHYCR_CLKSEL_1 | SYSCFG_OTGHSPHYCR_CLKSEL_3;
   SYSCFG->OTGHSPHYCR |= SYSCFG_OTGHSPHYCR_EN;
 
-  /* CN9 has no dedicated VBUS sense — match TinyUSB stm32wba BSP (family.c). */
+  /* CN9 has no dedicated VBUS sense -- match TinyUSB stm32wba BSP (family.c).
+   */
   USB_OTG_HS->GCCFG &= ~USB_OTG_GCCFG_VBDEN;
   USB_OTG_HS->GCCFG |= USB_OTG_GCCFG_VBVALEXTOEN;
   USB_OTG_HS->GCCFG |= USB_OTG_GCCFG_VBVALOVAL;

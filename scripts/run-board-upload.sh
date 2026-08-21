@@ -33,7 +33,7 @@ NEEDS_PORT=1
 DISCOVERY_TIMEOUT="10s"
 PORT_WAIT_SECONDS=6
 READY_MARKER=""
-WAIT_MESSAGE="Processing — wait"
+WAIT_MESSAGE="Processing -- wait"
 READY_BANNER=""
 
 usage() {
@@ -49,7 +49,7 @@ Options:
   --port-wait-seconds N
   --ready-marker TEXT     Stop spinner when this substring appears on stderr
   --ready-banner TEXT     Emit this banner when port discovery succeeds (ported boards)
-  --wait-message TEXT     Spinner label (default: Processing — wait)
+  --wait-message TEXT     Spinner label (default: Processing -- wait)
 EOF
 }
 

@@ -32,7 +32,7 @@ extern "C" {
 #include <stdint.h>
 
 #define READER_NDEF_BUF_MAX NERO_NFC_READER_NDEF_BUF_MAX
-/* [T5T-ISO15693] section 4.2 — ISO/IEC 15693 user block size is
+/* [T5T-ISO15693] section 4.2 -- ISO/IEC 15693 user block size is
  * NFC_TAG_T2T_PAGE_SIZE_BYTES. */
 #define ST25_T5_USER_BLOCK_SIZE NFC_TAG_T2T_PAGE_SIZE_BYTES
 /*
@@ -68,7 +68,7 @@ static inline uint16_t reader_tags_type5_cc_byte_len(
   if (type5->cc_len != 0u) {
     return type5->cc_len;
   }
-  /* [T5T-ISO15693] section 4.3.1.17 — MLEN (CC byte 2) == 0 marks
+  /* [T5T-ISO15693] section 4.3.1.17 -- MLEN (CC byte 2) == 0 marks
    * NFC_TAG_T5T_CC_LEN_EXTENDED. */
   return (type5->cc[NFC_TAG_T5T_CC_MLEN_BYTE_INDEX] == 0u)
              ? NFC_TAG_T5T_CC_LEN_EXTENDED

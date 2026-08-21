@@ -40,7 +40,7 @@ class NfcArduinoPort {
   static void DelayMsImpl(uint32_t ms);
   static void DelayUsImpl(uint32_t us);
   void SerialBeginImpl(uint32_t baud);
-  NERO_NFC_NODISCARD bool SerialReadyImpl();
+  NERO_NFC_NODISCARD bool SerialReadyImpl() const;
   void SerialWriteCharImpl(char c);
   int SerialAvailableImpl();
   int SerialReadByteImpl();

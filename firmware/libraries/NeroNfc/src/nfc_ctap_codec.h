@@ -195,7 +195,7 @@ NERO_NFC_NODISCARD bool nfc_ctap_apdu_needs_ccid_time_extension(
     const uint8_t* apdu, uint16_t apdu_len);
 
 /*
- * [CTAP2.3] §11.3.5.2 — a transparent relay never synthesizes or rewrites the
+ * [CTAP2.3] §11.3.5.2 -- a transparent relay never synthesizes or rewrites the
  * token's ISO7816 status word. This classifier inspects a token response and
  * tells the relay whether to forward the bytes verbatim or fail closed; it does
  * not mutate the buffer.

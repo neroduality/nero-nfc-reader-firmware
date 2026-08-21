@@ -15,10 +15,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-# USB CCID — PC/SC setup
+# USB CCID -- PC/SC setup
 
 Supported MCU boards with CCID firmware may need `install-pcsc-driver` when their
-VID:PID pairs are not in upstream `libccid` — unlike commercial CCID readers,
+VID:PID pairs are not in upstream `libccid` -- unlike commercial CCID readers,
 which usually are.
 
 | Board | `ifdVendorID` | `ifdProductID` | `ifdFriendlyName` (PC/SC reader label) |
@@ -42,7 +42,7 @@ Debian/Ubuntu:
 sudo apt install pcscd libccid pcsc-tools
 ```
 
-Then (all distros) — CCID board on USB; replug if `pcsc_scan` does not list it:
+Then (all distros) -- CCID board on USB; replug if `pcsc_scan` does not list it:
 
 ```bash
 sudo systemctl enable --now pcscd.socket
@@ -52,7 +52,7 @@ pcsc_scan
 ```
 
 `sudo make install-pcsc-driver` patches the system `ifd-ccid.bundle` plist (backup kept).
-No standalone bundle — shared `libccid.so` would collide with other readers.
+No standalone bundle -- shared `libccid.so` would collide with other readers.
 
 Remove:
 
@@ -68,7 +68,7 @@ Linux browsers expect FIDO keys on hidraw. Use [pcsc-fido](https://github.com/ne
 [install guide](https://github.com/neroduality/pcsc-fido/blob/main/INSTALLATION.md)) until the
 platform exposes NFC FIDO cards through PC/SC directly.
 
-The on-air path follows [FIDO CTAP 2.3 §11.3 (NFC transport)](https://fidoalliance.org/specs/fido-v2.3-ps-20260226/fido-client-to-authenticator-protocol-v2.3-ps-20260226.pdf)—that
+The on-air path follows [FIDO CTAP 2.3 §11.3 (NFC transport)](https://fidoalliance.org/specs/fido-v2.3-ps-20260226/fido-client-to-authenticator-protocol-v2.3-ps-20260226.pdf)--that
 framing is relayed unchanged over PC/SC; the browser side is
 [WebAuthn Level 3](https://www.w3.org/TR/webauthn-3/). For setup,
 troubleshooting, and the full spec list, see

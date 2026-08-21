@@ -17,7 +17,7 @@ limitations under the License.
 
 # Release
 
-Source code release only — from annotated `v*` tags. Pushing a tag runs
+Source code release only -- from annotated `v*` tags. Pushing a tag runs
 [`.github/workflows/release.yml`](.github/workflows/release.yml) on that commit
 (source tarball + GitHub Release). Release body and download details
 are in [`.github/release-notes.md`](.github/release-notes.md) (`@TAG@` / `@VERSION@`

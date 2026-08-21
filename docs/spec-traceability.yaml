@@ -14,642 +14,642 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Spec traceability — nero-nfc-reader-firmware
+# Spec traceability -- nero-nfc-reader-firmware
 #
 # Single authoritative manifest: normative spec literals extracted from external
 # documents, mapped to firmware symbols.
 #
 # Fields per entry:
-#   spec_prefix — SPEC Prefix tag ([T2T-ISO14443-A-NTAG21x], [ISO14443-3], …)
-#   symbol      — firmware symbol name (#define, enum constant, or constexpr/const)
-#   spec_value  — normative literal from the cited spec (decimal or 0x hex)
-#   ref         — clause / table / page in the spec document
-#   source      — repo-relative file containing the symbol
+#   spec_prefix -- SPEC Prefix tag ([T2T-ISO14443-A-NTAG21x], [ISO14443-3], ...)
+#   symbol      -- firmware symbol name (#define, enum constant, or constexpr/const)
+#   spec_value  -- normative literal from the cited spec (decimal or 0x hex)
+#   ref         -- clause / table / page in the spec document
+#   source      -- repo-relative file containing the symbol
 
 constants:
 
   - spec_prefix: ACR122U API
     symbol: NFC_ACR122U_P1_GET_FIRMWARE_VERSION
     spec_value: "0x48"
-    ref: "ACR122U API v2.02 §6.3 — Get Firmware Version pseudo-APDU FF 00 48 00 00; P1=48h (INS=00h)."
+    ref: "ACR122U API v2.02 §6.3 -- Get Firmware Version pseudo-APDU FF 00 48 00 00; P1=48h (INS=00h)."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: BT-OOB
     symbol: WRITER_BT_MAC_OCTET_COUNT
     spec_value: "6"
-    ref: "NFC Forum Bluetooth Secure Simple Pairing over NFC §3.1 Table 2 — Bluetooth Device Address field length."
+    ref: "NFC Forum Bluetooth Secure Simple Pairing over NFC §3.1 Table 2 -- Bluetooth Device Address field length."
     source: firmware/libraries/NeroNfc/src/writer/writer_payload.c
 
   - spec_prefix: BT-OOB
     symbol: WRITER_BT_OOB_PAYLOAD_LEN
     spec_value: "8"
-    ref: "NFC Forum Bluetooth Secure Simple Pairing over NFC §3.1.1 — minimum BR/EDR OOB Data Length: 2-byte length + 6-byte BD_ADDR."
+    ref: "NFC Forum Bluetooth Secure Simple Pairing over NFC §3.1.1 -- minimum BR/EDR OOB Data Length: 2-byte length + 6-byte BD_ADDR."
     source: firmware/libraries/NeroNfc/src/writer/writer_payload.c
 
   - spec_prefix: CCID1.10
     symbol: NFC_CCID_BULK_HEADER_LEN
     spec_value: "10"
-    ref: "USB CCID Spec Rev 1.10 §6.1 / 6.2 — CCID bulk messages use a 10-byte header before command or response payload bytes."
+    ref: "USB CCID Spec Rev 1.10 §6.1 / 6.2 -- CCID bulk messages use a 10-byte header before command or response payload bytes."
     source: firmware/libraries/NeroNfc/src/nfc_ccid_frame.h
 
   - spec_prefix: CCID1.10
     symbol: NFC_CCID_BULK_LEVEL_PARAM2_OFFSET
     spec_value: "8"
-    ref: "USB CCID Spec Rev 1.10 §6 / §6.1.4 — [DERIVED] offset: the 3-byte message-specific region is offsets 7..9; XfrBlock wLevelParameter starts at 8."
+    ref: "USB CCID Spec Rev 1.10 §6 / §6.1.4 -- [DERIVED] offset: the 3-byte message-specific region is offsets 7..9; XfrBlock wLevelParameter starts at 8."
     source: firmware/libraries/NeroNfc/src/nfc_ccid_frame.h
 
   - spec_prefix: CCID1.10
     symbol: NFC_CCID_BULK_LEVEL_PARAM3_OFFSET
     spec_value: "9"
-    ref: "USB CCID Spec Rev 1.10 §6 / §6.1.4 — [DERIVED] offset: byte 9 is the second byte of XfrBlock wLevelParameter."
+    ref: "USB CCID Spec Rev 1.10 §6 / §6.1.4 -- [DERIVED] offset: byte 9 is the second byte of XfrBlock wLevelParameter."
     source: firmware/libraries/NeroNfc/src/nfc_ccid_frame.h
 
   - spec_prefix: CCID1.10
     symbol: NFC_CCID_BULK_LEVEL_PARAM_LEN
     spec_value: "3"
-    ref: "USB CCID Spec Rev 1.10 §6.1 / 6.2 — the three bytes after bSeq are command-specific CCID header parameters."
+    ref: "USB CCID Spec Rev 1.10 §6.1 / 6.2 -- the three bytes after bSeq are command-specific CCID header parameters."
     source: firmware/libraries/NeroNfc/src/nfc_ccid_frame.h
 
   - spec_prefix: CCID1.10
     symbol: NFC_CCID_BULK_LEVEL_PARAM_OFFSET
     spec_value: "7"
-    ref: "USB CCID Spec Rev 1.10 §6 / §6.1.4 — the 3-byte message-specific region starts at 7; XfrBlock bBWI is at 7 and wLevelParameter starts at 8."
+    ref: "USB CCID Spec Rev 1.10 §6 / §6.1.4 -- the 3-byte message-specific region starts at 7; XfrBlock bBWI is at 7 and wLevelParameter starts at 8."
     source: firmware/libraries/NeroNfc/src/nfc_ccid_frame.h
 
   - spec_prefix: CCID1.10
     symbol: NFC_CCID_BULK_LEVEL_PARAM_TAIL_LEN
     spec_value: "2"
-    ref: "USB CCID Spec Rev 1.10 §6 / §6.1.4 — [DERIVED] span of header offsets 8..9, the 2-byte XfrBlock wLevelParameter."
+    ref: "USB CCID Spec Rev 1.10 §6 / §6.1.4 -- [DERIVED] span of header offsets 8..9, the 2-byte XfrBlock wLevelParameter."
     source: firmware/libraries/NeroNfc/src/nfc_ccid_frame.h
 
   - spec_prefix: CCID1.10
     symbol: NFC_CCID_BULK_PAYLOAD_OFFSET
     spec_value: "10"
-    ref: "USB CCID Spec Rev 1.10 §6.1 / 6.2 — abData payload begins immediately after the 10-byte CCID bulk header."
+    ref: "USB CCID Spec Rev 1.10 §6.1 / 6.2 -- abData payload begins immediately after the 10-byte CCID bulk header."
     source: firmware/libraries/NeroNfc/src/nfc_ccid_frame.h
 
   - spec_prefix: CCID1.10
     symbol: NFC_CCID_BULK_SEQ_OFFSET
     spec_value: "6"
-    ref: "USB CCID Spec Rev 1.10 §6.1 / 6.2 — bSeq is byte offset 6 in the CCID bulk message header."
+    ref: "USB CCID Spec Rev 1.10 §6.1 / 6.2 -- bSeq is byte offset 6 in the CCID bulk message header."
     source: firmware/libraries/NeroNfc/src/nfc_ccid_frame.h
 
   - spec_prefix: CCID1.10
     symbol: NFC_CCID_BULK_SLOT_OFFSET
     spec_value: "5"
-    ref: "USB CCID Spec Rev 1.10 §6.1 / 6.2 — bSlot is byte offset 5 in the CCID bulk message header."
+    ref: "USB CCID Spec Rev 1.10 §6.1 / 6.2 -- bSlot is byte offset 5 in the CCID bulk message header."
     source: firmware/libraries/NeroNfc/src/nfc_ccid_frame.h
 
   - spec_prefix: CCID1.10
     symbol: NFC_CCID_CONTROL_ABORT
     spec_value: "0x01"
-    ref: "USB CCID Spec Rev 1.10 §5.3.1 — class-specific ABORT control request (bRequest 01h)."
+    ref: "USB CCID Spec Rev 1.10 §5.3.1 -- class-specific ABORT control request (bRequest 01h)."
     source: firmware/libraries/NeroNfc/src/nfc_ccid_frame.h
 
   - spec_prefix: CCID1.10
     symbol: NFC_CCID_CONTROL_BMREQ_ABORT
     spec_value: "0x21"
-    ref: "USB CCID Spec Rev 1.10 §5.3 — bmRequestType class-specific OUT (host-to-device)."
+    ref: "USB CCID Spec Rev 1.10 §5.3 -- bmRequestType class-specific OUT (host-to-device)."
     source: firmware/libraries/NeroNfc/src/nfc_ccid_frame.h
 
   - spec_prefix: CCID1.10
     symbol: NFC_CCID_CONTROL_BMREQ_GET
     spec_value: "0xA1"
-    ref: "USB CCID Spec Rev 1.10 §5.3 — bmRequestType class-specific IN (device-to-host)."
+    ref: "USB CCID Spec Rev 1.10 §5.3 -- bmRequestType class-specific IN (device-to-host)."
     source: firmware/libraries/NeroNfc/src/nfc_ccid_frame.h
 
   - spec_prefix: CCID1.10
     symbol: NFC_CCID_CONTROL_GET_CLOCK_FREQUENCIES
     spec_value: "0x02"
-    ref: "USB CCID Spec Rev 1.10 §5.3.2 — GET_CLOCK_FREQUENCIES control request (02h)."
+    ref: "USB CCID Spec Rev 1.10 §5.3.2 -- GET_CLOCK_FREQUENCIES control request (02h)."
     source: firmware/libraries/NeroNfc/src/nfc_ccid_frame.h
 
   - spec_prefix: CCID1.10
     symbol: NFC_CCID_CONTROL_GET_DATA_RATES
     spec_value: "0x03"
-    ref: "USB CCID Spec Rev 1.10 §5.3.3 — GET_DATA_RATES control request (03h)."
+    ref: "USB CCID Spec Rev 1.10 §5.3.3 -- GET_DATA_RATES control request (03h)."
     source: firmware/libraries/NeroNfc/src/nfc_ccid_frame.h
 
   - spec_prefix: CCID1.10
     symbol: NFC_CCID_DATA_RATE_CLOCK_OFFSET_DEFAULT_CLOCK
     spec_value: "10"
-    ref: "USB CCID Spec Rev 1.10 §6.2.5 — dwClockFrequency starts after the 10-byte CCID response header."
+    ref: "USB CCID Spec Rev 1.10 §6.2.5 -- dwClockFrequency starts after the 10-byte CCID response header."
     source: firmware/libraries/NeroNfc/src/nfc_ccid_frame.h
 
   - spec_prefix: CCID1.10
     symbol: NFC_CCID_DATA_RATE_CLOCK_OFFSET_DEFAULT_DATA_RATE
     spec_value: "14"
-    ref: "USB CCID Spec Rev 1.10 §6.2.5 — dwDataRate follows the 4-byte dwClockFrequency field."
+    ref: "USB CCID Spec Rev 1.10 §6.2.5 -- dwDataRate follows the 4-byte dwClockFrequency field."
     source: firmware/libraries/NeroNfc/src/nfc_ccid_frame.h
 
   - spec_prefix: CCID1.10
     symbol: NFC_CCID_DATA_RATE_CLOCK_PAYLOAD_LEN
     spec_value: "8"
-    ref: "USB CCID Spec Rev 1.10 §6.2.5 — DataRateAndClockFrequency response carries dwClockFrequency and dwDataRate."
+    ref: "USB CCID Spec Rev 1.10 §6.2.5 -- DataRateAndClockFrequency response carries dwClockFrequency and dwDataRate."
     source: firmware/libraries/NeroNfc/src/nfc_ccid_frame.h
 
   - spec_prefix: CCID1.10
     symbol: NFC_CCID_ICC_ACTIVE
     spec_value: "0x00"
-    ref: "USB CCID Spec Rev 1.10 §6.2.6 — bmICCStatus 0: ICC present and active."
+    ref: "USB CCID Spec Rev 1.10 §6.2.6 -- bmICCStatus 0: ICC present and active."
     source: firmware/libraries/NeroNfc/src/nfc_ccid_frame.h
 
   - spec_prefix: CCID1.10
     symbol: NFC_CCID_ICC_CMD_FAIL
     spec_value: "0x40"
-    ref: "USB CCID Spec Rev 1.10 §6.2.6 Table 6.2-3 — [DERIVED] bStatus mask: bmCommandStatus=1 in bits 7..6 encodes 40h."
+    ref: "USB CCID Spec Rev 1.10 §6.2.6 Table 6.2-3 -- [DERIVED] bStatus mask: bmCommandStatus=1 in bits 7..6 encodes 40h."
     source: firmware/libraries/NeroNfc/src/nfc_ccid_frame.h
 
   - spec_prefix: CCID1.10
     symbol: NFC_CCID_ICC_CMD_TIME_EXTENSION
     spec_value: "0x80"
-    ref: "USB CCID Spec Rev 1.10 §6.2.6 Table 6.2-3 — [DERIVED] bStatus mask: bmCommandStatus=2 in bits 7..6 encodes 80h."
+    ref: "USB CCID Spec Rev 1.10 §6.2.6 Table 6.2-3 -- [DERIVED] bStatus mask: bmCommandStatus=2 in bits 7..6 encodes 80h."
     source: firmware/libraries/NeroNfc/src/nfc_ccid_frame.h
 
   - spec_prefix: CCID1.10
     symbol: NFC_CCID_ICC_INACTIVE
     spec_value: "0x01"
-    ref: "USB CCID Spec Rev 1.10 §6.2.6 — bmICCStatus 1: ICC present and inactive."
+    ref: "USB CCID Spec Rev 1.10 §6.2.6 -- bmICCStatus 1: ICC present and inactive."
     source: firmware/libraries/NeroNfc/src/nfc_ccid_frame.h
 
   - spec_prefix: CCID1.10
     symbol: NFC_CCID_ICC_NO_ICC
     spec_value: "0x02"
-    ref: "USB CCID Spec Rev 1.10 §6.2.6 — bmICCStatus 2: no ICC present."
+    ref: "USB CCID Spec Rev 1.10 §6.2.6 -- bmICCStatus 2: no ICC present."
     source: firmware/libraries/NeroNfc/src/nfc_ccid_frame.h
 
   - spec_prefix: CCID1.10
     symbol: NFC_CCID_MSG_PC_TO_RDR_ABORT
     spec_value: "0x72"
-    ref: "USB CCID Spec Rev 1.10 §6.1.13 — PC_to_RDR_Abort bMessageType."
+    ref: "USB CCID Spec Rev 1.10 §6.1.13 -- PC_to_RDR_Abort bMessageType."
     source: firmware/libraries/NeroNfc/src/nfc_ccid_frame.h
 
   - spec_prefix: CCID1.10
     symbol: NFC_CCID_MSG_PC_TO_RDR_ESCAPE
     spec_value: "0x6B"
-    ref: "USB CCID Spec Rev 1.10 §6.1.8 — PC_to_RDR_Escape bMessageType."
+    ref: "USB CCID Spec Rev 1.10 §6.1.8 -- PC_to_RDR_Escape bMessageType."
     source: firmware/libraries/NeroNfc/src/nfc_ccid_frame.h
 
   - spec_prefix: CCID1.10
     symbol: NFC_CCID_MSG_PC_TO_RDR_GET_PARAMETERS
     spec_value: "0x6C"
-    ref: "USB CCID Spec Rev 1.10 §6.1.5 — PC_to_RDR_GetParameters bMessageType."
+    ref: "USB CCID Spec Rev 1.10 §6.1.5 -- PC_to_RDR_GetParameters bMessageType."
     source: firmware/libraries/NeroNfc/src/nfc_ccid_frame.h
 
   - spec_prefix: CCID1.10
     symbol: NFC_CCID_MSG_PC_TO_RDR_ICC_CLOCK
     spec_value: "0x6E"
-    ref: "USB CCID Spec Rev 1.10 §6.1.9 — PC_to_RDR_IccClock bMessageType."
+    ref: "USB CCID Spec Rev 1.10 §6.1.9 -- PC_to_RDR_IccClock bMessageType."
     source: firmware/libraries/NeroNfc/src/nfc_ccid_frame.h
 
   - spec_prefix: CCID1.10
     symbol: NFC_CCID_MSG_PC_TO_RDR_ICC_POWER_OFF
     spec_value: "0x63"
-    ref: "USB CCID Spec Rev 1.10 §6.1.2 — PC_to_RDR_IccPowerOff bMessageType."
+    ref: "USB CCID Spec Rev 1.10 §6.1.2 -- PC_to_RDR_IccPowerOff bMessageType."
     source: firmware/libraries/NeroNfc/src/nfc_ccid_frame.h
 
   - spec_prefix: CCID1.10
     symbol: NFC_CCID_MSG_PC_TO_RDR_ICC_POWER_ON
     spec_value: "0x62"
-    ref: "USB CCID Spec Rev 1.10 §6.1.1 — PC_to_RDR_IccPowerOn bMessageType."
+    ref: "USB CCID Spec Rev 1.10 §6.1.1 -- PC_to_RDR_IccPowerOn bMessageType."
     source: firmware/libraries/NeroNfc/src/nfc_ccid_frame.h
 
   - spec_prefix: CCID1.10
     symbol: NFC_CCID_MSG_PC_TO_RDR_MECHANICAL
     spec_value: "0x71"
-    ref: "USB CCID Spec Rev 1.10 §6.1.12 — PC_to_RDR_Mechanical bMessageType."
+    ref: "USB CCID Spec Rev 1.10 §6.1.12 -- PC_to_RDR_Mechanical bMessageType."
     source: firmware/libraries/NeroNfc/src/nfc_ccid_frame.h
 
   - spec_prefix: CCID1.10
     symbol: NFC_CCID_MSG_PC_TO_RDR_RESET_PARAMETERS
     spec_value: "0x6D"
-    ref: "USB CCID Spec Rev 1.10 §6.1.6 — PC_to_RDR_ResetParameters bMessageType."
+    ref: "USB CCID Spec Rev 1.10 §6.1.6 -- PC_to_RDR_ResetParameters bMessageType."
     source: firmware/libraries/NeroNfc/src/nfc_ccid_frame.h
 
   - spec_prefix: CCID1.10
     symbol: NFC_CCID_MSG_PC_TO_RDR_SECURE
     spec_value: "0x69"
-    ref: "USB CCID Spec Rev 1.10 §6.1.11 — PC_to_RDR_Secure bMessageType."
+    ref: "USB CCID Spec Rev 1.10 §6.1.11 -- PC_to_RDR_Secure bMessageType."
     source: firmware/libraries/NeroNfc/src/nfc_ccid_frame.h
 
   - spec_prefix: CCID1.10
     symbol: NFC_CCID_MSG_PC_TO_RDR_SET_DATA_RATE_AND_CLOCK
     spec_value: "0x73"
-    ref: "USB CCID Spec Rev 1.10 §6.1.14 — PC_to_RDR_SetDataRateAndClockFrequency."
+    ref: "USB CCID Spec Rev 1.10 §6.1.14 -- PC_to_RDR_SetDataRateAndClockFrequency."
     source: firmware/libraries/NeroNfc/src/nfc_ccid_frame.h
 
   - spec_prefix: CCID1.10
     symbol: NFC_CCID_MSG_PC_TO_RDR_SET_PARAMETERS
     spec_value: "0x61"
-    ref: "USB CCID Spec Rev 1.10 §6.1.7 — PC_to_RDR_SetParameters bMessageType."
+    ref: "USB CCID Spec Rev 1.10 §6.1.7 -- PC_to_RDR_SetParameters bMessageType."
     source: firmware/libraries/NeroNfc/src/nfc_ccid_frame.h
 
   - spec_prefix: CCID1.10
     symbol: NFC_CCID_MSG_PC_TO_RDR_SLOTSTATUS
     spec_value: "0x65"
-    ref: "USB CCID Spec Rev 1.10 §6.1.3 — PC_to_RDR_GetSlotStatus bMessageType."
+    ref: "USB CCID Spec Rev 1.10 §6.1.3 -- PC_to_RDR_GetSlotStatus bMessageType."
     source: firmware/libraries/NeroNfc/src/nfc_ccid_frame.h
 
   - spec_prefix: CCID1.10
     symbol: NFC_CCID_MSG_PC_TO_RDR_T0_APDU
     spec_value: "0x6A"
-    ref: "USB CCID Spec Rev 1.10 §6.1.10 — PC_to_RDR_T0APDU bMessageType."
+    ref: "USB CCID Spec Rev 1.10 §6.1.10 -- PC_to_RDR_T0APDU bMessageType."
     source: firmware/libraries/NeroNfc/src/nfc_ccid_frame.h
 
   - spec_prefix: CCID1.10
     symbol: NFC_CCID_MSG_PC_TO_RDR_XFR
     spec_value: "0x6F"
-    ref: "USB CCID Spec Rev 1.10 §6.1.4 — PC_to_RDR_XfrBlock bMessageType."
+    ref: "USB CCID Spec Rev 1.10 §6.1.4 -- PC_to_RDR_XfrBlock bMessageType."
     source: firmware/libraries/NeroNfc/src/nfc_ccid_frame.h
 
   - spec_prefix: CCID1.10
     symbol: NFC_CCID_MSG_RDR_TO_PC_DATABLOCK
     spec_value: "0x80"
-    ref: "USB CCID Spec Rev 1.10 §6.2.1 — RDR_to_PC_DataBlock bMessageType."
+    ref: "USB CCID Spec Rev 1.10 §6.2.1 -- RDR_to_PC_DataBlock bMessageType."
     source: firmware/libraries/NeroNfc/src/nfc_ccid_frame.h
 
   - spec_prefix: CCID1.10
     symbol: NFC_CCID_MSG_RDR_TO_PC_DATA_RATE_AND_CLOCK
     spec_value: "0x84"
-    ref: "USB CCID Spec Rev 1.10 §6.2.5 — RDR_to_PC_DataRateAndClockFrequency."
+    ref: "USB CCID Spec Rev 1.10 §6.2.5 -- RDR_to_PC_DataRateAndClockFrequency."
     source: firmware/libraries/NeroNfc/src/nfc_ccid_frame.h
 
   - spec_prefix: CCID1.10
     symbol: NFC_CCID_MSG_RDR_TO_PC_ESCAPE
     spec_value: "0x83"
-    ref: "USB CCID Spec Rev 1.10 §6.2.4 — RDR_to_PC_Escape bMessageType."
+    ref: "USB CCID Spec Rev 1.10 §6.2.4 -- RDR_to_PC_Escape bMessageType."
     source: firmware/libraries/NeroNfc/src/nfc_ccid_frame.h
 
   - spec_prefix: CCID1.10
     symbol: NFC_CCID_MSG_RDR_TO_PC_NOTIFY_SLOT_CHANGE
     spec_value: "0x50"
-    ref: "USB CCID Spec Rev 1.10 §6.3.1 — RDR_to_PC_NotifySlotChange bMessageType."
+    ref: "USB CCID Spec Rev 1.10 §6.3.1 -- RDR_to_PC_NotifySlotChange bMessageType."
     source: firmware/libraries/NeroNfc/src/nfc_ccid_frame.h
 
   - spec_prefix: CCID1.10
     symbol: NFC_CCID_MSG_RDR_TO_PC_PARAMETERS
     spec_value: "0x82"
-    ref: "USB CCID Spec Rev 1.10 §6.2.3 — RDR_to_PC_Parameters bMessageType."
+    ref: "USB CCID Spec Rev 1.10 §6.2.3 -- RDR_to_PC_Parameters bMessageType."
     source: firmware/libraries/NeroNfc/src/nfc_ccid_frame.h
 
   - spec_prefix: CCID1.10
     symbol: NFC_CCID_MSG_RDR_TO_PC_SLOTSTATUS
     spec_value: "0x81"
-    ref: "USB CCID Spec Rev 1.10 §6.2.2 — RDR_to_PC_SlotStatus bMessageType."
+    ref: "USB CCID Spec Rev 1.10 §6.2.2 -- RDR_to_PC_SlotStatus bMessageType."
     source: firmware/libraries/NeroNfc/src/nfc_ccid_frame.h
 
   - spec_prefix: CCID1.10
     symbol: NFC_CCID_NOTIFY_SLOT_ABSENT_CHANGED
     spec_value: "0x02"
-    ref: "USB CCID Spec Rev 1.10 §6.3.1 — [DERIVED] slot-0 bmSlotICCState: state bit=0 and changed bit=1 encode 02h."
+    ref: "USB CCID Spec Rev 1.10 §6.3.1 -- [DERIVED] slot-0 bmSlotICCState: state bit=0 and changed bit=1 encode 02h."
     source: firmware/libraries/NeroNfc/src/nfc_ccid_frame.h
 
   - spec_prefix: CCID1.10
     symbol: NFC_CCID_NOTIFY_SLOT_PRESENT_CHANGED
     spec_value: "0x03"
-    ref: "USB CCID Spec Rev 1.10 §6.3.1 — [DERIVED] slot-0 bmSlotICCState: state bit=1 and changed bit=1 encode 03h."
+    ref: "USB CCID Spec Rev 1.10 §6.3.1 -- [DERIVED] slot-0 bmSlotICCState: state bit=1 and changed bit=1 encode 03h."
     source: firmware/libraries/NeroNfc/src/nfc_ccid_frame.h
 
   - spec_prefix: CCID1.10
     symbol: NFC_CCID_T0_PARAMS_LEN
     spec_value: "5"
-    ref: "USB CCID Spec Rev 1.10 §6.2.3 — T=0 protocol data structure length in RDR_to_PC_Parameters."
+    ref: "USB CCID Spec Rev 1.10 §6.2.3 -- T=0 protocol data structure length in RDR_to_PC_Parameters."
     source: firmware/libraries/NeroNfc/src/nfc_ccid_frame.h
 
   - spec_prefix: CCID1.10
     symbol: NFC_CCID_T1_PARAMS_LEN
     spec_value: "7"
-    ref: "USB CCID Spec Rev 1.10 §6.2.3 — T=1 protocol data structure length in RDR_to_PC_Parameters."
+    ref: "USB CCID Spec Rev 1.10 §6.2.3 -- T=1 protocol data structure length in RDR_to_PC_Parameters."
     source: firmware/libraries/NeroNfc/src/nfc_ccid_frame.h
 
   - spec_prefix: CCID1.10
     symbol: NFC_CCID_XFR_LEVEL_CHAIN_BEGIN
     spec_value: "0x01"
-    ref: "USB CCID Spec Rev 1.10 §6.1.4 — wLevelParameter 0001h: command APDU begins; continues in the next PC_to_RDR_XfrBlock."
+    ref: "USB CCID Spec Rev 1.10 §6.1.4 -- wLevelParameter 0001h: command APDU begins; continues in the next PC_to_RDR_XfrBlock."
     source: firmware/libraries/NeroNfc/src/nfc_ccid_frame.h
 
   - spec_prefix: CCID1.10
     symbol: NFC_CCID_XFR_LEVEL_CHAIN_END
     spec_value: "0x02"
-    ref: "USB CCID Spec Rev 1.10 §6.1.4 — wLevelParameter 0002h: abData continues a command APDU and ends the APDU command."
+    ref: "USB CCID Spec Rev 1.10 §6.1.4 -- wLevelParameter 0002h: abData continues a command APDU and ends the APDU command."
     source: firmware/libraries/NeroNfc/src/nfc_ccid_frame.h
 
   - spec_prefix: CCID1.10
     symbol: NFC_CCID_XFR_LEVEL_CHAIN_MIDDLE
     spec_value: "0x03"
-    ref: "USB CCID Spec Rev 1.10 §6.1.4 — wLevelParameter 0003h: abData continues the command APDU and another block follows."
+    ref: "USB CCID Spec Rev 1.10 §6.1.4 -- wLevelParameter 0003h: abData continues the command APDU and another block follows."
     source: firmware/libraries/NeroNfc/src/nfc_ccid_frame.h
 
   - spec_prefix: CCID1.10
     symbol: NFC_CCID_XFR_LEVEL_SINGLE
     spec_value: "0x00"
-    ref: "USB CCID Spec Rev 1.10 §6.1.4 — wLevelParameter 0000h: command APDU begins and ends with this command."
+    ref: "USB CCID Spec Rev 1.10 §6.1.4 -- wLevelParameter 0000h: command APDU begins and ends with this command."
     source: firmware/libraries/NeroNfc/src/nfc_ccid_frame.h
 
   - spec_prefix: CCID1.10
     symbol: NFC_CCID_XFR_RESPONSE_CONTINUE
     spec_value: "0x10"
-    ref: "USB CCID Spec Rev 1.10 §6.2.1 — bChainParameter 10h: empty abData; host continues the command APDU in the next PC_to_RDR_XfrBlock."
+    ref: "USB CCID Spec Rev 1.10 §6.2.1 -- bChainParameter 10h: empty abData; host continues the command APDU in the next PC_to_RDR_XfrBlock."
     source: firmware/libraries/NeroNfc/src/nfc_ccid_frame.h
 
   - spec_prefix: CCID1.10
     symbol: READER_CCID_PARAM_BIFSC
     spec_value: "0xFE"
-    ref: "USB CCID Spec Rev 1.10 §6.1.7 / §6.2.3 — implementation choice FEh, the maximum permitted bIFSC in range 00h..FEh."
+    ref: "USB CCID Spec Rev 1.10 §6.1.7 / §6.2.3 -- implementation choice FEh, the maximum permitted bIFSC in range 00h..FEh."
     source: firmware/libraries/NeroNfc/src/reader/reader_ccid_protocol.h
 
   - spec_prefix: CCID1.10
     symbol: READER_CCID_PARAM_BM_FINDEX_DINDEX
     spec_value: "0x11"
-    ref: "USB CCID Spec Rev 1.10 §6.1.7 / §6.2.3 — implementation choice 11h packs FI index 1 and DI index 1; CCID defines the nibble layout."
+    ref: "USB CCID Spec Rev 1.10 §6.1.7 / §6.2.3 -- implementation choice 11h packs FI index 1 and DI index 1; CCID defines the nibble layout."
     source: firmware/libraries/NeroNfc/src/reader/reader_ccid_protocol.h
 
   - spec_prefix: CCID1.10
     symbol: READER_CCID_PARAM_BWAITING_T0
     spec_value: "0x0A"
-    ref: "USB CCID Spec Rev 1.10 §6.1.7 / §6.2.3 — implementation-selected T=0 WI=0Ah; CCID permits 00h..FFh."
+    ref: "USB CCID Spec Rev 1.10 §6.1.7 / §6.2.3 -- implementation-selected T=0 WI=0Ah; CCID permits 00h..FFh."
     source: firmware/libraries/NeroNfc/src/reader/reader_ccid_protocol.h
 
   - spec_prefix: CCID1.10
     symbol: READER_CCID_PARAM_BWAITING_T1
     spec_value: "0x4D"
-    ref: "USB CCID Spec Rev 1.10 §6.1.7 / §6.2.3 — implementation-selected T=1 BWI=4, CWI=13 (4Dh); permitted ranges are BWI 0..9 and CWI 0..15."
+    ref: "USB CCID Spec Rev 1.10 §6.1.7 / §6.2.3 -- implementation-selected T=1 BWI=4, CWI=13 (4Dh); permitted ranges are BWI 0..9 and CWI 0..15."
     source: firmware/libraries/NeroNfc/src/reader/reader_ccid_protocol.h
 
   - spec_prefix: CCID1.10
     symbol: READER_CCID_PARAM_ERR_OFFSET_ABRFU0
     spec_value: "0x08"
-    ref: "USB CCID Spec Rev 1.10 §6.1.7 / §6.2.7 — PC_to_RDR_SetParameters abRFU[0] is at offset 8, reported in bError for a bad parameter."
+    ref: "USB CCID Spec Rev 1.10 §6.1.7 / §6.2.7 -- PC_to_RDR_SetParameters abRFU[0] is at offset 8, reported in bError for a bad parameter."
     source: firmware/libraries/NeroNfc/src/reader/reader_ccid_protocol.h
 
   - spec_prefix: CCID1.10
     symbol: READER_CCID_PARAM_ERR_OFFSET_ABRFU1
     spec_value: "0x09"
-    ref: "USB CCID Spec Rev 1.10 §6.1.7 / §6.2.7 — PC_to_RDR_SetParameters abRFU[1] is at offset 9, reported in bError for a bad parameter."
+    ref: "USB CCID Spec Rev 1.10 §6.1.7 / §6.2.7 -- PC_to_RDR_SetParameters abRFU[1] is at offset 9, reported in bError for a bad parameter."
     source: firmware/libraries/NeroNfc/src/reader/reader_ccid_protocol.h
 
   - spec_prefix: CCID1.10
     symbol: READER_CCID_PARAM_ERR_OFFSET_BPROTOCOLNUM
     spec_value: "0x07"
-    ref: "USB CCID Spec Rev 1.10 §6.1.7 / §6.2.7 — PC_to_RDR_SetParameters bProtocolNum is at offset 7, reported in bError for a bad parameter."
+    ref: "USB CCID Spec Rev 1.10 §6.1.7 / §6.2.7 -- PC_to_RDR_SetParameters bProtocolNum is at offset 7, reported in bError for a bad parameter."
     source: firmware/libraries/NeroNfc/src/reader/reader_ccid_protocol.h
 
   - spec_prefix: CCID1.10
     symbol: READER_CCID_PARAM_ERR_OFFSET_DWLENGTH
     spec_value: "0x01"
-    ref: "USB CCID Spec Rev 1.10 §6.1.7 / §6.2.7 — PC_to_RDR_SetParameters dwLength starts at offset 1, reported in bError for a bad parameter."
+    ref: "USB CCID Spec Rev 1.10 §6.1.7 / §6.2.7 -- PC_to_RDR_SetParameters dwLength starts at offset 1, reported in bError for a bad parameter."
     source: firmware/libraries/NeroNfc/src/reader/reader_ccid_protocol.h
 
   - spec_prefix: CCID1.10
     symbol: READER_CCID_POWER_SELECT_MAX
     spec_value: "0x03"
-    ref: "USB CCID Spec Rev 1.10 §6.1.1 — PC_to_RDR_IccPowerOn bPowerSelect selector range 00h..03h: automatic, 5V, 3V, 1.8V."
+    ref: "USB CCID Spec Rev 1.10 §6.1.1 -- PC_to_RDR_IccPowerOn bPowerSelect selector range 00h..03h: automatic, 5V, 3V, 1.8V."
     source: firmware/libraries/NeroNfc/src/reader/reader_ccid_protocol.h
 
   - spec_prefix: CTAP2.3
     symbol: NFC_CTAP_AAGUID_LEN
     spec_value: "16"
-    ref: "FIDO CTAP 2.3 §6.4 authenticatorGetInfo — aaguid member is 16 bytes."
+    ref: "FIDO CTAP 2.3 §6.4 authenticatorGetInfo -- aaguid member is 16 bytes."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: CTAP2.3
     symbol: NFC_CTAP_APDU_EXTENDED_CMD_OFFSET
     spec_value: "7"
-    ref: "[DERIVED] FIDO CTAP 2.3 §11.3.5.1/§11.3.6 and ISO/IEC 7816-4 case-4 extended C-APDU — CTAP command offset = 4-byte header + 3-byte extended Lc = 7."
+    ref: "[DERIVED] FIDO CTAP 2.3 §11.3.5.1/§11.3.6 and ISO/IEC 7816-4 case-4 extended C-APDU -- CTAP command offset = 4-byte header + 3-byte extended Lc = 7."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: CTAP2.3
     symbol: NFC_CTAP_APDU_EXTENDED_HDR_LEN
     spec_value: "8"
-    ref: "[DERIVED] FIDO CTAP 2.3 §11.3.5.1/§11.3.6 and ISO/IEC 7816-4 case-4 extended C-APDU — bytes before CBOR = 4-byte header + 3-byte extended Lc + 1-byte CTAP command = 8."
+    ref: "[DERIVED] FIDO CTAP 2.3 §11.3.5.1/§11.3.6 and ISO/IEC 7816-4 case-4 extended C-APDU -- bytes before CBOR = 4-byte header + 3-byte extended Lc + 1-byte CTAP command = 8."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: CTAP2.3
     symbol: NFC_CTAP_APDU_EXTENDED_LC_HDR_OFFSET
     spec_value: "7"
-    ref: "[DERIVED] FIDO CTAP 2.3 §11.3.5.1/§11.3.6 and ISO/IEC 7816-4 case-4 extended C-APDU — bytes before Data In = 4-byte header + 3-byte extended Lc = 7; this is not Lc's starting offset."
+    ref: "[DERIVED] FIDO CTAP 2.3 §11.3.5.1/§11.3.6 and ISO/IEC 7816-4 case-4 extended C-APDU -- bytes before Data In = 4-byte header + 3-byte extended Lc = 7; this is not Lc's starting offset."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: CTAP2.3
     symbol: NFC_CTAP_APDU_EXTENDED_LC_LSB_OFFSET
     spec_value: "6"
-    ref: "[DERIVED] FIDO CTAP 2.3 §11.3.5.1/§11.3.6 and ISO/IEC 7816-4 case-4 extended C-APDU — zero-based extended-Lc low-byte offset is 6."
+    ref: "[DERIVED] FIDO CTAP 2.3 §11.3.5.1/§11.3.6 and ISO/IEC 7816-4 case-4 extended C-APDU -- zero-based extended-Lc low-byte offset is 6."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: CTAP2.3
     symbol: NFC_CTAP_APDU_EXTENDED_LC_MSB_OFFSET
     spec_value: "5"
-    ref: "[DERIVED] FIDO CTAP 2.3 §11.3.5.1/§11.3.6 and ISO/IEC 7816-4 case-4 extended C-APDU — zero-based extended-Lc high-byte offset is 5."
+    ref: "[DERIVED] FIDO CTAP 2.3 §11.3.5.1/§11.3.6 and ISO/IEC 7816-4 case-4 extended C-APDU -- zero-based extended-Lc high-byte offset is 5."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: CTAP2.3
     symbol: NFC_CTAP_APDU_EXTENDED_TAIL_LEN
     spec_value: "2"
-    ref: "[DERIVED] FIDO CTAP 2.3 §11.3.5.1/§11.3.6 and ISO/IEC 7816-4 case-4 extended C-APDU — extended Le trailer is 2 bytes."
+    ref: "[DERIVED] FIDO CTAP 2.3 §11.3.5.1/§11.3.6 and ISO/IEC 7816-4 case-4 extended C-APDU -- extended Le trailer is 2 bytes."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: CTAP2.3
     symbol: NFC_CTAP_APDU_PAYLOAD_HDR_EXTENDED
     spec_value: "9"
-    ref: "[DERIVED] FIDO CTAP 2.3 §11.3.5.1/§11.3.6 and ISO/IEC 7816-4 case-4 extended C-APDU — wrapper excluding Data In = 4-byte header + 3-byte Lc + 2-byte Le = 9; no CTAP status byte."
+    ref: "[DERIVED] FIDO CTAP 2.3 §11.3.5.1/§11.3.6 and ISO/IEC 7816-4 case-4 extended C-APDU -- wrapper excluding Data In = 4-byte header + 3-byte Lc + 2-byte Le = 9; no CTAP status byte."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: CTAP2.3
     symbol: NFC_CTAP_APDU_PAYLOAD_HDR_SHORT
     spec_value: "6"
-    ref: "[DERIVED] FIDO CTAP 2.3 §11.3.5.1/§11.3.6 and ISO/IEC 7816-4 case-4 short C-APDU — wrapper excluding Data In = 4-byte header + 1-byte Lc + 1-byte Le = 6; no CTAP status byte."
+    ref: "[DERIVED] FIDO CTAP 2.3 §11.3.5.1/§11.3.6 and ISO/IEC 7816-4 case-4 short C-APDU -- wrapper excluding Data In = 4-byte header + 1-byte Lc + 1-byte Le = 6; no CTAP status byte."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: CTAP2.3
     symbol: NFC_CTAP_APDU_SHORT_CMD_OFFSET
     spec_value: "5"
-    ref: "[DERIVED] FIDO CTAP 2.3 §11.3.5.1/§11.3.6 and ISO/IEC 7816-4 case-4 short C-APDU — CTAP command offset = 4-byte header + 1-byte Lc = 5."
+    ref: "[DERIVED] FIDO CTAP 2.3 §11.3.5.1/§11.3.6 and ISO/IEC 7816-4 case-4 short C-APDU -- CTAP command offset = 4-byte header + 1-byte Lc = 5."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: CTAP2.3
     symbol: NFC_CTAP_APDU_SHORT_HDR_LEN
     spec_value: "6"
-    ref: "[DERIVED] FIDO CTAP 2.3 §11.3.5.1/§11.3.6 and ISO/IEC 7816-4 case-4 short C-APDU — bytes before CBOR = 4-byte header + 1-byte Lc + 1-byte CTAP command = 6."
+    ref: "[DERIVED] FIDO CTAP 2.3 §11.3.5.1/§11.3.6 and ISO/IEC 7816-4 case-4 short C-APDU -- bytes before CBOR = 4-byte header + 1-byte Lc + 1-byte CTAP command = 6."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: CTAP2.3
     symbol: NFC_CTAP_APDU_SHORT_TAIL_LEN
     spec_value: "1"
-    ref: "[DERIVED] FIDO CTAP 2.3 §11.3.5.1/§11.3.6 and ISO/IEC 7816-4 case-4 short C-APDU — short Le trailer is 1 byte."
+    ref: "[DERIVED] FIDO CTAP 2.3 §11.3.5.1/§11.3.6 and ISO/IEC 7816-4 case-4 short C-APDU -- short Le trailer is 1 byte."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: CTAP2.3
     symbol: NFC_CTAP_CBOR_HDR_INLINE
     spec_value: "1"
-    ref: "[DERIVED] FIDO CTAP 2.3 §11.3.5.2 response framing — Data is a 1-byte CTAP status followed by response data, so response CBOR begins at offset 1."
+    ref: "[DERIVED] FIDO CTAP 2.3 §11.3.5.2 response framing -- Data is a 1-byte CTAP status followed by response data, so response CBOR begins at offset 1."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: CTAP2.3
     symbol: NFC_CTAP_CBOR_KEY_ALLOW_LIST
     spec_value: "0x03"
-    ref: "FIDO CTAP 2.3 §6.2 authenticatorGetAssertion — request member allowList (0x03)."
+    ref: "FIDO CTAP 2.3 §6.2 authenticatorGetAssertion -- request member allowList (0x03)."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: CTAP2.3
     symbol: NFC_CTAP_CBOR_KEY_CLIENT_DATA_HASH
     spec_value: "0x02"
-    ref: "FIDO CTAP 2.3 §6.2 authenticatorGetAssertion — request member clientDataHash (0x02)."
+    ref: "FIDO CTAP 2.3 §6.2 authenticatorGetAssertion -- request member clientDataHash (0x02)."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: CTAP2.3
     symbol: NFC_CTAP_CBOR_KEY_OPTIONS
     spec_value: "0x05"
-    ref: "FIDO CTAP 2.3 §6.2 authenticatorGetAssertion — request member options (0x05)."
+    ref: "FIDO CTAP 2.3 §6.2 authenticatorGetAssertion -- request member options (0x05)."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: CTAP2.3
     symbol: NFC_CTAP_CBOR_KEY_RP_ID
     spec_value: "0x01"
-    ref: "FIDO CTAP 2.3 §6.2 authenticatorGetAssertion — request member rpId (0x01)."
+    ref: "FIDO CTAP 2.3 §6.2 authenticatorGetAssertion -- request member rpId (0x01)."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: CTAP2.3
     symbol: NFC_CTAP_CLA
     spec_value: "0x80"
-    ref: "FIDO CTAP 2.3 §11.3.5.1 — NFCCTAP command class byte (proprietary short CLA)."
+    ref: "FIDO CTAP 2.3 §11.3.5.1 -- NFCCTAP command class byte (proprietary short CLA)."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: CTAP2.3
     symbol: NFC_CTAP_CMD_CLIENT_PIN
     spec_value: "0x06"
-    ref: "FIDO CTAP 2.3 §6.5.5 — authenticatorClientPIN command code 06h."
+    ref: "FIDO CTAP 2.3 §6.5.5 -- authenticatorClientPIN command code 06h."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: CTAP2.3
     symbol: NFC_CTAP_CMD_GET_ASSERTION
     spec_value: "0x02"
-    ref: "FIDO CTAP 2.3 §6.2 — authenticatorGetAssertion command code 02h."
+    ref: "FIDO CTAP 2.3 §6.2 -- authenticatorGetAssertion command code 02h."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: CTAP2.3
     symbol: NFC_CTAP_CMD_GET_INFO
     spec_value: "0x04"
-    ref: "FIDO CTAP 2.3 §6.4 — authenticatorGetInfo command code 04h."
+    ref: "FIDO CTAP 2.3 §6.4 -- authenticatorGetInfo command code 04h."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: CTAP2.3
     symbol: NFC_CTAP_CMD_MAKE_CREDENTIAL
     spec_value: "0x01"
-    ref: "FIDO CTAP 2.3 §6.1 — authenticatorMakeCredential command code 01h."
+    ref: "FIDO CTAP 2.3 §6.1 -- authenticatorMakeCredential command code 01h."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: CTAP2.3
     symbol: NFC_CTAP_ERR_CBOR_UNEXPECTED_TYPE
     spec_value: "0x11"
-    ref: "FIDO CTAP 2.3 §8.2 — CTAP2_ERR_CBOR_UNEXPECTED_TYPE = 11h."
+    ref: "FIDO CTAP 2.3 §8.2 -- CTAP2_ERR_CBOR_UNEXPECTED_TYPE = 11h."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: CTAP2.3
     symbol: NFC_CTAP_ERR_INVALID_CBOR
     spec_value: "0x12"
-    ref: "FIDO CTAP 2.3 §8.2 — CTAP2_ERR_INVALID_CBOR = 12h."
+    ref: "FIDO CTAP 2.3 §8.2 -- CTAP2_ERR_INVALID_CBOR = 12h."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: CTAP2.3
     symbol: NFC_CTAP_ERR_INVALID_CHANNEL
     spec_value: "0x0B"
-    ref: "FIDO CTAP 2.3 §8.2 — CTAP1_ERR_INVALID_CHANNEL = 0Bh."
+    ref: "FIDO CTAP 2.3 §8.2 -- CTAP1_ERR_INVALID_CHANNEL = 0Bh."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: CTAP2.3
     symbol: NFC_CTAP_ERR_INVALID_COMMAND
     spec_value: "0x01"
-    ref: "FIDO CTAP 2.3 §8.2 — CTAP1_ERR_INVALID_COMMAND = 01h."
+    ref: "FIDO CTAP 2.3 §8.2 -- CTAP1_ERR_INVALID_COMMAND = 01h."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: CTAP2.3
     symbol: NFC_CTAP_ERR_INVALID_PARAMETER
     spec_value: "0x02"
-    ref: "FIDO CTAP 2.3 §8.2 — CTAP1_ERR_INVALID_PARAMETER = 02h."
+    ref: "FIDO CTAP 2.3 §8.2 -- CTAP1_ERR_INVALID_PARAMETER = 02h."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: CTAP2.3
     symbol: NFC_CTAP_ERR_KEEPALIVE_CANCEL
     spec_value: "0x2D"
-    ref: "FIDO CTAP 2.3 §8.2 — CTAP2_ERR_KEEPALIVE_CANCEL = 2Dh."
+    ref: "FIDO CTAP 2.3 §8.2 -- CTAP2_ERR_KEEPALIVE_CANCEL = 2Dh."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: CTAP2.3
     symbol: NFC_CTAP_ERR_MISSING_PARAMETER
     spec_value: "0x14"
-    ref: "FIDO CTAP 2.3 §8.2 — CTAP2_ERR_MISSING_PARAMETER = 14h."
+    ref: "FIDO CTAP 2.3 §8.2 -- CTAP2_ERR_MISSING_PARAMETER = 14h."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: CTAP2.3
     symbol: NFC_CTAP_ERR_NO_CREDENTIALS
     spec_value: "0x2E"
-    ref: "FIDO CTAP 2.3 §8.2 — CTAP2_ERR_NO_CREDENTIALS = 2Eh."
+    ref: "FIDO CTAP 2.3 §8.2 -- CTAP2_ERR_NO_CREDENTIALS = 2Eh."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: CTAP2.3
     symbol: NFC_CTAP_ERR_OTHER
     spec_value: "0x7F"
-    ref: "FIDO CTAP 2.3 §8.2 — CTAP1_ERR_OTHER = 7Fh."
+    ref: "FIDO CTAP 2.3 §8.2 -- CTAP1_ERR_OTHER = 7Fh."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: CTAP2.3
     symbol: NFC_CTAP_ERR_PIN_AUTH_INVALID
     spec_value: "0x33"
-    ref: "FIDO CTAP 2.3 §8.2 — CTAP2_ERR_PIN_AUTH_INVALID = 33h."
+    ref: "FIDO CTAP 2.3 §8.2 -- CTAP2_ERR_PIN_AUTH_INVALID = 33h."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: CTAP2.3
     symbol: NFC_CTAP_ERR_PIN_BLOCKED
     spec_value: "0x32"
-    ref: "FIDO CTAP 2.3 §8.2 — CTAP2_ERR_PIN_BLOCKED = 32h."
+    ref: "FIDO CTAP 2.3 §8.2 -- CTAP2_ERR_PIN_BLOCKED = 32h."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: CTAP2.3
     symbol: NFC_CTAP_ERR_PIN_INVALID
     spec_value: "0x31"
-    ref: "FIDO CTAP 2.3 §8.2 — CTAP2_ERR_PIN_INVALID = 31h."
+    ref: "FIDO CTAP 2.3 §8.2 -- CTAP2_ERR_PIN_INVALID = 31h."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: CTAP2.3
     symbol: NFC_CTAP_ERR_PUAT_REQUIRED
     spec_value: "0x36"
-    ref: "FIDO CTAP 2.3 §8.2 — CTAP2_ERR_PUAT_REQUIRED = 36h."
+    ref: "FIDO CTAP 2.3 §8.2 -- CTAP2_ERR_PUAT_REQUIRED = 36h."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: CTAP2.3
     symbol: NFC_CTAP_ERR_UNAUTHORIZED_PERMISSION
     spec_value: "0x40"
-    ref: "FIDO CTAP 2.3 §8.2 — CTAP2_ERR_UNAUTHORIZED_PERMISSION = 40h."
+    ref: "FIDO CTAP 2.3 §8.2 -- CTAP2_ERR_UNAUTHORIZED_PERMISSION = 40h."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: CTAP2.3
     symbol: NFC_CTAP_ERR_USER_ACTION_TIMEOUT
     spec_value: "0x2F"
-    ref: "FIDO CTAP 2.3 §8.2 — CTAP2_ERR_USER_ACTION_TIMEOUT = 2Fh."
+    ref: "FIDO CTAP 2.3 §8.2 -- CTAP2_ERR_USER_ACTION_TIMEOUT = 2Fh."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: CTAP2.3
     symbol: NFC_CTAP_FIDO_AID_LEN
     spec_value: "8"
-    ref: "[DERIVED] FIDO CTAP 2.3 §11.3.3 — FIDO2 AID RID A000000647 is 5 octets and PIX 2F0001 is 3 octets, totaling 8."
+    ref: "[DERIVED] FIDO CTAP 2.3 §11.3.3 -- FIDO2 AID RID A000000647 is 5 octets and PIX 2F0001 is 3 octets, totaling 8."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: CTAP2.3
     symbol: NFC_CTAP_GET_INFO_KEY_AAGUID
     spec_value: "0x03"
-    ref: "FIDO CTAP 2.3 §6.4 authenticatorGetInfo — response member aaguid (0x03)."
+    ref: "FIDO CTAP 2.3 §6.4 authenticatorGetInfo -- response member aaguid (0x03)."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: CTAP2.3
     symbol: NFC_CTAP_GET_INFO_KEY_OPTIONS
     spec_value: "0x04"
-    ref: "FIDO CTAP 2.3 §6.4 authenticatorGetInfo — response member options (0x04)."
+    ref: "FIDO CTAP 2.3 §6.4 authenticatorGetInfo -- response member options (0x04)."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: CTAP2.3
     symbol: NFC_CTAP_GET_INFO_KEY_VERSIONS
     spec_value: "0x01"
-    ref: "FIDO CTAP 2.3 §6.4 authenticatorGetInfo — response member versions (0x01)."
+    ref: "FIDO CTAP 2.3 §6.4 authenticatorGetInfo -- response member versions (0x01)."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: CTAP2.3
@@ -691,25 +691,25 @@ constants:
   - spec_prefix: CTAP2.3
     symbol: NFC_CTAP_RESPONSE_STATUS_PREFIX_LEN
     spec_value: "3"
-    ref: "[DERIVED] FIDO CTAP 2.3 §11.3.5.2 response framing — non-CBOR overhead is 1 CTAP status byte plus trailing SW1/SW2 = 3 bytes."
+    ref: "[DERIVED] FIDO CTAP 2.3 §11.3.5.2 response framing -- non-CBOR overhead is 1 CTAP status byte plus trailing SW1/SW2 = 3 bytes."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: CTAP2.3
     symbol: NFC_CTAP_STATUS_SUCCESS
     spec_value: "0x00"
-    ref: "FIDO CTAP 2.3 §8.2 Status codes — 0x00 is CTAP1_ERR_SUCCESS/CTAP2_OK and indicates success."
+    ref: "FIDO CTAP 2.3 §8.2 Status codes -- 0x00 is CTAP1_ERR_SUCCESS/CTAP2_OK and indicates success."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: CTAP2.3
     symbol: NFC_ISO7816_SW1_MORE_DATA_VENDOR
     spec_value: "0x91"
-    ref: "FIDO CTAP 2.3 §11.3.5.2/§11.3.6/§11.3.7.2 — 9100 causes NFCCTAP_GETRESPONSE unless cancelled; 0x91 is its SW1 byte."
+    ref: "FIDO CTAP 2.3 §11.3.5.2/§11.3.6/§11.3.7.2 -- 9100 causes NFCCTAP_GETRESPONSE unless cancelled; 0x91 is its SW1 byte."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: IMPL-POLICY
     symbol: ISO_DEP_CID_HDR_OFFSET
     spec_value: "2"
-    ref: "[DERIVED] Implementation policy: from ISO/IEC 14443-4:2018 §7.2.2 — zero-based payload offset after the mandatory PCB and an optional CID."
+    ref: "[DERIVED] Implementation policy: from ISO/IEC 14443-4:2018 §7.2.2 -- zero-based payload offset after the mandatory PCB and an optional CID."
     source: firmware/libraries/NeroNfc/src/reader/reader_iso_dep_frame.h
 
   - spec_prefix: IMPL-POLICY
@@ -721,7 +721,7 @@ constants:
   - spec_prefix: IMPL-POLICY
     symbol: ISO_DEP_HDR_BASE_LEN
     spec_value: "1"
-    ref: "[DERIVED] Implementation policy: From ISO/IEC 14443-4:2018 §7.2.2 — implementation base prologue length containing only the mandatory one-byte PCB."
+    ref: "[DERIVED] Implementation policy: From ISO/IEC 14443-4:2018 §7.2.2 -- implementation base prologue length containing only the mandatory one-byte PCB."
     source: firmware/libraries/NeroNfc/src/reader/reader_iso_dep_frame.h
 
   - spec_prefix: IMPL-POLICY
@@ -889,49 +889,49 @@ constants:
   - spec_prefix: IMPL-POLICY
     symbol: NFC_ISO7816_APDU_IDX_CLA
     spec_value: "0"
-    ref: "[DERIVED] Implementation policy: zero-based index from ISO/IEC 7816-4:2020 §5.2 command APDU syntax — CLA is the first header byte."
+    ref: "[DERIVED] Implementation policy: zero-based index from ISO/IEC 7816-4:2020 §5.2 command APDU syntax -- CLA is the first header byte."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: IMPL-POLICY
     symbol: NFC_ISO7816_APDU_IDX_INS
     spec_value: "1"
-    ref: "[DERIVED] Implementation policy: zero-based index from ISO/IEC 7816-4:2020 §5.2 command APDU syntax — INS follows CLA."
+    ref: "[DERIVED] Implementation policy: zero-based index from ISO/IEC 7816-4:2020 §5.2 command APDU syntax -- INS follows CLA."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: IMPL-POLICY
     symbol: NFC_ISO7816_APDU_IDX_LC
     spec_value: "4"
-    ref: "[DERIVED] Implementation policy: zero-based index from ISO/IEC 7816-4:2020 §5.2 — the short Lc or Le byte follows CLA, INS, P1 and P2."
+    ref: "[DERIVED] Implementation policy: zero-based index from ISO/IEC 7816-4:2020 §5.2 -- the short Lc or Le byte follows CLA, INS, P1 and P2."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: IMPL-POLICY
     symbol: NFC_ISO7816_APDU_IDX_P1
     spec_value: "2"
-    ref: "[DERIVED] Implementation policy: zero-based index from ISO/IEC 7816-4:2020 §5.2 command APDU syntax — P1 follows CLA and INS."
+    ref: "[DERIVED] Implementation policy: zero-based index from ISO/IEC 7816-4:2020 §5.2 command APDU syntax -- P1 follows CLA and INS."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: IMPL-POLICY
     symbol: NFC_ISO7816_APDU_IDX_P2
     spec_value: "3"
-    ref: "[DERIVED] Implementation policy: zero-based index from ISO/IEC 7816-4:2020 §5.2 command APDU syntax — P2 follows P1."
+    ref: "[DERIVED] Implementation policy: zero-based index from ISO/IEC 7816-4:2020 §5.2 command APDU syntax -- P2 follows P1."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: IMPL-POLICY
     symbol: NFC_ISO7816_APDU_LE_ONLY_LEN
     spec_value: "5"
-    ref: "[DERIVED] Implementation policy: from ISO/IEC 7816-4:2020 §5.2 — a short case-2 C-APDU is the four-byte command header plus one-byte Le."
+    ref: "[DERIVED] Implementation policy: from ISO/IEC 7816-4:2020 §5.2 -- a short case-2 C-APDU is the four-byte command header plus one-byte Le."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: IMPL-POLICY
     symbol: NFC_ISO7816_ATR_FIXED_PREFIX_LEN
-    spec_value: "3"
-    ref: "[DERIVED] Implementation policy: synthetic ATR layout from ISO/IEC 7816-3:2006 §§8.1, 8.2.2 and 8.2.3 — TS, T0 and the selected TD1 precede historical bytes."
+    spec_value: "4"
+    ref: "[DERIVED] Implementation policy: PC/SC Part 3 v2.01.09 §3.1.3.2.3.1 contactless ATR layout (3B 8N 80 01 ...) -- TS, T0, TD1 and TD2 precede the ATS historical bytes."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: IMPL-POLICY
     symbol: NFC_ISO7816_ATR_TS_TCK_OVERHEAD
-    spec_value: "4"
-    ref: "[DERIVED] Implementation policy: synthetic ATR layout from ISO/IEC 7816-3:2006 §§8.1, 8.2.2, 8.2.3 and 8.2.5 — TS, T0, selected TD1 and required TCK add four bytes."
+    spec_value: "5"
+    ref: "[DERIVED] Implementation policy: PC/SC Part 3 v2.01.09 §3.1.3.2.3.1 contactless ATR layout -- TS, T0, TD1, TD2 and the required TCK add five bytes around the ATS historical bytes."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: IMPL-POLICY
@@ -949,13 +949,13 @@ constants:
   - spec_prefix: IMPL-POLICY
     symbol: NFC_ISO7816_MIN_CMD_APDU_LEN
     spec_value: "4"
-    ref: "[DERIVED] Implementation policy: parser minimum from ISO/IEC 7816-4:2020 §5.2 — mandatory command header CLA, INS, P1 and P2 is four bytes."
+    ref: "[DERIVED] Implementation policy: parser minimum from ISO/IEC 7816-4:2020 §5.2 -- mandatory command header CLA, INS, P1 and P2 is four bytes."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: IMPL-POLICY
     symbol: NFC_ISO7816_MIN_RESPONSE_WITH_SW_LEN
     spec_value: "2"
-    ref: "[DERIVED] Implementation policy: parser minimum from ISO/IEC 7816-4:2020 §§5.2 and 5.6 — a response may consist only of mandatory SW1-SW2."
+    ref: "[DERIVED] Implementation policy: parser minimum from ISO/IEC 7816-4:2020 §§5.2 and 5.6 -- a response may consist only of mandatory SW1-SW2."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: IMPL-POLICY
@@ -967,7 +967,7 @@ constants:
   - spec_prefix: IMPL-POLICY
     symbol: NFC_ISO7816_SHORT_APDU_HDR_LEN
     spec_value: "5"
-    ref: "[DERIVED] Implementation policy: from ISO/IEC 7816-4:2020 §5.2 — firmware's short APDU prefix is four command-header bytes plus one short Lc or Le byte."
+    ref: "[DERIVED] Implementation policy: from ISO/IEC 7816-4:2020 §5.2 -- firmware's short APDU prefix is four command-header bytes plus one short Lc or Le byte."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: IMPL-POLICY
@@ -1009,7 +1009,7 @@ constants:
   - spec_prefix: IMPL-POLICY
     symbol: NFC_PCSC_GET_DATA_ATQA_RSP_LEN
     spec_value: "2"
-    ref: "[DERIVED] Implementation policy: ISO/IEC 14443-3:2018 §6.5.2 — local GET DATA returns the complete two-octet ATQA."
+    ref: "[DERIVED] Implementation policy: ISO/IEC 14443-3:2018 §6.5.2 -- local GET DATA returns the complete two-octet ATQA."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: IMPL-POLICY
@@ -1033,7 +1033,7 @@ constants:
   - spec_prefix: IMPL-POLICY
     symbol: NFC_PCSC_GET_DATA_SAK_RSP_LEN
     spec_value: "1"
-    ref: "[DERIVED] Implementation policy: ISO/IEC 14443-3:2018 §6.5.3.4 Figure 11 — local GET DATA returns the one-octet SAK without CRC_A."
+    ref: "[DERIVED] Implementation policy: ISO/IEC 14443-3:2018 §6.5.3.4 Figure 11 -- local GET DATA returns the one-octet SAK without CRC_A."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: IMPL-POLICY
@@ -1099,7 +1099,7 @@ constants:
   - spec_prefix: IMPL-POLICY
     symbol: NFC_PCSC_T4_READ_ACCESS_CLOSED
     spec_value: "0xFF"
-    ref: "[DERIVED] Implementation policy: Implementation policy — 0xFF is nonstandard/RFU for Mapping 2.0 NDEF read access (NFC Forum Type 4 Tag Operation Spec 2.0 §5.1.2.1 RQ_T4T_NDA_018), while 0xFF is the standard write-denied/read-only value under RQ_T4T_NDA_019."
+    ref: "[DERIVED] Implementation policy: Implementation policy -- 0xFF is nonstandard/RFU for Mapping 2.0 NDEF read access (NFC Forum Type 4 Tag Operation Spec 2.0 §5.1.2.1 RQ_T4T_NDA_018), while 0xFF is the standard write-denied/read-only value under RQ_T4T_NDA_019."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: IMPL-POLICY
@@ -1123,37 +1123,37 @@ constants:
   - spec_prefix: IMPL-POLICY
     symbol: NFC_TAG_ST25DV_EXT_MEMORY_BLOCK_SIZE_INDEX
     spec_value: "2"
-    ref: "[DERIVED] Implementation policy: zero-based field index from ST DS13519 Rev 8 §7.6.23 Table 168 — block-size byte follows the two-byte block-count value."
+    ref: "[DERIVED] Implementation policy: zero-based field index from ST DS13519 Rev 8 §7.6.23 Table 168 -- block-size byte follows the two-byte block-count value."
     source: firmware/libraries/NeroNfc/src/nfc_tag_info.h
 
   - spec_prefix: IMPL-POLICY
     symbol: NFC_TAG_ST25DV_EXT_MEMORY_SIZE_FIELD_LEN
     spec_value: "3"
-    ref: "[DERIVED] Implementation policy: field width from ST DS13519 Rev 8 §7.6.23 Table 168 — extended memory size is two block-count bytes plus one block-size byte."
+    ref: "[DERIVED] Implementation policy: field width from ST DS13519 Rev 8 §7.6.23 Table 168 -- extended memory size is two block-count bytes plus one block-size byte."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: IMPL-POLICY
     symbol: NFC_TAG_ST25DV_EXT_SYS_INFO_CMD_HEADER_LEN
     spec_value: "3"
-    ref: "[DERIVED] Implementation policy: request-prefix width from ST DS13519 Rev 8 §7.6.23 Tables 164–165 — flags, command code and one-byte parameter-request field precede an optional UID."
+    ref: "[DERIVED] Implementation policy: request-prefix width from ST DS13519 Rev 8 §7.6.23 Tables 164-165 -- flags, command code and one-byte parameter-request field precede an optional UID."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: IMPL-POLICY
     symbol: NFC_TAG_ST25DV_EXT_SYS_INFO_MIN_REPLY_LEN
     spec_value: "12"
-    ref: "[DERIVED] Implementation policy: ST DS13519 Rev 8 §7.6.23 Tables 166–169 — 10-byte flags+UID preamble plus two block-count bytes; this is not the protocol's unconditional minimum."
+    ref: "[DERIVED] Implementation policy: ST DS13519 Rev 8 §7.6.23 Tables 166-169 -- 10-byte flags+UID preamble plus two block-count bytes; this is not the protocol's unconditional minimum."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: IMPL-POLICY
     symbol: NFC_TAG_ST25DV_EXT_SYS_INFO_REQUEST_FIELDS
     spec_value: "0x0F"
-    ref: "[DERIVED] Implementation policy: Request policy from ST DS13519 Rev 8 §7.6.23 Table 165 — OR DSFID, AFI, memory-size and IC-reference request bits to form 0Fh."
+    ref: "[DERIVED] Implementation policy: Request policy from ST DS13519 Rev 8 §7.6.23 Table 165 -- OR DSFID, AFI, memory-size and IC-reference request bits to form 0Fh."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: IMPL-POLICY
     symbol: NFC_TAG_ST25TN_FALLBACK_LAST_PAGE
     spec_value: "19"
-    ref: "[DERIVED] Implementation policy: ST25TN512 fallback geometry — 64-byte T2T area ending at user page 19 when density is unknown."
+    ref: "[DERIVED] Implementation policy: ST25TN512 fallback geometry -- 64-byte T2T area ending at user page 19 when density is unknown."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: IMPL-POLICY
@@ -1207,19 +1207,19 @@ constants:
   - spec_prefix: IMPL-POLICY
     symbol: NFC_TAG_T4T_RATS_CMD_LEN
     spec_value: "2"
-    ref: "[DERIVED] Implementation policy: From ISO/IEC 14443-4:2018 §5.2 — implementation transmits the two-byte RATS payload (E0h + PARAM); CRC_A is generated separately."
+    ref: "[DERIVED] Implementation policy: From ISO/IEC 14443-4:2018 §5.2 -- implementation transmits the two-byte RATS payload (E0h + PARAM); CRC_A is generated separately."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: IMPL-POLICY
     symbol: NFC_TAG_T4T_RATS_PARAM_FSDI7
     spec_value: "0x70"
-    ref: "[DERIVED] Implementation policy: From ISO/IEC 14443-4:2018 §5.2 — firmware policy combines FSDI=7 with CID=0 to form PARAM 70h."
+    ref: "[DERIVED] Implementation policy: From ISO/IEC 14443-4:2018 §5.2 -- firmware policy combines FSDI=7 with CID=0 to form PARAM 70h."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: IMPL-POLICY
     symbol: NFC_TAG_T5T_CC_MLEN_OVERFLOW_CC3_FLAG
     spec_value: "0x04"
-    ref: "[DERIVED] Implementation policy: ST AN5608 §3.3.1 — Android Oreo MLEN workaround sets CC byte 3 bit 2; not NFC Forum T5T compliant."
+    ref: "[DERIVED] Implementation policy: ST AN5608 §3.3.1 -- Android Oreo MLEN workaround sets CC byte 3 bit 2; not NFC Forum T5T compliant."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: IMPL-POLICY
@@ -1243,7 +1243,7 @@ constants:
   - spec_prefix: IMPL-POLICY
     symbol: NFC_TAG_T5T_ISO15693_FLAGS_ADDRESSED
     spec_value: "0x22"
-    ref: "[DERIVED] Implementation policy: request-flags composition from ISO/IEC 15693-3:2026 §7.3.2 Tables 5–6 — high data rate 02h OR Address_flag 20h gives 22h."
+    ref: "[DERIVED] Implementation policy: request-flags composition from ISO/IEC 15693-3:2026 §7.3.2 Tables 5-6 -- high data rate 02h OR Address_flag 20h gives 22h."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: IMPL-POLICY
@@ -1255,7 +1255,7 @@ constants:
   - spec_prefix: IMPL-POLICY
     symbol: NFC_TAG_T5T_ISO15693_SYS_INFO_CMD_HEADER_LEN
     spec_value: "2"
-    ref: "[DERIVED] Implementation policy: from ISO/IEC 15693-3:2026 §7.3.1 and §10.4.12 — request flags plus command code form the two-byte prefix before an optional UID."
+    ref: "[DERIVED] Implementation policy: from ISO/IEC 15693-3:2026 §7.3.1 and §10.4.12 -- request flags plus command code form the two-byte prefix before an optional UID."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: IMPL-POLICY
@@ -1267,7 +1267,7 @@ constants:
   - spec_prefix: IMPL-POLICY
     symbol: NFC_TAG_T5T_ISO15693_SYS_INFO_MIN_REPLY_LEN
     spec_value: "10"
-    ref: "[DERIVED] Implementation policy: minimum parser length from ISO/IEC 15693-3:2026 §10.4.12 — response flags (1) + information flags (1) + mandatory UID (8) = 10 bytes before any optional fields."
+    ref: "[DERIVED] Implementation policy: minimum parser length from ISO/IEC 15693-3:2026 §10.4.12 -- response flags (1) + information flags (1) + mandatory UID (8) = 10 bytes before any optional fields."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: IMPL-POLICY
@@ -1345,1303 +1345,1315 @@ constants:
   - spec_prefix: ISO14443-3
     symbol: ISO14443_CMD_SEL_CL3
     spec_value: "0x97"
-    ref: "ISO/IEC 14443-3:2018 §6.5.3.2 — Type A SEL code 97h selects cascade level 3."
+    ref: "ISO/IEC 14443-3:2018 §6.5.3.2 -- Type A SEL code 97h selects cascade level 3."
     source: firmware/libraries/NeroNfc/src/frontend/st25r3916/st25_sketch_spi.h
 
   - spec_prefix: ISO14443-3
     symbol: ISO_DEP_CRC_LEN
     spec_value: "2"
-    ref: "ISO/IEC 14443-3:2018 §6.2.4 and Type B frame definitions — CRC_A and CRC_B fields are two octets."
+    ref: "ISO/IEC 14443-3:2018 §6.2.4 and Type B frame definitions -- CRC_A and CRC_B fields are two octets."
     source: firmware/libraries/NeroNfc/src/reader/reader_iso_dep_frame.h
 
   - spec_prefix: ISO14443-3
     symbol: K_S_T25_ISO14443_A_CASCADE_TAG
     spec_value: "0x88"
-    ref: "ISO/IEC 14443-3:2018 §6.5.4 — cascade tag CT is 88h and prefixes an incomplete Type A UID cascade level."
+    ref: "ISO/IEC 14443-3:2018 §6.5.4 -- cascade tag CT is 88h and prefixes an incomplete Type A UID cascade level."
     source: firmware/libraries/NeroNfc/src/frontend/st25r3916/st25r3916_iso14443a_uid.h
 
   - spec_prefix: ISO14443-3
     symbol: K_S_T25_ISO14443_A_LEVELS_DOUBLE
     spec_value: "2"
-    ref: "ISO/IEC 14443-3:2018 §6.5.4 — a double-size seven-byte Type A UID is obtained over two cascade levels."
+    ref: "ISO/IEC 14443-3:2018 §6.5.4 -- a double-size seven-byte Type A UID is obtained over two cascade levels."
     source: firmware/libraries/NeroNfc/src/frontend/st25r3916/st25r3916_iso14443a_uid.h
 
   - spec_prefix: ISO14443-3
     symbol: K_S_T25_ISO14443_A_LEVELS_TRIPLE
     spec_value: "3"
-    ref: "ISO/IEC 14443-3:2018 §6.5.4 — a triple-size ten-byte Type A UID is obtained over three cascade levels."
+    ref: "ISO/IEC 14443-3:2018 §6.5.4 -- a triple-size ten-byte Type A UID is obtained over three cascade levels."
     source: firmware/libraries/NeroNfc/src/frontend/st25r3916/st25r3916_iso14443a_uid.h
 
   - spec_prefix: ISO14443-3
     symbol: K_S_T25_ISO14443_A_SAK_CASCADE_BIT
     spec_value: "0x04"
-    ref: "ISO/IEC 14443-3:2018 §6.5.3.4 Table 9 — SAK b3 (04h) is the cascade bit; when set, the UID is incomplete."
+    ref: "ISO/IEC 14443-3:2018 §6.5.3.4 Table 9 -- SAK b3 (04h) is the cascade bit; when set, the UID is incomplete."
     source: firmware/libraries/NeroNfc/src/frontend/st25r3916/st25r3916_iso14443a_uid.h
 
   - spec_prefix: ISO14443-3
     symbol: K_S_T25_ISO14443_A_SEL_RESP_LEN
     spec_value: "4"
-    ref: "ISO/IEC 14443-3:2018 §6.5.4 — UID CLn contributes four UID/CT bytes per cascade level; BCC and the later SAK are separate."
+    ref: "ISO/IEC 14443-3:2018 §6.5.4 -- UID CLn contributes four UID/CT bytes per cascade level; BCC and the later SAK are separate."
     source: firmware/libraries/NeroNfc/src/frontend/st25r3916/st25r3916_iso14443a_uid.h
 
   - spec_prefix: ISO14443-3
     symbol: K_S_T25_ISO14443_A_UID_LEN_DOUBLE
     spec_value: "7"
-    ref: "ISO/IEC 14443-3:2018 §6.5.4 — double-size Type A UID length is seven bytes."
+    ref: "ISO/IEC 14443-3:2018 §6.5.4 -- double-size Type A UID length is seven bytes."
     source: firmware/libraries/NeroNfc/src/frontend/st25r3916/st25r3916_iso14443a_uid.h
 
   - spec_prefix: ISO14443-3
     symbol: K_S_T25_ISO14443_A_UID_LEN_SINGLE
     spec_value: "4"
-    ref: "ISO/IEC 14443-3:2018 §6.5.4 — single-size Type A UID length is four bytes."
+    ref: "ISO/IEC 14443-3:2018 §6.5.4 -- single-size Type A UID length is four bytes."
     source: firmware/libraries/NeroNfc/src/frontend/st25r3916/st25r3916_iso14443a_uid.h
 
   - spec_prefix: ISO14443-3
     symbol: K_S_T25_ISO14443_A_UID_LEN_TRIPLE
     spec_value: "10"
-    ref: "ISO/IEC 14443-3:2018 §6.5.4 — triple-size Type A UID length is ten bytes."
+    ref: "ISO/IEC 14443-3:2018 §6.5.4 -- triple-size Type A UID length is ten bytes."
     source: firmware/libraries/NeroNfc/src/frontend/st25r3916/st25r3916_iso14443a_uid.h
 
   - spec_prefix: ISO14443-3
     symbol: NFC_FRONTEND_ISO14443A_SEL_CL1
     spec_value: "0x93"
-    ref: "ISO/IEC 14443-3:2018 §6.5.3.2 — Type A SEL code 93h selects cascade level 1."
+    ref: "ISO/IEC 14443-3:2018 §6.5.3.2 -- Type A SEL code 93h selects cascade level 1."
     source: firmware/libraries/NeroNfc/src/nero_nfc_frontend.h
 
   - spec_prefix: ISO14443-3
     symbol: NFC_FRONTEND_ISO14443A_SEL_CL2
     spec_value: "0x95"
-    ref: "ISO/IEC 14443-3:2018 §6.5.3.2 — Type A SEL code 95h selects cascade level 2."
+    ref: "ISO/IEC 14443-3:2018 §6.5.3.2 -- Type A SEL code 95h selects cascade level 2."
     source: firmware/libraries/NeroNfc/src/nero_nfc_frontend.h
 
   - spec_prefix: ISO14443-3
     symbol: NFC_TAG_ATQA_LEN
     spec_value: "2"
-    ref: "ISO/IEC 14443-3:2018 §6.5.2 — Type A ATQA is two octets."
+    ref: "ISO/IEC 14443-3:2018 §6.5.2 -- Type A ATQA is two octets."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: ISO14443-3
     symbol: NFC_TAG_T4T_SAK_ISO14443_4_BIT
     spec_value: "0x20"
-    ref: "ISO/IEC 14443-3:2018 §6.5.3.4 Table 9 — with a complete UID, SAK b6 (20h) indicates ISO/IEC 14443-4 compliance."
+    ref: "ISO/IEC 14443-3:2018 §6.5.3.4 Table 9 -- with a complete UID, SAK b6 (20h) indicates ISO/IEC 14443-4 compliance."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: ISO14443-4
     symbol: ISO14443_CMD_RATS
     spec_value: "0xE0"
-    ref: "ISO/IEC 14443-4:2018 §5.2 — RATS starts with E0h."
+    ref: "ISO/IEC 14443-4:2018 §5.2 -- RATS starts with E0h."
     source: firmware/libraries/NeroNfc/src/frontend/st25r3916/st25_sketch_spi.h
 
   - spec_prefix: ISO14443-4
     symbol: ISO_DEP_BLOCK_NUM_MASK
     spec_value: "0x01"
-    ref: "ISO/IEC 14443-4:2018 §7.2.2 — ISO-DEP PCB b1 is the block-number bit."
+    ref: "ISO/IEC 14443-4:2018 §7.2.2 -- ISO-DEP PCB b1 is the block-number bit."
     source: firmware/libraries/NeroNfc/src/reader/reader_iso_dep_frame.h
 
   - spec_prefix: ISO14443-4
     symbol: ISO_DEP_FWI_DEFAULT
     spec_value: "4"
-    ref: "ISO/IEC 14443-4:2018 §5.3.5 and §7.3 — default FWI is 4 when ATS TB(1) is absent."
+    ref: "ISO/IEC 14443-4:2018 §5.3.5 and §7.3 -- default FWI is 4 when ATS TB(1) is absent."
     source: firmware/libraries/NeroNfc/src/nfc_iso_dep_timing.h
 
   - spec_prefix: ISO14443-4
     symbol: ISO_DEP_FWI_MAX
     spec_value: "14"
-    ref: "ISO/IEC 14443-4:2018 §5.3.5 and §7.3 — FWI values are 0 through 14; 15 is RFU."
+    ref: "ISO/IEC 14443-4:2018 §5.3.5 and §7.3 -- FWI values are 0 through 14; 15 is RFU."
     source: firmware/libraries/NeroNfc/src/nfc_iso_dep_timing.h
 
   - spec_prefix: ISO14443-4
     symbol: ISO_DEP_FWT_SCALE_NUM
     spec_value: "4096"
-    ref: "ISO/IEC 14443-4:2018 §7.3 — FWT uses (256 × 16 / fc) × 2^FWI, hence 4096/fc."
+    ref: "ISO/IEC 14443-4:2018 §7.3 -- FWT uses (256 × 16 / fc) × 2^FWI, hence 4096/fc."
     source: firmware/libraries/NeroNfc/src/nfc_iso_dep_timing.h
 
   - spec_prefix: ISO14443-4
     symbol: ISO_DEP_PCB_CHAIN_BIT
     spec_value: "0x10"
-    ref: "ISO/IEC 14443-4:2018 §7.2.2 — I-block PCB chaining bit mask is 10h."
+    ref: "ISO/IEC 14443-4:2018 §7.2.2 -- I-block PCB chaining bit mask is 10h."
     source: firmware/libraries/NeroNfc/src/reader/reader_iso_dep_frame.h
 
   - spec_prefix: ISO14443-4
     symbol: ISO_DEP_PCB_CID_BIT
     spec_value: "0x08"
-    ref: "ISO/IEC 14443-4:2018 §7.2.2 — PCB CID-following bit mask is 08h."
+    ref: "ISO/IEC 14443-4:2018 §7.2.2 -- PCB CID-following bit mask is 08h."
     source: firmware/libraries/NeroNfc/src/reader/reader_iso_dep_frame.h
 
   - spec_prefix: ISO14443-4
     symbol: ISO_DEP_PCB_CLASS_I_BLOCK
     spec_value: "0x00"
-    ref: "ISO/IEC 14443-4:2018 §7.2.2 — I-block PCB class pattern has the two most-significant bits 00b."
+    ref: "ISO/IEC 14443-4:2018 §7.2.2 -- I-block PCB class pattern has the two most-significant bits 00b."
     source: firmware/libraries/NeroNfc/src/reader/reader_iso_dep_frame.h
 
   - spec_prefix: ISO14443-4
     symbol: ISO_DEP_PCB_CLASS_MASK
     spec_value: "0xC0"
-    ref: "ISO/IEC 14443-4:2018 §7.2.2 — mask C0h selects the two PCB block-class bits."
+    ref: "ISO/IEC 14443-4:2018 §7.2.2 -- mask C0h selects the two PCB block-class bits."
     source: firmware/libraries/NeroNfc/src/reader/reader_iso_dep_frame.h
 
   - spec_prefix: ISO14443-4
     symbol: ISO_DEP_PCB_CLASS_R_BLOCK
     spec_value: "0x80"
-    ref: "ISO/IEC 14443-4:2018 §7.2.2 — R-block PCB class pattern has the two most-significant bits 10b."
+    ref: "ISO/IEC 14443-4:2018 §7.2.2 -- R-block PCB class pattern has the two most-significant bits 10b."
     source: firmware/libraries/NeroNfc/src/reader/reader_iso_dep_frame.h
 
   - spec_prefix: ISO14443-4
     symbol: ISO_DEP_PCB_CLASS_S_BLOCK
     spec_value: "0xC0"
-    ref: "ISO/IEC 14443-4:2018 §7.2.2 — S-block PCB class pattern has the two most-significant bits 11b."
+    ref: "ISO/IEC 14443-4:2018 §7.2.2 -- S-block PCB class pattern has the two most-significant bits 11b."
     source: firmware/libraries/NeroNfc/src/reader/reader_iso_dep_frame.h
 
   - spec_prefix: ISO14443-4
     symbol: ISO_DEP_PCB_I_BLOCK_BASE
     spec_value: "0x02"
-    ref: "ISO/IEC 14443-4:2018 §7.2.2 — unchained I-block PCB base pattern with no CID or NAD is 02h before block-number selection."
+    ref: "ISO/IEC 14443-4:2018 §7.2.2 -- unchained I-block PCB base pattern with no CID or NAD is 02h before block-number selection."
     source: firmware/libraries/NeroNfc/src/reader/reader_iso_dep_frame.h
 
   - spec_prefix: ISO14443-4
     symbol: ISO_DEP_PCB_NAD_BIT
     spec_value: "0x04"
-    ref: "ISO/IEC 14443-4:2018 §7.2.2 — PCB NAD-following bit mask is 04h."
+    ref: "ISO/IEC 14443-4:2018 §7.2.2 -- PCB NAD-following bit mask is 04h."
     source: firmware/libraries/NeroNfc/src/reader/reader_iso_dep_frame.h
 
   - spec_prefix: ISO14443-4
     symbol: ISO_DEP_PCB_R_BLOCK_BASE
     spec_value: "0xA2"
-    ref: "ISO/IEC 14443-4:2018 §7.2.2 — R(ACK) PCB base pattern with no CID is A2h before block-number selection."
+    ref: "ISO/IEC 14443-4:2018 §7.2.2 -- R(ACK) PCB base pattern with no CID is A2h before block-number selection."
     source: firmware/libraries/NeroNfc/src/reader/reader_iso_dep_frame.h
 
   - spec_prefix: ISO14443-4
     symbol: ISO_DEP_PCB_S_WTX
     spec_value: "0xF2"
-    ref: "ISO/IEC 14443-4:2018 §7.2.2 and §7.4 — S(WTX) PCB value is F2h."
+    ref: "ISO/IEC 14443-4:2018 §7.2.2 and §7.4 -- S(WTX) PCB value is F2h."
     source: firmware/libraries/NeroNfc/src/reader/reader_iso_dep_frame.h
 
   - spec_prefix: ISO14443-4
     symbol: ISO_DEP_WTXM_MASK
     spec_value: "0x3F"
-    ref: "ISO/IEC 14443-4:2018 §7.4 — WTXM occupies INF bits b6 through b1, mask 3Fh."
+    ref: "ISO/IEC 14443-4:2018 §7.4 -- WTXM occupies INF bits b6 through b1, mask 3Fh."
     source: firmware/libraries/NeroNfc/src/reader/reader_iso_dep_frame.h
 
   - spec_prefix: ISO14443-4
     symbol: ISO_DEP_WTXM_MAX
     spec_value: "59"
-    ref: "ISO/IEC 14443-4:2018 §7.4 — maximum valid WTXM is 59; 60 through 63 are RFU."
+    ref: "ISO/IEC 14443-4:2018 §7.4 -- maximum valid WTXM is 59; 60 through 63 are RFU."
     source: firmware/libraries/NeroNfc/src/nfc_iso_dep_timing.h
 
   - spec_prefix: ISO14443-4
     symbol: ISO_DEP_WTXM_MIN
     spec_value: "1"
-    ref: "ISO/IEC 14443-4:2018 §7.4 — minimum valid WTXM is 1; zero is RFU."
+    ref: "ISO/IEC 14443-4:2018 §7.4 -- minimum valid WTXM is 1; zero is RFU."
     source: firmware/libraries/NeroNfc/src/nfc_iso_dep_timing.h
 
   - spec_prefix: ISO14443-4
     symbol: NFC_FRONTEND_ISO14443_CMD_RATS
     spec_value: "0xE0"
-    ref: "ISO/IEC 14443-4:2018 §5.2 — RATS starts with E0h."
+    ref: "ISO/IEC 14443-4:2018 §5.2 -- RATS starts with E0h."
     source: firmware/libraries/NeroNfc/src/nero_nfc_frontend.h
 
   - spec_prefix: ISO14443-4
     symbol: NFC_TAG_T4T_RATS_START_BYTE
     spec_value: "0xE0"
-    ref: "ISO/IEC 14443-4:2018 §5.2 — RATS PDU start byte is E0h."
+    ref: "ISO/IEC 14443-4:2018 §5.2 -- RATS PDU start byte is E0h."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: ISO7816-3
     symbol: NFC_ISO7816_ATR_T0_TD1_PRESENT
     spec_value: "0x80"
-    ref: "ISO/IEC 7816-3:2006 §8.2.2 — T0 Y(1) bit 80h indicates TD1 is present; K (historical length) is the low nibble 0Fh."
+    ref: "ISO/IEC 7816-3:2006 §8.2.2 -- T0 Y(1) bit 80h indicates TD1 is present; K (historical length) is the low nibble 0Fh."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: ISO7816-3
-    symbol: NFC_ISO7816_ATR_TD1_T1
+    symbol: NFC_ISO7816_ATR_TD1_TD2_PRESENT
+    spec_value: "0x80"
+    ref: "ISO/IEC 7816-3:2006 §8.2.3 -- TD1 Y(2) bit 80h indicates TD2 is present; PC/SC Part 3 v2.01.09 §3.1.3.2.3.1 fixes TD1=80h for contactless ATRs."
+    source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
+
+  - spec_prefix: ISO7816-3
+    symbol: NFC_ISO7816_ATR_TD2_T1
     spec_value: "0x01"
-    ref: "ISO/IEC 7816-3:2006 §8.2.3 — TD1 low nibble 01h indicates protocol T=1."
+    ref: "ISO/IEC 7816-3:2006 §8.2.3 -- TD2 low nibble 01h indicates protocol T=1; PC/SC Part 3 v2.01.09 §3.1.3.2.3.1 fixes TD2=01h for contactless ATRs."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: ISO7816-3
     symbol: NFC_ISO7816_ATR_TS
     spec_value: "0x3B"
-    ref: "ISO/IEC 7816-3:2006 §8.1 — TS decodes to 3Bh for direct convention."
+    ref: "ISO/IEC 7816-3:2006 §8.1 -- TS decodes to 3Bh for direct convention."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: ISO7816-3
     symbol: NFC_ISO7816_HISTORICAL_BYTES_MAX
     spec_value: "15"
-    ref: "ISO/IEC 7816-3:2006 §8.2.4 — K permits at most 15 historical bytes."
+    ref: "ISO/IEC 7816-3:2006 §8.2.4 -- K permits at most 15 historical bytes."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: ISO7816-3
     symbol: NFC_PCSC_PROTOCOL_T0
     spec_value: "0x00"
-    ref: "ISO/IEC 7816-3:2006 §8.2.3 — TD low nibble 00h indicates protocol T=0."
+    ref: "ISO/IEC 7816-3:2006 §8.2.3 -- TD low nibble 00h indicates protocol T=0."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: ISO7816-3
     symbol: NFC_PCSC_PROTOCOL_T1
     spec_value: "0x01"
-    ref: "ISO/IEC 7816-3:2006 §8.2.3 — TD low nibble 01h indicates protocol T=1."
+    ref: "ISO/IEC 7816-3:2006 §8.2.3 -- TD low nibble 01h indicates protocol T=1."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: ISO7816-4
     symbol: NFC_ISO7816_CLA_ISO
     spec_value: "0x00"
-    ref: "ISO/IEC 7816-4:2020 §5.4.1 — 00h is the basic interindustry CLA encoding with logical channel zero."
+    ref: "ISO/IEC 7816-4:2020 §5.4.1 -- 00h is the basic interindustry CLA encoding with logical channel zero."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: ISO7816-4
     symbol: NFC_ISO7816_CLA_PROPRIETARY_SHORT
     spec_value: "0x80"
-    ref: "ISO/IEC 7816-4:2020 §5.4.1 — CLA encodings with b8 set are proprietary; 80h is the firmware's representative short proprietary CLA."
+    ref: "ISO/IEC 7816-4:2020 §5.4.1 -- CLA encodings with b8 set are proprietary; 80h is the firmware's representative short proprietary CLA."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: ISO7816-4
     symbol: NFC_ISO7816_INS_GET_DATA
     spec_value: "0xCA"
-    ref: "ISO/IEC 7816-4:2020 §5.5 and §11.5.3 — even GET DATA instruction byte is CAh."
+    ref: "ISO/IEC 7816-4:2020 §5.5 and §11.5.3 -- even GET DATA instruction byte is CAh."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: ISO7816-4
     symbol: NFC_ISO7816_INS_GET_RESPONSE
     spec_value: "0xC0"
-    ref: "ISO/IEC 7816-4:2020 §5.5 and §11.8.1 — GET RESPONSE instruction byte is C0h."
+    ref: "ISO/IEC 7816-4:2020 §5.5 and §11.8.1 -- GET RESPONSE instruction byte is C0h."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: ISO7816-4
     symbol: NFC_ISO7816_INS_READ_BINARY
     spec_value: "0xB0"
-    ref: "ISO/IEC 7816-4:2020 §5.5 and §11.3.3 — even READ BINARY instruction byte is B0h."
+    ref: "ISO/IEC 7816-4:2020 §5.5 and §11.3.3 -- even READ BINARY instruction byte is B0h."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: ISO7816-4
     symbol: NFC_ISO7816_INS_SELECT
     spec_value: "0xA4"
-    ref: "ISO/IEC 7816-4:2020 §5.5 and §11.2.2 — SELECT instruction byte is A4h."
+    ref: "ISO/IEC 7816-4:2020 §5.5 and §11.2.2 -- SELECT instruction byte is A4h."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: ISO7816-4
     symbol: NFC_ISO7816_INS_UPDATE_BINARY
     spec_value: "0xD6"
-    ref: "ISO/IEC 7816-4:2020 §5.5 and §11.3.5 — even UPDATE BINARY instruction byte is D6h."
+    ref: "ISO/IEC 7816-4:2020 §5.5 and §11.3.5 -- even UPDATE BINARY instruction byte is D6h."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: ISO7816-4
     symbol: NFC_ISO7816_LC_SELECT_FILE_ID
     spec_value: "2"
-    ref: "ISO/IEC 7816-4:2020 §11.2.2 — selection by file identifier carries a two-byte file identifier, hence short Lc=2."
+    ref: "ISO/IEC 7816-4:2020 §11.2.2 -- selection by file identifier carries a two-byte file identifier, hence short Lc=2."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: ISO7816-4
     symbol: NFC_ISO7816_P1_SELECT_BY_DF_NAME
     spec_value: "0x04"
-    ref: "ISO/IEC 7816-4:2020 §11.2.2 — SELECT P1=04h selects by DF name."
+    ref: "ISO/IEC 7816-4:2020 §11.2.2 -- SELECT P1=04h selects by DF name."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: ISO7816-4
     symbol: NFC_ISO7816_P1_SELECT_BY_FILE_ID
     spec_value: "0x00"
-    ref: "ISO/IEC 7816-4:2020 §11.2.2 — SELECT P1=00h selects by file identifier in the applicable context."
+    ref: "ISO/IEC 7816-4:2020 §11.2.2 -- SELECT P1=00h selects by file identifier in the applicable context."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: ISO7816-4
     symbol: NFC_ISO7816_P2_SELECT_FIRST
     spec_value: "0x00"
-    ref: "ISO/IEC 7816-4:2020 §11.2.2 — SELECT P2 occurrence bits 00b request the first or only occurrence."
+    ref: "ISO/IEC 7816-4:2020 §11.2.2 -- SELECT P2 occurrence bits 00b request the first or only occurrence."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: ISO7816-4
     symbol: NFC_ISO7816_P2_SELECT_NO_FCI
     spec_value: "0x0C"
-    ref: "ISO/IEC 7816-4:2020 §11.2.2 — SELECT P2=0Ch combines first/only occurrence with no response data."
+    ref: "ISO/IEC 7816-4:2020 §11.2.2 -- SELECT P2=0Ch combines first/only occurrence with no response data."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: ISO7816-4
     symbol: NFC_ISO7816_SHORT_LC_MAX
     spec_value: "255"
-    ref: "ISO/IEC 7816-4:2020 §5.2 — the one-byte short Lc encoding carries at most 255 data bytes."
+    ref: "ISO/IEC 7816-4:2020 §5.2 -- the one-byte short Lc encoding carries at most 255 data bytes."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: ISO7816-4
     symbol: NFC_ISO7816_SW1_CLASS_NOT_SUPPORTED
     spec_value: "0x6E"
-    ref: "ISO/IEC 7816-4:2020 §5.6 — 6E00 means class not supported."
+    ref: "ISO/IEC 7816-4:2020 §5.6 -- 6E00 means class not supported."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: ISO7816-4
     symbol: NFC_ISO7816_SW1_CONDITIONS_NOT_SATISFIED
     spec_value: "0x69"
-    ref: "ISO/IEC 7816-4:2020 §5.6 — 69XX is the command-not-allowed class; conditions of use not satisfied is specifically 6985."
+    ref: "ISO/IEC 7816-4:2020 §5.6 -- 69XX is the command-not-allowed class; conditions of use not satisfied is specifically 6985."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: ISO7816-4
     symbol: NFC_ISO7816_SW1_GENERAL_ERROR
     spec_value: "0x6F"
-    ref: "ISO/IEC 7816-4:2020 §5.6 — 6F00 means no precise diagnosis."
+    ref: "ISO/IEC 7816-4:2020 §5.6 -- 6F00 means no precise diagnosis."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: ISO7816-4
     symbol: NFC_ISO7816_SW1_INS_NOT_SUPPORTED
     spec_value: "0x6D"
-    ref: "ISO/IEC 7816-4:2020 §5.6 — 6D00 means instruction code not supported or invalid."
+    ref: "ISO/IEC 7816-4:2020 §5.6 -- 6D00 means instruction code not supported or invalid."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: ISO7816-4
     symbol: NFC_ISO7816_SW1_MORE_DATA
     spec_value: "0x61"
-    ref: "ISO/IEC 7816-4:2020 §5.6 — for 61XX, SW2 indicates response bytes still available."
+    ref: "ISO/IEC 7816-4:2020 §5.6 -- for 61XX, SW2 indicates response bytes still available."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: ISO7816-4
     symbol: NFC_ISO7816_SW1_SUCCESS
     spec_value: "0x90"
-    ref: "ISO/IEC 7816-4:2020 §5.6 — 9000 is normal processing without further qualification."
+    ref: "ISO/IEC 7816-4:2020 §5.6 -- 9000 is normal processing without further qualification."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: ISO7816-4
     symbol: NFC_ISO7816_SW1_VERIFICATION_FAILED
     spec_value: "0x63"
-    ref: "ISO/IEC 7816-4:2020 §5.6 — 63XX is a warning with non-volatile state changed; 63CX commonly qualifies verification retry counters."
+    ref: "ISO/IEC 7816-4:2020 §5.6 -- 63XX is a warning with non-volatile state changed; 63CX commonly qualifies verification retry counters."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: ISO7816-4
     symbol: NFC_ISO7816_SW1_WRONG_DATA
     spec_value: "0x6A"
-    ref: "ISO/IEC 7816-4:2020 §5.6 — 6AXX is the wrong-parameter class with the specific condition qualified by SW2; it is not limited to the data field."
+    ref: "ISO/IEC 7816-4:2020 §5.6 -- 6AXX is the wrong-parameter class with the specific condition qualified by SW2; it is not limited to the data field."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: ISO7816-4
     symbol: NFC_ISO7816_SW1_WRONG_LENGTH
     spec_value: "0x6C"
-    ref: "ISO/IEC 7816-4:2020 §5.6 — for 6CXX, Le is wrong and SW2 indicates the exact length."
+    ref: "ISO/IEC 7816-4:2020 §5.6 -- for 6CXX, Le is wrong and SW2 indicates the exact length."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: ISO7816-4
     symbol: NFC_ISO7816_SW1_WRONG_LENGTH_ALT
     spec_value: "0x67"
-    ref: "ISO/IEC 7816-4:2020 §5.6 — 6700 means wrong length without further indication."
+    ref: "ISO/IEC 7816-4:2020 §5.6 -- 6700 means wrong length without further indication."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: ISO7816-4
     symbol: NFC_ISO7816_SW1_WRONG_P1P2
     spec_value: "0x6B"
-    ref: "ISO/IEC 7816-4:2020 §5.6 — 6B00 means wrong parameters P1-P2."
+    ref: "ISO/IEC 7816-4:2020 §5.6 -- 6B00 means wrong parameters P1-P2."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: ISO7816-4
     symbol: NFC_ISO7816_SW2_CONDITIONS_NOT_SATISFIED
     spec_value: "0x85"
-    ref: "ISO/IEC 7816-4:2020 §5.6 — with SW1=69h, SW2=85h means conditions of use not satisfied."
+    ref: "ISO/IEC 7816-4:2020 §5.6 -- with SW1=69h, SW2=85h means conditions of use not satisfied."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: ISO7816-4
     symbol: NFC_ISO7816_SW2_FILE_NOT_FOUND
     spec_value: "0x82"
-    ref: "ISO/IEC 7816-4:2020 §5.6 — with SW1=6Ah, SW2=82h means file or application not found."
+    ref: "ISO/IEC 7816-4:2020 §5.6 -- with SW1=6Ah, SW2=82h means file or application not found."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: ISO7816-4
     symbol: NFC_ISO7816_SW2_FUNC_NOT_SUPPORTED
     spec_value: "0x81"
-    ref: "ISO/IEC 7816-4:2020 §5.6 — with SW1=6Ah, SW2=81h means function not supported."
+    ref: "ISO/IEC 7816-4:2020 §5.6 -- with SW1=6Ah, SW2=81h means function not supported."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: ISO7816-4
     symbol: NFC_ISO7816_SW2_REF_DATA_NOT_FOUND
     spec_value: "0x88"
-    ref: "ISO/IEC 7816-4:2020 §5.6 — with SW1=6Ah, SW2=88h means referenced data or reference data not found."
+    ref: "ISO/IEC 7816-4:2020 §5.6 -- with SW1=6Ah, SW2=88h means referenced data or reference data not found."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: ISO7816-4
     symbol: NFC_ISO7816_SW2_SUCCESS
     spec_value: "0x00"
-    ref: "ISO/IEC 7816-4:2020 §5.6 — SW2=00h completes normal-processing status 9000."
+    ref: "ISO/IEC 7816-4:2020 §5.6 -- SW2=00h completes normal-processing status 9000."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: ISO7816-4
     symbol: NFC_ISO7816_SW2_WRONG_PARAMS
     spec_value: "0x86"
-    ref: "ISO/IEC 7816-4:2020 §5.6 — with SW1=6Ah, SW2=86h means incorrect parameters P1-P2."
+    ref: "ISO/IEC 7816-4:2020 §5.6 -- with SW1=6Ah, SW2=86h means incorrect parameters P1-P2."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: ISO7816-4
     symbol: NFC_ISO7816_SW_LEN
     spec_value: "2"
-    ref: "ISO/IEC 7816-4:2020 §§5.2 and 5.6 — the mandatory response status trailer is SW1 followed by SW2, two bytes."
+    ref: "ISO/IEC 7816-4:2020 §§5.2 and 5.6 -- the mandatory response status trailer is SW1 followed by SW2, two bytes."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: ISO7816-4
     symbol: NFC_ISO7816_SW_STATUS_WORD_LEN
     spec_value: "2"
-    ref: "ISO/IEC 7816-4:2020 §§5.2 and 5.6 — the status word comprises the two bytes SW1-SW2."
+    ref: "ISO/IEC 7816-4:2020 §§5.2 and 5.6 -- the status word comprises the two bytes SW1-SW2."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: ISO7816-4
     symbol: NFC_ISO7816_SW_SUCCESS
     spec_value: "0x9000"
-    ref: "ISO/IEC 7816-4:2020 §5.6 — 9000 means normal processing without further qualification."
+    ref: "ISO/IEC 7816-4:2020 §5.6 -- 9000 means normal processing without further qualification."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: NDEF
     symbol: NERO_NFC_URI_PREFIX_CODE_COUNT
     spec_value: "36"
-    ref: "NFC Forum RTD URI 1.0 §3.2.2 Table 3 — abbreviation codes 00h..23h (36 entries); 24h..FFh RFU."
+    ref: "NFC Forum RTD URI 1.0 §3.2.2 Table 3 -- abbreviation codes 00h..23h (36 entries); 24h..FFh RFU."
     source: firmware/libraries/NeroNfc/src/nero_nfc_limits.h
 
   - spec_prefix: NDEF
     symbol: NFC_NDEF_HDR_CF
     spec_value: "0x20"
-    ref: "NFC Forum NDEF 1.0 §3.2 — record header bit 5 CF (Chunk Flag) = 20h."
+    ref: "NFC Forum NDEF 1.0 §3.2 -- record header bit 5 CF (Chunk Flag) = 20h."
     source: firmware/libraries/NeroNfc/src/protocol/nfc_ndef_record_decode.c
 
   - spec_prefix: NDEF
     symbol: NFC_NDEF_HDR_IL
     spec_value: "0x08"
-    ref: "NFC Forum NDEF 1.0 §3.2 — record header bit 3 IL (ID-Length present) = 08h."
+    ref: "NFC Forum NDEF 1.0 §3.2 -- record header bit 3 IL (ID-Length present) = 08h."
     source: firmware/libraries/NeroNfc/src/protocol/nfc_ndef_record_decode.c
 
   - spec_prefix: NDEF
     symbol: NFC_NDEF_HDR_MB
     spec_value: "0x80"
-    ref: "NFC Forum NDEF 1.0 §3.2 — record header bit 7 MB (Message Begin) = 80h."
+    ref: "NFC Forum NDEF 1.0 §3.2 -- record header bit 7 MB (Message Begin) = 80h."
     source: firmware/libraries/NeroNfc/src/nfc_ndef_record_decode.h
 
   - spec_prefix: NDEF
     symbol: NFC_NDEF_HDR_ME
     spec_value: "0x40"
-    ref: "NFC Forum NDEF 1.0 §3.2 — record header bit 6 ME (Message End) = 40h."
+    ref: "NFC Forum NDEF 1.0 §3.2 -- record header bit 6 ME (Message End) = 40h."
     source: firmware/libraries/NeroNfc/src/nfc_ndef_record_decode.h
 
   - spec_prefix: NDEF
     symbol: NFC_NDEF_HDR_SR
     spec_value: "0x10"
-    ref: "NFC Forum NDEF 1.0 §3.2 — record header bit 4 SR (Short Record) = 10h."
+    ref: "NFC Forum NDEF 1.0 §3.2 -- record header bit 4 SR (Short Record) = 10h."
     source: firmware/libraries/NeroNfc/src/nfc_ndef_record_decode.h
 
   - spec_prefix: NDEF
     symbol: NFC_NDEF_HDR_TNF_MASK
     spec_value: "0x07"
-    ref: "NFC Forum NDEF 1.0 §3.2 — record header bits 2..0 TNF mask = 07h."
+    ref: "NFC Forum NDEF 1.0 §3.2 -- record header bits 2..0 TNF mask = 07h."
     source: firmware/libraries/NeroNfc/src/nfc_ndef_record_decode.h
 
   - spec_prefix: NDEF
     symbol: NFC_NDEF_RTD_TYPE_TEXT
     spec_value: "0x54"
-    ref: "NFC Forum RTD Text 1.0 §3.2.1 — Well Known Type \"T\" (54h)."
+    ref: "NFC Forum RTD Text 1.0 §3.2.1 -- Well Known Type \"T\" (54h)."
     source: firmware/libraries/NeroNfc/src/nfc_ndef_record_decode.h
 
   - spec_prefix: NDEF
     symbol: NFC_NDEF_RTD_TYPE_URI
     spec_value: "0x55"
-    ref: "NFC Forum RTD URI 1.0 §3.2.1 — Well Known Type \"U\" (55h)."
+    ref: "NFC Forum RTD URI 1.0 §3.2.1 -- Well Known Type \"U\" (55h)."
     source: firmware/libraries/NeroNfc/src/nfc_ndef_record_decode.h
 
   - spec_prefix: NDEF
     symbol: NFC_NDEF_TEXT_STATUS_LANG_LEN_MASK
     spec_value: "0x3F"
-    ref: "NFC Forum RTD Text 1.0 §3.2.1 Table 3 — status byte bits 5..0 language-code length mask 3Fh."
+    ref: "NFC Forum RTD Text 1.0 §3.2.1 Table 3 -- status byte bits 5..0 language-code length mask 3Fh."
     source: firmware/libraries/NeroNfc/src/protocol/nfc_ndef_record_decode.c
 
   - spec_prefix: NDEF
     symbol: NFC_NDEF_TEXT_STATUS_UTF16
     spec_value: "0x80"
-    ref: "NFC Forum RTD Text 1.0 §3.2.1 Table 3 — status byte bit 7 = 1 selects UTF-16 (80h)."
+    ref: "NFC Forum RTD Text 1.0 §3.2.1 Table 3 -- status byte bit 7 = 1 selects UTF-16 (80h)."
     source: firmware/libraries/NeroNfc/src/protocol/nfc_ndef_record_decode.c
 
   - spec_prefix: NDEF
     symbol: NFC_NDEF_TLV_EXTENDED_LEN
     spec_value: "0xFF"
-    ref: "NFC Forum Type 2 Tag Operation Spec 1.1 §2.3 RQ_T2T_MEM_014 — L=FFh introduces the three-byte length form."
+    ref: "NFC Forum Type 2 Tag Operation Spec 1.1 §2.3 RQ_T2T_MEM_014 -- L=FFh introduces the three-byte length form."
     source: firmware/libraries/NeroNfc/src/nfc_ndef_tlv.h
 
   - spec_prefix: NDEF
     symbol: NFC_NDEF_TLV_EXTENDED_LEN_FIELD_BYTES
     spec_value: "3"
-    ref: "NFC Forum Type 2 Tag Operation Spec 1.1 §2.3 RQ_T2T_MEM_014 — extended L is marker FFh plus two length bytes (3 octets)."
+    ref: "NFC Forum Type 2 Tag Operation Spec 1.1 §2.3 RQ_T2T_MEM_014 -- extended L is marker FFh plus two length bytes (3 octets)."
     source: firmware/libraries/NeroNfc/src/nfc_ndef_tlv.h
 
   - spec_prefix: NDEF
     symbol: NFC_NDEF_TLV_MESSAGE
     spec_value: "0x03"
-    ref: "NFC Forum Type 2 Tag Operation Spec 1.1 §2.3 Table 2 / §2.3.4 — NDEF Message TLV tag 03h."
+    ref: "NFC Forum Type 2 Tag Operation Spec 1.1 §2.3 Table 2 / §2.3.4 -- NDEF Message TLV tag 03h."
     source: firmware/libraries/NeroNfc/src/nfc_ndef_tlv.h
 
   - spec_prefix: NDEF
     symbol: NFC_NDEF_TLV_NULL
     spec_value: "0x00"
-    ref: "NFC Forum Type 2 Tag Operation Spec 1.1 §2.3 — NULL TLV tag 00h (also used on T5T)."
+    ref: "NFC Forum Type 2 Tag Operation Spec 1.1 §2.3 -- NULL TLV tag 00h (also used on T5T)."
     source: firmware/libraries/NeroNfc/src/nfc_ndef_tlv.h
 
   - spec_prefix: NDEF
     symbol: NFC_NDEF_TLV_ONE_BYTE_LEN_MAX
     spec_value: "254"
-    ref: "NFC Forum Type 2 Tag Operation Spec 1.1 §2.3 RQ_T2T_MEM_014 — one-byte L codes lengths 00h–FEh (254 max); FFh starts the three-byte form."
+    ref: "NFC Forum Type 2 Tag Operation Spec 1.1 §2.3 RQ_T2T_MEM_014 -- one-byte L codes lengths 00h-FEh (254 max); FFh starts the three-byte form."
     source: firmware/libraries/NeroNfc/src/nfc_ndef_tlv.h
 
   - spec_prefix: NDEF
     symbol: NFC_NDEF_TLV_TERMINATOR
     spec_value: "0xFE"
-    ref: "NFC Forum Type 2 Tag Operation Spec 1.1 §2.3 — Terminator TLV tag FEh."
+    ref: "NFC Forum Type 2 Tag Operation Spec 1.1 §2.3 -- Terminator TLV tag FEh."
     source: firmware/libraries/NeroNfc/src/nfc_ndef_tlv.h
 
   - spec_prefix: NDEF
     symbol: NFC_NDEF_TNF_MIME
     spec_value: "0x02"
-    ref: "NFC Forum NDEF 1.0 §3.2.6 — TNF 0x02 media type (RFC 2046)."
+    ref: "NFC Forum NDEF 1.0 §3.2.6 -- TNF 0x02 media type (RFC 2046)."
     source: firmware/libraries/NeroNfc/src/nfc_ndef_record_decode.h
 
   - spec_prefix: NDEF
     symbol: NFC_NDEF_TNF_WELL_KNOWN
     spec_value: "0x01"
-    ref: "NFC Forum NDEF 1.0 §3.2.6 — TNF 0x01 NFC Forum well-known type (RTD)."
+    ref: "NFC Forum NDEF 1.0 §3.2.6 -- TNF 0x01 NFC Forum well-known type (RTD)."
     source: firmware/libraries/NeroNfc/src/nfc_ndef_record_decode.h
 
   - spec_prefix: NDEF
     symbol: NFC_NDEF_URI_PREFIX_HTTPS
     spec_value: "0x04"
-    ref: "NFC Forum RTD URI 1.0 §3.2.2 Table 3 — identifier code 04h = \"https://\"."
+    ref: "NFC Forum RTD URI 1.0 §3.2.2 Table 3 -- identifier code 04h = \"https://\"."
     source: firmware/libraries/NeroNfc/src/nfc_ndef_record_decode.h
 
   - spec_prefix: PCSC-P3
     symbol: NFC_ISO7816_CLA_PROPRIETARY
     spec_value: "0xFF"
-    ref: "PC/SC Part 3 v2.01.09 §3.2.2.1.3 Table 3-8a and Part 3 Supplemental for Contactless ICCs v2.02.00 §1/Table 2 — PC/SC IFD commands use CLA FFh."
+    ref: "PC/SC Part 3 v2.01.09 §3.2.2.1.3 Table 3-8a and Part 3 Supplemental for Contactless ICCs v2.02.00 §1/Table 2 -- PC/SC IFD commands use CLA FFh."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: PCSC-P3
     symbol: NFC_PCSC_ESCAPE_TRANSPARENT_INS
     spec_value: "0xC2"
-    ref: "PC/SC Part 3 Supplemental for Contactless ICCs v2.02.00 §1, Table 2, and §5 Table 19 — IFD Transparent Exchange uses INS C2h (FF C2 00 01)."
+    ref: "PC/SC Part 3 Supplemental for Contactless ICCs v2.02.00 §1, Table 2, and §5 Table 19 -- IFD Transparent Exchange uses INS C2h (FF C2 00 01)."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: PCSC-P3
     symbol: NFC_PCSC_GET_DATA_ATS
     spec_value: "0x01"
-    ref: "PC/SC Part 3 v2.01.09 §3.2.2.1.3 Table 3-8b — GET DATA P1=01h P2=00h returns ISO 14443-A ATS historical bytes without CRC."
+    ref: "PC/SC Part 3 v2.01.09 §3.2.2.1.3 Table 3-8b -- GET DATA P1=01h P2=00h returns ISO 14443-A ATS historical bytes without CRC."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: PCSC-P3
     symbol: NFC_PCSC_GET_DATA_UID
     spec_value: "0x00"
-    ref: "PC/SC Part 3 v2.01.09 §3.2.2.1.3 Table 3-8b — GET DATA P1=00h P2=00h returns the UID."
+    ref: "PC/SC Part 3 v2.01.09 §3.2.2.1.3 Table 3-8b -- GET DATA P1=00h P2=00h returns the UID."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: PCSC-P3
     symbol: NFC_PCSC_STORAGE_RID_0
     spec_value: "0xA0"
-    ref: "PC/SC Part 3 Supplemental Document v2.01.09 §2.1.1 Table 1 — PC/SC Workgroup RID byte 0 = A0h."
+    ref: "PC/SC Part 3 Supplemental Document v2.01.09 §2.1.1 Table 1 -- PC/SC Workgroup RID byte 0 = A0h."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: PCSC-P3
     symbol: NFC_PCSC_STORAGE_RID_1
     spec_value: "0x00"
-    ref: "PC/SC Part 3 Supplemental Document v2.01.09 §2.1.1 Table 1 — PC/SC Workgroup RID byte 1 = 00h."
+    ref: "PC/SC Part 3 Supplemental Document v2.01.09 §2.1.1 Table 1 -- PC/SC Workgroup RID byte 1 = 00h."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: PCSC-P3
     symbol: NFC_PCSC_STORAGE_RID_2
     spec_value: "0x00"
-    ref: "PC/SC Part 3 Supplemental Document v2.01.09 §2.1.1 Table 1 — PC/SC Workgroup RID byte 2 = 00h."
+    ref: "PC/SC Part 3 Supplemental Document v2.01.09 §2.1.1 Table 1 -- PC/SC Workgroup RID byte 2 = 00h."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: PCSC-P3
     symbol: NFC_PCSC_STORAGE_RID_3
     spec_value: "0x03"
-    ref: "PC/SC Part 3 Supplemental Document v2.01.09 §2.1.1 Table 1 — PC/SC Workgroup RID byte 3 = 03h."
+    ref: "PC/SC Part 3 Supplemental Document v2.01.09 §2.1.1 Table 1 -- PC/SC Workgroup RID byte 3 = 03h."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: PCSC-P3
     symbol: NFC_PCSC_STORAGE_RID_4
     spec_value: "0x06"
-    ref: "PC/SC Part 3 Supplemental Document v2.01.09 §2.1.1 Table 1 — PC/SC Workgroup RID byte 4 = 06h (RID A0 00 00 03 06)."
+    ref: "PC/SC Part 3 Supplemental Document v2.01.09 §2.1.1 Table 1 -- PC/SC Workgroup RID byte 4 = 06h (RID A0 00 00 03 06)."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: PCSC-P3
     symbol: NFC_PCSC_STORAGE_RID_LEN
     spec_value: "5"
-    ref: "PC/SC Part 3 Supplemental Document v2.01.09 §2.1.1 Table 1 — PC/SC Workgroup RID length is 5 bytes."
+    ref: "PC/SC Part 3 Supplemental Document v2.01.09 §2.1.1 Table 1 -- PC/SC Workgroup RID length is 5 bytes."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: PCSC-P3
     symbol: NFC_PCSC_STORAGE_STANDARD_ISO14443A
     spec_value: "0x03"
-    ref: "PC/SC Part 3 Supplemental Document v2.01.09 §2.1.2.1 Table 2 — PIX.SS 03h denotes ISO 14443 A, part 3."
+    ref: "PC/SC Part 3 Supplemental Document v2.01.09 §2.1.2.1 Table 2 -- PIX.SS 03h denotes ISO 14443 A, part 3."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: PCSC-P3
     symbol: NFC_PCSC_STORAGE_STANDARD_ISO15693
     spec_value: "0x0B"
-    ref: "PC/SC Part 3 Supplemental Document v2.01.09 §2.1.2.1 Table 2 — PIX.SS 0Bh denotes ISO 15693, part 3."
+    ref: "PC/SC Part 3 Supplemental Document v2.01.09 §2.1.2.1 Table 2 -- PIX.SS 0Bh denotes ISO 15693, part 3."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: PN532
     symbol: NFC_PN532_BRTY_106KBPS_TYPE_A
     spec_value: "0x00"
-    ref: "NXP UM0701-02 §7.3.5 InListPassiveTarget input — BrTy 00h selects 106 kbps ISO/IEC 14443 Type A."
+    ref: "NXP UM0701-02 §7.3.5 InListPassiveTarget input -- BrTy 00h selects 106 kbps ISO/IEC 14443 Type A."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: PN532
     symbol: NFC_PN532_CMD_GET_FIRMWARE_VERSION
     spec_value: "0x02"
-    ref: "NXP UM0701-02 §7 Table 12 / §7.2.2 — GetFirmwareVersion command code 02h."
+    ref: "NXP UM0701-02 §7 Table 12 / §7.2.2 -- GetFirmwareVersion command code 02h."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: PN532
     symbol: NFC_PN532_CMD_IN_COMMUNICATE_THRU
     spec_value: "0x42"
-    ref: "NXP UM0701-02 §7 Table 12 / §7.3.9 — InCommunicateThru command code 42h."
+    ref: "NXP UM0701-02 §7 Table 12 / §7.3.9 -- InCommunicateThru command code 42h."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: PN532
     symbol: NFC_PN532_CMD_IN_DATA_EXCHANGE
     spec_value: "0x40"
-    ref: "NXP UM0701-02 §7 Table 12 / §7.3.8 — InDataExchange command code 40h."
+    ref: "NXP UM0701-02 §7 Table 12 / §7.3.8 -- InDataExchange command code 40h."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: PN532
     symbol: NFC_PN532_CMD_IN_DESELECT
     spec_value: "0x44"
-    ref: "NXP UM0701-02 §7 Table 12 / §7.3.10 — InDeselect command code 44h."
+    ref: "NXP UM0701-02 §7 Table 12 / §7.3.10 -- InDeselect command code 44h."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: PN532
     symbol: NFC_PN532_CMD_IN_LIST_PASSIVE_TARGET
     spec_value: "0x4A"
-    ref: "NXP UM0701-02 §7 Table 12 / §7.3.5 — InListPassiveTarget command code 4Ah."
+    ref: "NXP UM0701-02 §7 Table 12 / §7.3.5 -- InListPassiveTarget command code 4Ah."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: PN532
     symbol: NFC_PN532_CMD_IN_RELEASE
     spec_value: "0x52"
-    ref: "NXP UM0701-02 §7 Table 12 / §7.3.11 — InRelease command code 52h."
+    ref: "NXP UM0701-02 §7 Table 12 / §7.3.11 -- InRelease command code 52h."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: PN532
     symbol: NFC_PN532_FW_VERSION_IC
     spec_value: "0x32"
-    ref: "NXP UM0701-02 §7.2.2 GetFirmwareVersion output — IC field 32h identifies PN532."
+    ref: "NXP UM0701-02 §7.2.2 GetFirmwareVersion output -- IC field 32h identifies PN532."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: PN532
     symbol: NFC_PN532_FW_VERSION_REV
     spec_value: "0x06"
-    ref: "NXP UM0701-02 §7.2.2 GetFirmwareVersion output — Rev field 06h for firmware revision 1.6."
+    ref: "NXP UM0701-02 §7.2.2 GetFirmwareVersion output -- Rev field 06h for firmware revision 1.6."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: PN532
     symbol: NFC_PN532_FW_VERSION_SUPPORT
     spec_value: "0x07"
-    ref: "NXP UM0701-02 §7.2.2 GetFirmwareVersion output — Support bitfield 07h for PN532 firmware 1.6."
+    ref: "NXP UM0701-02 §7.2.2 GetFirmwareVersion output -- Support bitfield 07h for PN532 firmware 1.6."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: PN532
     symbol: NFC_PN532_FW_VERSION_VER
     spec_value: "0x01"
-    ref: "NXP UM0701-02 §7.2.2 GetFirmwareVersion output — Ver field 01h for PN532 firmware family 1.x."
+    ref: "NXP UM0701-02 §7.2.2 GetFirmwareVersion output -- Ver field 01h for PN532 firmware family 1.x."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: PN532
     symbol: NFC_PN532_GET_FIRMWARE_VERSION_RSP_SUB
     spec_value: "0x03"
-    ref: "NXP UM0701-02 §7 response-frame rule / §7.2.2 output — GetFirmwareVersion response code CC+1 = 03h."
+    ref: "NXP UM0701-02 §7 response-frame rule / §7.2.2 output -- GetFirmwareVersion response code CC+1 = 03h."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: PN532
     symbol: NFC_PN532_HOST_TO_PN532
     spec_value: "0xD4"
-    ref: "NXP UM0701-02 §6.2.1.1 Figure 13 TFI definition — D4h identifies a host-to-PN532 frame."
+    ref: "NXP UM0701-02 §6.2.1.1 Figure 13 TFI definition -- D4h identifies a host-to-PN532 frame."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: PN532
     symbol: NFC_PN532_PN532_TO_HOST
     spec_value: "0xD5"
-    ref: "NXP UM0701-02 §6.2.1.1 Figure 13 TFI definition — D5h identifies a PN532-to-host frame."
+    ref: "NXP UM0701-02 §6.2.1.1 Figure 13 TFI definition -- D5h identifies a PN532-to-host frame."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: PN532
     symbol: NFC_PN532_RSP_IN_COMMUNICATE_THRU
     spec_value: "0x43"
-    ref: "NXP UM0701-02 §7 response-frame rule / §7.3.9 output — InCommunicateThru response code 43h."
+    ref: "NXP UM0701-02 §7 response-frame rule / §7.3.9 output -- InCommunicateThru response code 43h."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: PN532
     symbol: NFC_PN532_RSP_IN_DATA_EXCHANGE
     spec_value: "0x41"
-    ref: "NXP UM0701-02 §7 response-frame rule / §7.3.8 output — InDataExchange response code CC+1 = 41h."
+    ref: "NXP UM0701-02 §7 response-frame rule / §7.3.8 output -- InDataExchange response code CC+1 = 41h."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: PN532
     symbol: NFC_PN532_RSP_IN_DESELECT
     spec_value: "0x45"
-    ref: "NXP UM0701-02 §7 response-frame rule / §7.3.10 output — InDeselect response code 45h."
+    ref: "NXP UM0701-02 §7 response-frame rule / §7.3.10 output -- InDeselect response code 45h."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: PN532
     symbol: NFC_PN532_RSP_IN_LIST_PASSIVE_TARGET
     spec_value: "0x4B"
-    ref: "NXP UM0701-02 §7 response-frame rule / §7.3.5 output — InListPassiveTarget response code 4Bh."
+    ref: "NXP UM0701-02 §7 response-frame rule / §7.3.5 output -- InListPassiveTarget response code 4Bh."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: PN532
     symbol: NFC_PN532_RSP_IN_RELEASE
     spec_value: "0x53"
-    ref: "NXP UM0701-02 §7 response-frame rule / §7.3.11 output — InRelease response code CC+1 = 53h."
+    ref: "NXP UM0701-02 §7 response-frame rule / §7.3.11 output -- InRelease response code CC+1 = 53h."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: PN532
     symbol: NFC_PN532_SINGLE_TARGET
     spec_value: "0x01"
-    ref: "NXP UM0701-02 §7.3.5 — implementation choice MaxTg=01h requests one target; NbTg may be 0..2 and Tg is a separate logical identifier."
+    ref: "NXP UM0701-02 §7.3.5 -- implementation choice MaxTg=01h requests one target; NbTg may be 0..2 and Tg is a separate logical identifier."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: PN532
     symbol: NFC_PN532_STATUS_CONTEXT_ERROR
     spec_value: "0x27"
-    ref: "NXP UM0701-02 §7.1 Table 13 — 27h means the command is not acceptable in the current PN532 context."
+    ref: "NXP UM0701-02 §7.1 Table 13 -- 27h means the command is not acceptable in the current PN532 context."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: PN532
     symbol: NFC_PN532_STATUS_OK
     spec_value: "0x00"
-    ref: "NXP UM0701-02 §7.1 prose before Table 13 — a null error-code field means the operation completed properly."
+    ref: "NXP UM0701-02 §7.1 prose before Table 13 -- a null error-code field means the operation completed properly."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: PN532
     symbol: NFC_PN532_STATUS_TIMEOUT
     spec_value: "0x01"
-    ref: "NXP UM0701-02 §7.1 Table 13 — 01h means Time Out: the target has not answered."
+    ref: "NXP UM0701-02 §7.1 Table 13 -- 01h means Time Out: the target has not answered."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: RFC3986
     symbol: NFC_NDEF_URI_PCT_HI_OFFSET
     spec_value: "1"
-    ref: "RFC 3986 §2.1 — percent-encoded octet is \"%\" followed by the first HEXDIG at offset 1."
+    ref: "RFC 3986 §2.1 -- percent-encoded octet is \"%\" followed by the first HEXDIG at offset 1."
     source: firmware/libraries/NeroNfc/src/protocol/nfc_ndef_record_decode.c
 
   - spec_prefix: RFC3986
     symbol: NFC_NDEF_URI_PCT_LO_OFFSET
     spec_value: "2"
-    ref: "RFC 3986 §2.1 — percent-encoded octet is \"%\" followed by the second HEXDIG at offset 2."
+    ref: "RFC 3986 §2.1 -- percent-encoded octet is \"%\" followed by the second HEXDIG at offset 2."
     source: firmware/libraries/NeroNfc/src/protocol/nfc_ndef_record_decode.c
 
   - spec_prefix: RFC6350
     symbol: NFC_RFC6350_ASCII_DELETE
     spec_value: "0x7F"
-    ref: "RFC 6350 §3.3 ABNF — property values allow WSP, VCHAR (21h..7Eh), and non-ASCII; ASCII DEL 7Fh is excluded."
+    ref: "RFC 6350 §3.3 ABNF -- property values allow WSP, VCHAR (21h..7Eh), and non-ASCII; ASCII DEL 7Fh is excluded."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: RFC6350
     symbol: NFC_RFC6350_VCARD_VERSION_MAJOR
     spec_value: "4"
-    ref: "RFC 6350 §6.7.9 — VERSION property value is 4.0 for vCard 4; major component is 4."
+    ref: "RFC 6350 §6.7.9 -- VERSION property value is 4.0 for vCard 4; major component is 4."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: RFC8949-CBOR-CTAP2
     symbol: NFC_CBOR_AI_INLINE_MAX
     spec_value: "23"
-    ref: "RFC 8949 §3 — additional information 0..23 encodes the argument inline."
+    ref: "RFC 8949 §3 -- additional information 0..23 encodes the argument inline."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: RFC8949-CBOR-CTAP2
     symbol: NFC_CBOR_BOOL_FALSE
     spec_value: "0xF4"
-    ref: "RFC 8949 Appendix B Table 7 — initial byte F4h encodes false."
+    ref: "RFC 8949 Appendix B Table 7 -- initial byte F4h encodes false."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: RFC8949-CBOR-CTAP2
     symbol: NFC_CBOR_BOOL_TRUE
     spec_value: "0xF5"
-    ref: "RFC 8949 Appendix B Table 7 — initial byte F5h encodes true."
+    ref: "RFC 8949 Appendix B Table 7 -- initial byte F5h encodes true."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: RFC8949-CBOR-CTAP2
     symbol: NFC_CBOR_HEADER_ONE_BYTE_BYTES
     spec_value: "0x58"
-    ref: "RFC 8949 Appendix B Table 7 — 58h denotes a byte string whose length is the following uint8_t."
+    ref: "RFC 8949 Appendix B Table 7 -- 58h denotes a byte string whose length is the following uint8_t."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: RFC8949-CBOR-CTAP2
     symbol: NFC_CBOR_HEADER_ONE_BYTE_TEXT
     spec_value: "0x78"
-    ref: "RFC 8949 Appendix B Table 7 — 78h denotes a UTF-8 string whose length is the following uint8_t."
+    ref: "RFC 8949 Appendix B Table 7 -- 78h denotes a UTF-8 string whose length is the following uint8_t."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: RFC8949-CBOR-CTAP2
     symbol: NFC_CBOR_HEADER_TWO_BYTE_BYTES
     spec_value: "0x59"
-    ref: "RFC 8949 Appendix B Table 7 — 59h denotes a byte string whose length is the following uint16_t."
+    ref: "RFC 8949 Appendix B Table 7 -- 59h denotes a byte string whose length is the following uint16_t."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: RFC8949-CBOR-CTAP2
     symbol: NFC_CBOR_INLINE_BYTES_BASE
     spec_value: "0x40"
-    ref: "[DERIVED] RFC 8949 §3 and Appendix B Table 7 — inline byte-string headers span 40h..57h, so the base is 40h."
+    ref: "[DERIVED] RFC 8949 §3 and Appendix B Table 7 -- inline byte-string headers span 40h..57h, so the base is 40h."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: RFC8949-CBOR-CTAP2
     symbol: NFC_CBOR_INLINE_TEXT_BASE
     spec_value: "0x60"
-    ref: "[DERIVED] RFC 8949 §3 and Appendix B Table 7 — inline UTF-8 string headers span 60h..77h, so the base is 60h."
+    ref: "[DERIVED] RFC 8949 §3 and Appendix B Table 7 -- inline UTF-8 string headers span 60h..77h, so the base is 60h."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: RFC8949-CBOR-CTAP2
     symbol: NFC_CBOR_MAJOR_ARRAY
     spec_value: "4"
-    ref: "RFC 8949 §3.1 Table 1 — major type 4 is an array."
+    ref: "RFC 8949 §3.1 Table 1 -- major type 4 is an array."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: RFC8949-CBOR-CTAP2
     symbol: NFC_CBOR_MAJOR_BYTES
     spec_value: "2"
-    ref: "RFC 8949 §3.1 Table 1 — major type 2 is a byte string."
+    ref: "RFC 8949 §3.1 Table 1 -- major type 2 is a byte string."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: RFC8949-CBOR-CTAP2
     symbol: NFC_CBOR_MAJOR_FLOAT_SIMPLE
     spec_value: "7"
-    ref: "RFC 8949 §3.1 Table 1 and §3.3 — major type 7 encodes simple and floating-point values."
+    ref: "RFC 8949 §3.1 Table 1 and §3.3 -- major type 7 encodes simple and floating-point values."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: RFC8949-CBOR-CTAP2
     symbol: NFC_CBOR_MAJOR_MAP
     spec_value: "5"
-    ref: "RFC 8949 §3.1 Table 1 — major type 5 is a map."
+    ref: "RFC 8949 §3.1 Table 1 -- major type 5 is a map."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: RFC8949-CBOR-CTAP2
     symbol: NFC_CBOR_MAJOR_NEGATIVE
     spec_value: "1"
-    ref: "RFC 8949 §3.1 Table 1 — major type 1 is a negative integer."
+    ref: "RFC 8949 §3.1 Table 1 -- major type 1 is a negative integer."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: RFC8949-CBOR-CTAP2
     symbol: NFC_CBOR_MAJOR_TEXT
     spec_value: "3"
-    ref: "RFC 8949 §3.1 Table 1 — major type 3 is a UTF-8 text string."
+    ref: "RFC 8949 §3.1 Table 1 -- major type 3 is a UTF-8 text string."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: RFC8949-CBOR-CTAP2
     symbol: NFC_CBOR_MAJOR_UNSIGNED
     spec_value: "0"
-    ref: "RFC 8949 §3.1 Table 1 — major type 0 is an unsigned integer."
+    ref: "RFC 8949 §3.1 Table 1 -- major type 0 is an unsigned integer."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: RFC8949-CBOR-CTAP2
     symbol: NFC_CBOR_ONE_BYTE_LEN_MAX
     spec_value: "255"
-    ref: "RFC 8949 §3/§4.1 and FIDO CTAP 2.3 §8 — AI=24 carries a uint8_t through 255; required shortest-form lengths use it for 24..255."
+    ref: "RFC 8949 §3/§4.1 and FIDO CTAP 2.3 §8 -- AI=24 carries a uint8_t through 255; required shortest-form lengths use it for 24..255."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: RFC8949-CBOR-CTAP2
     symbol: NFC_CBOR_SIMPLE_TRUE
     spec_value: "21"
-    ref: "RFC 8949 §3.3 — simple value 21 (true); major-type-7 encoding uses F5h."
+    ref: "RFC 8949 §3.3 -- simple value 21 (true); major-type-7 encoding uses F5h."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
+
+  - spec_prefix: RFC8949-CBOR-CTAP2
+    symbol: READER_CBOR_MAP_ITEMS_PER_ENTRY
+    spec_value: "2"
+    ref: "RFC 8949 §3.1 -- a map entry is a key data item followed by a value data item, so skipping one entry skips two items."
+    source: firmware/libraries/NeroNfc/src/reader/reader_cbor.c
 
   - spec_prefix: SC17-ICM
     symbol: NFC_TAG_MFR_CODE_NXP
     spec_value: "0x04"
-    ref: "ISO/IEC JTC 1/SC 17 Register of IC Manufacturers (Standing Document 5) — identifier 04h is assigned to NXP Semiconductors; ISO/IEC 7816-6 defines the identifier data element, not the assignment."
+    ref: "ISO/IEC JTC 1/SC 17 Register of IC Manufacturers (Standing Document 5) -- identifier 04h is assigned to NXP Semiconductors; ISO/IEC 7816-6 defines the identifier data element, not the assignment."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: SC17-ICM
     symbol: NFC_TAG_MFR_CODE_ST
     spec_value: "0x02"
-    ref: "ISO/IEC JTC 1/SC 17 Register of IC Manufacturers (Standing Document 5) — identifier 02h is assigned to STMicroelectronics; ISO/IEC 7816-6 defines the identifier data element, not the assignment."
+    ref: "ISO/IEC JTC 1/SC 17 Register of IC Manufacturers (Standing Document 5) -- identifier 02h is assigned to STMicroelectronics; ISO/IEC 7816-6 defines the identifier data element, not the assignment."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T2T-ISO14443-A
     symbol: NFC_FORUM_CC_MAGIC
     spec_value: "0xE1"
-    ref: "NFC Forum Type 2 Tag Operation Spec 1.1 §6.1 — Type 2 Capability Container byte 0 magic E1h (RQ_T2T_NDA_002)."
+    ref: "NFC Forum Type 2 Tag Operation Spec 1.1 §6.1 -- Type 2 Capability Container byte 0 magic E1h (RQ_T2T_NDA_002)."
     source: firmware/libraries/NeroNfc/src/nfc_tag_info.h
 
   - spec_prefix: T2T-ISO14443-A
     symbol: NFC_FRONTEND_NTAG_CMD_READ
     spec_value: "0x30"
-    ref: "NFC Forum Type 2 Tag Operation Spec 1.1 §5.1 — Type 2 READ command opcode."
+    ref: "NFC Forum Type 2 Tag Operation Spec 1.1 §5.1 -- Type 2 READ command opcode."
     source: firmware/libraries/NeroNfc/src/nero_nfc_frontend.h
 
   - spec_prefix: T2T-ISO14443-A
     symbol: NFC_FRONTEND_NTAG_CMD_WRITE
     spec_value: "0xA2"
-    ref: "NFC Forum Type 2 Tag Operation Spec 1.1 §5.2 — Type 2 WRITE command opcode."
+    ref: "NFC Forum Type 2 Tag Operation Spec 1.1 §5.2 -- Type 2 WRITE command opcode."
     source: firmware/libraries/NeroNfc/src/nero_nfc_frontend.h
 
   - spec_prefix: T2T-ISO14443-A
     symbol: NFC_T2T_CC_VERSION
     spec_value: "0x10"
-    ref: "NFC Forum Type 2 Tag Operation Spec 1.1 §6.1 / 6.1.1 — Type 2 mapping version 1.0 in CC byte 1 (10h)."
+    ref: "NFC Forum Type 2 Tag Operation Spec 1.1 §6.1 / 6.1.1 -- Type 2 mapping version 1.0 in CC byte 1 (10h)."
     source: firmware/libraries/NeroNfc/src/nfc_tag_info.h
 
   - spec_prefix: T2T-ISO14443-A
     symbol: NFC_TAG_CC_ACCESS_HIGH_NIBBLE_MASK
     spec_value: "0xF0"
-    ref: "NFC Forum Type 2 Tag Operation Spec 1.1 §6.1 — Type 2 CC byte 3 high nibble carries read access condition."
+    ref: "NFC Forum Type 2 Tag Operation Spec 1.1 §6.1 -- Type 2 CC byte 3 high nibble carries read access condition."
     source: firmware/libraries/NeroNfc/src/nfc_tag_info.h
 
   - spec_prefix: T2T-ISO14443-A
     symbol: NFC_TAG_CC_MAPPING_MAJOR_SHIFT
     spec_value: "4"
-    ref: "NFC Forum Type 2 Tag Operation Spec 1.1 §6.1 / 6.1.1 — Type 2 CC mapping major version is the high nibble of byte 1."
+    ref: "NFC Forum Type 2 Tag Operation Spec 1.1 §6.1 / 6.1.1 -- Type 2 CC mapping major version is the high nibble of byte 1."
     source: firmware/libraries/NeroNfc/src/nfc_tag_info.h
 
   - spec_prefix: T2T-ISO14443-A
     symbol: NFC_TAG_T2T_ACK_NIBBLE
     spec_value: "0x0A"
-    ref: "NFC Forum Type 2 Tag Operation Spec 1.1 §5.2 Table 4 / Appendix C.4 — WRITE has a 4-bit ACK; the command-flow example identifies Ah as that ACK packet (§5.4 delegates normative ACK encoding to Digital Protocol)."
+    ref: "NFC Forum Type 2 Tag Operation Spec 1.1 §5.2 Table 4 / Appendix C.4 -- WRITE has a 4-bit ACK; the command-flow example identifies Ah as that ACK packet (§5.4 delegates normative ACK encoding to Digital Protocol)."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T2T-ISO14443-A
     symbol: NFC_TAG_T2T_ACK_NIBBLE_MASK
     spec_value: "0x0F"
-    ref: "NFC Forum Type 2 Tag Operation Spec 1.1 §5.2 Table 4 / Appendix C.4 — the ACK is four bits and the example response is Ah, hence low-nibble mask 0Fh."
+    ref: "NFC Forum Type 2 Tag Operation Spec 1.1 §5.2 Table 4 / Appendix C.4 -- the ACK is four bits and the example response is Ah, hence low-nibble mask 0Fh."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T2T-ISO14443-A
     symbol: NFC_TAG_T2T_AREA_SIZE_UNIT_BYTES
     spec_value: "8"
-    ref: "NFC Forum Type 2 Tag Operation Spec 1.1 §6.1 RQ_T2T_NDA_002/RQ_T2T_NDA_003 — CC byte 2 multiplied by 8 equals the data-area size in bytes."
+    ref: "NFC Forum Type 2 Tag Operation Spec 1.1 §6.1 RQ_T2T_NDA_002/RQ_T2T_NDA_003 -- CC byte 2 multiplied by 8 equals the data-area size in bytes."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T2T-ISO14443-A
     symbol: NFC_TAG_T2T_CC_ACCESS_INDEX
     spec_value: "3"
-    ref: "NFC Forum Type 2 Tag Operation Spec 1.1 §6.1 — Type 2 Capability Container access byte index (byte 3)."
+    ref: "NFC Forum Type 2 Tag Operation Spec 1.1 §6.1 -- Type 2 Capability Container access byte index (byte 3)."
     source: firmware/libraries/NeroNfc/src/nfc_tag_info.h
 
   - spec_prefix: T2T-ISO14443-A
     symbol: NFC_TAG_T2T_CC_MAGIC_INDEX
     spec_value: "0"
-    ref: "NFC Forum Type 2 Tag Operation Spec 1.1 §6.1 — Type 2 Capability Container magic byte index (byte 0)."
+    ref: "NFC Forum Type 2 Tag Operation Spec 1.1 §6.1 -- Type 2 Capability Container magic byte index (byte 0)."
     source: firmware/libraries/NeroNfc/src/nfc_tag_info.h
 
   - spec_prefix: T2T-ISO14443-A
     symbol: NFC_TAG_T2T_CC_MLEN_INDEX
     spec_value: "2"
-    ref: "NFC Forum Type 2 Tag Operation Spec 1.1 §6.1 — Type 2 Capability Container MLEN byte index (byte 2)."
+    ref: "NFC Forum Type 2 Tag Operation Spec 1.1 §6.1 -- Type 2 Capability Container MLEN byte index (byte 2)."
     source: firmware/libraries/NeroNfc/src/nfc_tag_info.h
 
   - spec_prefix: T2T-ISO14443-A
     symbol: NFC_TAG_T2T_CC_PAGE_INDEX
     spec_value: "3"
-    ref: "NFC Forum Type 2 Tag Operation Spec 1.1 §2.1.3 / 6.1 — Capability Container is block/page 3 of the Type 2 memory map."
+    ref: "NFC Forum Type 2 Tag Operation Spec 1.1 §2.1.3 / 6.1 -- Capability Container is block/page 3 of the Type 2 memory map."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T2T-ISO14443-A
     symbol: NFC_TAG_T2T_CC_VER_INDEX
     spec_value: "1"
-    ref: "NFC Forum Type 2 Tag Operation Spec 1.1 §6.1 — Type 2 Capability Container mapping-version byte index (byte 1)."
+    ref: "NFC Forum Type 2 Tag Operation Spec 1.1 §6.1 -- Type 2 Capability Container mapping-version byte index (byte 1)."
     source: firmware/libraries/NeroNfc/src/nfc_tag_info.h
 
   - spec_prefix: T2T-ISO14443-A
     symbol: NFC_TAG_T2T_MIN_NDEF_USER_PAGES
     spec_value: "1"
-    ref: "NFC Forum Type 2 Tag Operation Spec 1.1 §2.1.3–§2.1.4 — CC occupies block 3 and the data/TLV area begins at block 4; one additional 4-byte block is this implementation's minimum initial TLV scan, not a normative tag-capacity minimum."
+    ref: "NFC Forum Type 2 Tag Operation Spec 1.1 §2.1.3-§2.1.4 -- CC occupies block 3 and the data/TLV area begins at block 4; one additional 4-byte block is this implementation's minimum initial TLV scan, not a normative tag-capacity minimum."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T2T-ISO14443-A
     symbol: NFC_TAG_T2T_PAGE_SIZE_BYTES
     spec_value: "4"
-    ref: "NFC Forum Type 2 Tag Operation Spec 1.1 §2 / Figures 1–2 — the memory structure is divided into blocks containing four bytes each."
+    ref: "NFC Forum Type 2 Tag Operation Spec 1.1 §2 / Figures 1-2 -- the memory structure is divided into blocks containing four bytes each."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T2T-ISO14443-A
     symbol: NFC_TAG_T2T_READ_CMD_LEN
     spec_value: "2"
-    ref: "NFC Forum Type 2 Tag Operation Spec 1.1 §5.1/5.2 — READ frame: opcode + page address."
+    ref: "NFC Forum Type 2 Tag Operation Spec 1.1 §5.1/5.2 -- READ frame: opcode + page address."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T2T-ISO14443-A
     symbol: NFC_TAG_T2T_READ_RESP_BYTES
     spec_value: "16"
-    ref: "NFC Forum Type 2 Tag Operation Spec 1.1 §5.1 — READ returns four consecutive pages (16 bytes)."
+    ref: "NFC Forum Type 2 Tag Operation Spec 1.1 §5.1 -- READ returns four consecutive pages (16 bytes)."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T2T-ISO14443-A
     symbol: NFC_TAG_T2T_READ_RESP_PAGES
     spec_value: "4"
-    ref: "NFC Forum Type 2 Tag Operation Spec 1.1 §5.1 — READ returns four consecutive pages (16 bytes)."
+    ref: "NFC Forum Type 2 Tag Operation Spec 1.1 §5.1 -- READ returns four consecutive pages (16 bytes)."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T2T-ISO14443-A
     symbol: NFC_TAG_T2T_WRITE_CMD_DATA_OFFSET
     spec_value: "2"
-    ref: "NFC Forum Type 2 Tag Operation Spec 1.1 §5.2 — Type 2 WRITE frame data starts after opcode and page address."
+    ref: "NFC Forum Type 2 Tag Operation Spec 1.1 §5.2 -- Type 2 WRITE frame data starts after opcode and page address."
     source: firmware/libraries/NeroNfc/src/nfc_tag_info.h
 
   - spec_prefix: T2T-ISO14443-A
     symbol: NFC_TAG_T2T_WRITE_CMD_LEN
     spec_value: "6"
-    ref: "NFC Forum Type 2 Tag Operation Spec 1.1 §5.2 — WRITE frame: opcode + page + four data bytes."
+    ref: "NFC Forum Type 2 Tag Operation Spec 1.1 §5.2 -- WRITE frame: opcode + page + four data bytes."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T2T-ISO14443-A
     symbol: NTAG_CMD_READ
     spec_value: "0x30"
-    ref: "NFC Forum Type 2 Tag Operation Spec 1.1 §5.1 — Type 2 READ command opcode used by the ST25 sketch glue."
+    ref: "NFC Forum Type 2 Tag Operation Spec 1.1 §5.1 -- Type 2 READ command opcode used by the ST25 sketch glue."
     source: firmware/libraries/NeroNfc/src/frontend/st25r3916/st25_sketch_spi.h
 
   - spec_prefix: T2T-ISO14443-A
     symbol: NTAG_CMD_WRITE
     spec_value: "0xA2"
-    ref: "NFC Forum Type 2 Tag Operation Spec 1.1 §5.2 — Type 2 WRITE command opcode used by the ST25 sketch glue."
+    ref: "NFC Forum Type 2 Tag Operation Spec 1.1 §5.2 -- Type 2 WRITE command opcode used by the ST25 sketch glue."
     source: firmware/libraries/NeroNfc/src/frontend/st25r3916/st25_sketch_spi.h
 
   - spec_prefix: T2T-ISO14443-A-NTAG21x
     symbol: NFC_FRONTEND_NTAG_CMD_FAST_READ
     spec_value: "0x3A"
-    ref: "NXP NTAG213/215/216 DS §10.3 Table 31 — FAST_READ command opcode 3Ah."
+    ref: "NXP NTAG213/215/216 DS §10.3 Table 31 -- FAST_READ command opcode 3Ah."
     source: firmware/libraries/NeroNfc/src/nero_nfc_frontend.h
 
   - spec_prefix: T2T-ISO14443-A-NTAG21x
     symbol: NFC_FRONTEND_NTAG_CMD_GET_VERSION
     spec_value: "0x60"
-    ref: "NXP NTAG213/215/216 DS §10.1 Table 26 — GET_VERSION command opcode 60h."
+    ref: "NXP NTAG213/215/216 DS §10.1 Table 26 -- GET_VERSION command opcode 60h."
     source: firmware/libraries/NeroNfc/src/nero_nfc_frontend.h
 
   - spec_prefix: T2T-ISO14443-A-NTAG21x
     symbol: NFC_FRONTEND_NTAG_CMD_READ_SIG
     spec_value: "0x3C"
-    ref: "NXP NTAG213/215/216 DS §10.8 Table 41 — READ_SIG command opcode 3Ch."
+    ref: "NXP NTAG213/215/216 DS §10.8 Table 41 -- READ_SIG command opcode 3Ch."
     source: firmware/libraries/NeroNfc/src/nero_nfc_frontend.h
 
   - spec_prefix: T2T-ISO14443-A-NTAG21x
     symbol: NFC_PCSC_GET_DATA_AUTH0_RSP_LEN
     spec_value: "1"
-    ref: "NXP NTAG213/215/216 DS §8.5.7 / §8.8 — AUTH0 is one configuration byte; firmware exposes it through a local GET DATA extension."
+    ref: "NXP NTAG213/215/216 DS §8.5.7 / §8.8 -- AUTH0 is one configuration byte; firmware exposes it through a local GET DATA extension."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: T2T-ISO14443-A-NTAG21x
     symbol: NFC_TAG_NTAG213_CC_MLEN
     spec_value: "0x12"
-    ref: "NXP NTAG213/215/216 DS §8.5.4 Table 4 — NTAG213 CC byte 2 (MLEN) = 12h (144-byte NDEF area)."
+    ref: "NXP NTAG213/215/216 DS §8.5.4 Table 4 -- NTAG213 CC byte 2 (MLEN) = 12h (144-byte NDEF area)."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T2T-ISO14443-A-NTAG21x
     symbol: NFC_TAG_NTAG213_LAST_PAGE
     spec_value: "39"
-    ref: "NXP NTAG213/215/216 DS §8.5 — NTAG213 last user memory page 27h (39 decimal)."
+    ref: "NXP NTAG213/215/216 DS §8.5 -- NTAG213 last user memory page 27h (39 decimal)."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T2T-ISO14443-A-NTAG21x
     symbol: NFC_TAG_NTAG213_SIZE_ID
     spec_value: "0x0F"
-    ref: "NXP NTAG213/215/216 DS §10.1 Table 28 byte 6 — storage-size ID 0Fh identifies NTAG213."
+    ref: "NXP NTAG213/215/216 DS §10.1 Table 28 byte 6 -- storage-size ID 0Fh identifies NTAG213."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T2T-ISO14443-A-NTAG21x
     symbol: NFC_TAG_NTAG215_CC_MLEN
     spec_value: "0x3E"
-    ref: "NXP NTAG213/215/216 DS §8.5.4 Table 4 — NTAG215 CC byte 2 (MLEN) = 3Eh (496-byte NDEF area)."
+    ref: "NXP NTAG213/215/216 DS §8.5.4 Table 4 -- NTAG215 CC byte 2 (MLEN) = 3Eh (496-byte NDEF area)."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T2T-ISO14443-A-NTAG21x
     symbol: NFC_TAG_NTAG215_LAST_PAGE
     spec_value: "129"
-    ref: "NXP NTAG213/215/216 DS §8.5 — NTAG215 last user memory page 81h (129 decimal)."
+    ref: "NXP NTAG213/215/216 DS §8.5 -- NTAG215 last user memory page 81h (129 decimal)."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T2T-ISO14443-A-NTAG21x
     symbol: NFC_TAG_NTAG215_SIZE_ID
     spec_value: "0x11"
-    ref: "NXP NTAG213/215/216 DS §10.1 Table 28 byte 6 — storage-size ID 11h identifies NTAG215."
+    ref: "NXP NTAG213/215/216 DS §10.1 Table 28 byte 6 -- storage-size ID 11h identifies NTAG215."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T2T-ISO14443-A-NTAG21x
     symbol: NFC_TAG_NTAG216_CC_MLEN
     spec_value: "0x6D"
-    ref: "NXP NTAG213/215/216 DS §8.5.4 Table 4 — NTAG216 CC byte 2 (MLEN) = 6Dh (872-byte NDEF area)."
+    ref: "NXP NTAG213/215/216 DS §8.5.4 Table 4 -- NTAG216 CC byte 2 (MLEN) = 6Dh (872-byte NDEF area)."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T2T-ISO14443-A-NTAG21x
     symbol: NFC_TAG_NTAG216_LAST_PAGE
     spec_value: "225"
-    ref: "NXP NTAG213/215/216 DS §8.5 — NTAG216 last user memory page E1h (225 decimal)."
+    ref: "NXP NTAG213/215/216 DS §8.5 -- NTAG216 last user memory page E1h (225 decimal)."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T2T-ISO14443-A-NTAG21x
     symbol: NFC_TAG_NTAG216_SIZE_ID
     spec_value: "0x13"
-    ref: "NXP NTAG213/215/216 DS §10.1 Table 28 byte 6 — storage-size ID 13h identifies NTAG216."
+    ref: "NXP NTAG213/215/216 DS §10.1 Table 28 byte 6 -- storage-size ID 13h identifies NTAG216."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T2T-ISO14443-A-NTAG21x
     symbol: NFC_TAG_NTAG_AUTH0_DISABLED
     spec_value: "0xFF"
-    ref: "NXP NTAG213/215/216 DS §8.8 — delivery AUTH0 = FFh disables password protection."
+    ref: "NXP NTAG213/215/216 DS §8.8 -- delivery AUTH0 = FFh disables password protection."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T2T-ISO14443-A-NTAG21x
     symbol: NFC_TAG_NTAG_AUTH0_PAGE_OFFSET
     spec_value: "2"
-    ref: "NXP NTAG213/215/216 DS §8.5 memory map — AUTH0 page is last-user-page + 2 (e.g. 27h→29h on NTAG213)."
+    ref: "NXP NTAG213/215/216 DS §8.5 memory map -- AUTH0 page is last-user-page + 2 (e.g. 27h->29h on NTAG213)."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T2T-ISO14443-A-NTAG21x
     symbol: NFC_TAG_NTAG_CFG_AUTH0_BYTE_INDEX
     spec_value: "3"
-    ref: "NXP NTAG213/215/216 DS §8.5.7 config page — AUTH0 occupies byte index 3 on that page."
+    ref: "NXP NTAG213/215/216 DS §8.5.7 config page -- AUTH0 occupies byte index 3 on that page."
     source: firmware/libraries/NeroNfc/src/nfc_tag_info.h
 
   - spec_prefix: T2T-ISO14443-A-NTAG21x
     symbol: NFC_TAG_NTAG_SIG_REPLY_LEN
     spec_value: "32"
-    ref: "NXP NTAG213/215/216 DS §10.8 — READ_SIG returns a 32-byte ECC signature."
+    ref: "NXP NTAG213/215/216 DS §10.8 -- READ_SIG returns a 32-byte ECC signature."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T2T-ISO14443-A-NTAG21x
     symbol: NFC_TAG_NTAG_VER_FIXED_HEADER
     spec_value: "0x00"
-    ref: "NXP NTAG213/215/216 DS §10.1 Table 28 byte 0 — fixed header 00h."
+    ref: "NXP NTAG213/215/216 DS §10.1 Table 28 byte 0 -- fixed header 00h."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T2T-ISO14443-A-NTAG21x
     symbol: NFC_TAG_NTAG_VER_PRODUCT_BYTE_INDEX
     spec_value: "2"
-    ref: "NXP NTAG213/215/216 DS §10.1 Table 28 — product type at byte index 2."
+    ref: "NXP NTAG213/215/216 DS §10.1 Table 28 -- product type at byte index 2."
     source: firmware/libraries/NeroNfc/src/nfc_tag_info.h
 
   - spec_prefix: T2T-ISO14443-A-NTAG21x
     symbol: NFC_TAG_NTAG_VER_PRODUCT_MAJOR_INDEX
     spec_value: "4"
-    ref: "NXP NTAG213/215/216 DS §10.1 Table 28 — major product version at byte index 4."
+    ref: "NXP NTAG213/215/216 DS §10.1 Table 28 -- major product version at byte index 4."
     source: firmware/libraries/NeroNfc/src/nfc_tag_info.h
 
   - spec_prefix: T2T-ISO14443-A-NTAG21x
     symbol: NFC_TAG_NTAG_VER_PRODUCT_MINOR_INDEX
     spec_value: "5"
-    ref: "NXP NTAG213/215/216 DS §10.1 Table 28 — minor product version at byte index 5."
+    ref: "NXP NTAG213/215/216 DS §10.1 Table 28 -- minor product version at byte index 5."
     source: firmware/libraries/NeroNfc/src/nfc_tag_info.h
 
   - spec_prefix: T2T-ISO14443-A-NTAG21x
     symbol: NFC_TAG_NTAG_VER_PRODUCT_NTAG
     spec_value: "0x04"
-    ref: "NXP NTAG213/215/216 DS §10.1 Table 28 byte 2 — product type 04h (NTAG)."
+    ref: "NXP NTAG213/215/216 DS §10.1 Table 28 byte 2 -- product type 04h (NTAG)."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T2T-ISO14443-A-NTAG21x
     symbol: NFC_TAG_NTAG_VER_PROTO_14443
     spec_value: "0x03"
-    ref: "NXP NTAG213/215/216 DS §10.1 Table 28 byte 7 — protocol type 03h (ISO/IEC 14443-3)."
+    ref: "NXP NTAG213/215/216 DS §10.1 Table 28 byte 7 -- protocol type 03h (ISO/IEC 14443-3)."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T2T-ISO14443-A-NTAG21x
     symbol: NFC_TAG_NTAG_VER_PROTO_BYTE_INDEX
     spec_value: "7"
-    ref: "NXP NTAG213/215/216 DS §10.1 Table 28 — protocol type at byte index 7."
+    ref: "NXP NTAG213/215/216 DS §10.1 Table 28 -- protocol type at byte index 7."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T2T-ISO14443-A-NTAG21x
     symbol: NFC_TAG_NTAG_VER_REPLY_LEN
     spec_value: "8"
-    ref: "NXP NTAG213/215/216 DS §10.1 Table 26/28 — GET_VERSION Data field is 8 bytes."
+    ref: "NXP NTAG213/215/216 DS §10.1 Table 26/28 -- GET_VERSION Data field is 8 bytes."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T2T-ISO14443-A-NTAG21x
     symbol: NFC_TAG_NTAG_VER_SIZE_BYTE_INDEX
     spec_value: "6"
-    ref: "NXP NTAG213/215/216 DS §10.1 Table 28 — storage size at byte index 6."
+    ref: "NXP NTAG213/215/216 DS §10.1 Table 28 -- storage size at byte index 6."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T2T-ISO14443-A-NTAG21x
     symbol: NFC_TAG_NTAG_VER_SUBTYPE
     spec_value: "0x02"
-    ref: "NXP NTAG213/215/216 DS §10.1 Table 28 byte 3 — product subtype 02h (50 pF)."
+    ref: "NXP NTAG213/215/216 DS §10.1 Table 28 byte 3 -- product subtype 02h (50 pF)."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T2T-ISO14443-A-NTAG21x
     symbol: NFC_TAG_NTAG_VER_SUBTYPE_BYTE_INDEX
     spec_value: "3"
-    ref: "NXP NTAG213/215/216 DS §10.1 Table 28 — product subtype at byte index 3."
+    ref: "NXP NTAG213/215/216 DS §10.1 Table 28 -- product subtype at byte index 3."
     source: firmware/libraries/NeroNfc/src/nfc_tag_info.h
 
   - spec_prefix: T2T-ISO14443-A-NTAG21x
     symbol: NFC_TAG_NTAG_VER_VENDOR_BYTE_INDEX
     spec_value: "1"
-    ref: "NXP NTAG213/215/216 DS §10.1 Table 28 — vendor ID at byte index 1."
+    ref: "NXP NTAG213/215/216 DS §10.1 Table 28 -- vendor ID at byte index 1."
     source: firmware/libraries/NeroNfc/src/nfc_tag_info.h
 
   - spec_prefix: T2T-ISO14443-A-NTAG21x
     symbol: NFC_TAG_NTAG_VER_VENDOR_NXP
     spec_value: "0x04"
-    ref: "NXP NTAG213/215/216 DS §10.1 Table 28 byte 1 — vendor ID 04h (NXP Semiconductors)."
+    ref: "NXP NTAG213/215/216 DS §10.1 Table 28 byte 1 -- vendor ID 04h (NXP Semiconductors)."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T2T-ISO14443-A-NTAG21x
     symbol: NFC_TAG_T2T_FAST_READ_CMD_LEN
     spec_value: "3"
-    ref: "NXP NTAG213/215/216 DS §10.3 — FAST_READ host command is Cmd+start+end (3 bytes before CRC)."
+    ref: "NXP NTAG213/215/216 DS §10.3 -- FAST_READ host command is Cmd+start+end (3 bytes before CRC)."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T2T-ISO14443-A-NTAG21x
     symbol: NFC_TAG_T2T_GET_VERSION_CMD_LEN
     spec_value: "1"
-    ref: "NXP NTAG213/215/216 DS §10.1 Table 26 — GET_VERSION Cmd field length is 1 byte."
+    ref: "NXP NTAG213/215/216 DS §10.1 Table 26 -- GET_VERSION Cmd field length is 1 byte."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T2T-ISO14443-A-NTAG21x
     symbol: NFC_TAG_T2T_WRITE_ACK_TIMEOUT_MS
     spec_value: "10"
-    ref: "NXP NTAG213/215/216 DS §10.4 Table 34 — WRITE TTimeOut for 4-bit ACK/NAK."
+    ref: "NXP NTAG213/215/216 DS §10.4 Table 34 -- WRITE TTimeOut for 4-bit ACK/NAK."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T2T-ISO14443-A-NTAG21x
     symbol: NTAG_CMD_GET_VERSION
     spec_value: "0x60"
-    ref: "NXP NTAG213/215/216 DS §10.1 Table 26 — GET_VERSION command opcode 60h."
+    ref: "NXP NTAG213/215/216 DS §10.1 Table 26 -- GET_VERSION command opcode 60h."
     source: firmware/libraries/NeroNfc/src/frontend/st25r3916/st25_sketch_spi.h
 
   - spec_prefix: T2T-ISO14443-A-ST25TN
     symbol: NFC_TAG_ST25TN01K_CC_MLEN
     spec_value: "0x14"
-    ref: "ST ST25TN512/ST25TN01K DS §7 / Table 28 — ST25TN01K factory CC byte 2 (MLEN) = 14h at delivery."
+    ref: "ST ST25TN512/ST25TN01K DS §7 / Table 28 -- ST25TN01K factory CC byte 2 (MLEN) = 14h at delivery."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T2T-ISO14443-A-ST25TN
     symbol: NFC_TAG_ST25TN01K_DATA_BYTES
     spec_value: "160"
-    ref: "ST ST25TN512/ST25TN01K DS §7 / Table 28 — ST25TN01K factory CC_2=14h means T2T_Area_Size = 14h x 8 = 160 bytes."
+    ref: "ST ST25TN512/ST25TN01K DS §7 / Table 28 -- ST25TN01K factory CC_2=14h means T2T_Area_Size = 14h x 8 = 160 bytes."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T2T-ISO14443-A-ST25TN
     symbol: NFC_TAG_ST25TN512_CC_MLEN
     spec_value: "0x08"
-    ref: "ST ST25TN512/ST25TN01K DS §7 / Table 28 — ST25TN512 factory CC byte 2 (MLEN) = 08h at delivery."
+    ref: "ST ST25TN512/ST25TN01K DS §7 / Table 28 -- ST25TN512 factory CC byte 2 (MLEN) = 08h at delivery."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T2T-ISO14443-A-ST25TN
     symbol: NFC_TAG_ST25TN512_DATA_BYTES
     spec_value: "64"
-    ref: "ST ST25TN512/ST25TN01K DS §7 / Table 28 — ST25TN512 factory CC_2=08h means T2T_Area_Size = 08h x 8 = 64 bytes."
+    ref: "ST ST25TN512/ST25TN01K DS §7 / Table 28 -- ST25TN512 factory CC_2=08h means T2T_Area_Size = 08h x 8 = 64 bytes."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T2T-ISO14443-A-ST25TN
     symbol: NFC_TAG_ST25TN_MAX_USER_PAGE
     spec_value: "43"
-    ref: "ST ST25TN01K DS memory map — user memory 04h..2Bh ⇒ last user page 43 for factory 160-byte T2T area."
+    ref: "ST ST25TN01K DS memory map -- user memory 04h..2Bh ⇒ last user page 43 for factory 160-byte T2T area."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T4T-ISO14443-4
     symbol: NFC_PCSC_T4_CC_FILE_LEN
     spec_value: "15"
-    ref: "NFC Forum Type 4 Tag Operation Spec 2.0 §5.1 Table 5 RQ_T4T_NDA_003 — minimum CCLEN is 000Fh (15 bytes)."
+    ref: "NFC Forum Type 4 Tag Operation Spec 2.0 §5.1 Table 5 RQ_T4T_NDA_003 -- minimum CCLEN is 000Fh (15 bytes)."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: T4T-ISO14443-4
     symbol: NFC_PCSC_T4_CC_MAPPING_VERSION
     spec_value: "0x20"
-    ref: "NFC Forum Type 4 Tag Operation Spec 2.0 §5.1.1 — this mapping specification is version 2.0, encoded 20h."
+    ref: "NFC Forum Type 4 Tag Operation Spec 2.0 §5.1.1 -- this mapping specification is version 2.0, encoded 20h."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: T4T-ISO14443-4
     symbol: NFC_PCSC_T4_NDEF_FC_TLV_LEN
     spec_value: "0x06"
-    ref: "NFC Forum Type 4 Tag Operation Spec 2.0 §5.1.2.1 RQ_T4T_NDA_015 — NDEF File Control TLV L=06h."
+    ref: "NFC Forum Type 4 Tag Operation Spec 2.0 §5.1.2.1 RQ_T4T_NDA_015 -- NDEF File Control TLV L=06h."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: T4T-ISO14443-4
     symbol: NFC_PCSC_T4_NDEF_FC_TLV_TAG
     spec_value: "0x04"
-    ref: "NFC Forum Type 4 Tag Operation Spec 2.0 §5.1.2.1 RQ_T4T_NDA_015 — NDEF File Control TLV T=04h."
+    ref: "NFC Forum Type 4 Tag Operation Spec 2.0 §5.1.2.1 RQ_T4T_NDA_015 -- NDEF File Control TLV T=04h."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: T4T-ISO14443-4
@@ -2659,301 +2671,301 @@ constants:
   - spec_prefix: T4T-ISO14443-4
     symbol: NFC_PCSC_T4_READ_ACCESS_OPEN
     spec_value: "0x00"
-    ref: "NFC Forum Type 4 Tag Operation Spec 2.0 §5.1.2.1 RQ_T4T_NDA_018/RQ_T4T_NDA_019 — 00h grants the respective read or write access without security."
+    ref: "NFC Forum Type 4 Tag Operation Spec 2.0 §5.1.2.1 RQ_T4T_NDA_018/RQ_T4T_NDA_019 -- 00h grants the respective read or write access without security."
     source: firmware/libraries/NeroNfc/src/nfc_pcsc_contactless.h
 
   - spec_prefix: T4T-ISO14443-4
     symbol: NFC_TAG_CC_CCLEN_LSB_INDEX
     spec_value: "1"
-    ref: "NFC Forum Type 4 Tag Operation Spec 2.0 §5.1 Table 5 — CCLEN is the two-byte field at offsets 0000h..0001h; low byte index 1."
+    ref: "NFC Forum Type 4 Tag Operation Spec 2.0 §5.1 Table 5 -- CCLEN is the two-byte field at offsets 0000h..0001h; low byte index 1."
     source: firmware/libraries/NeroNfc/src/nfc_tag_info.h
 
   - spec_prefix: T4T-ISO14443-4
     symbol: NFC_TAG_CC_CCLEN_MSB_INDEX
     spec_value: "0"
-    ref: "NFC Forum Type 4 Tag Operation Spec 2.0 §5.1 Table 5 — CCLEN is the two-byte field at offsets 0000h..0001h; high byte index 0."
+    ref: "NFC Forum Type 4 Tag Operation Spec 2.0 §5.1 Table 5 -- CCLEN is the two-byte field at offsets 0000h..0001h; high byte index 0."
     source: firmware/libraries/NeroNfc/src/nfc_tag_info.h
 
   - spec_prefix: T4T-ISO14443-4
     symbol: NFC_TAG_T4T_CC_FILE_ID
     spec_value: "0xE103"
-    ref: "NFC Forum Type 4 Tag Operation Spec 2.0 §5.1 RQ_T4T_NDA_001 — CC file identifier E103h."
+    ref: "NFC Forum Type 4 Tag Operation Spec 2.0 §5.1 RQ_T4T_NDA_001 -- CC file identifier E103h."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T4T-ISO14443-4
     symbol: NFC_TAG_T4T_CC_MAPPING_VER_INDEX
     spec_value: "2"
-    ref: "NFC Forum Type 4 Tag Operation Spec 2.0 §5.1 Table 5 — Mapping Version is at offset 0002h."
+    ref: "NFC Forum Type 4 Tag Operation Spec 2.0 §5.1 Table 5 -- Mapping Version is at offset 0002h."
     source: firmware/libraries/NeroNfc/src/nfc_tag_info.h
 
   - spec_prefix: T4T-ISO14443-4
     symbol: NFC_TAG_T4T_CC_MIN_LEN
     spec_value: "15"
-    ref: "NFC Forum Type 4 Tag Operation Spec 2.0 §5.1 Table 5 RQ_T4T_NDA_003 — minimum CCLEN is 000Fh (15 bytes)."
+    ref: "NFC Forum Type 4 Tag Operation Spec 2.0 §5.1 Table 5 RQ_T4T_NDA_003 -- minimum CCLEN is 000Fh (15 bytes)."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T4T-ISO14443-4
     symbol: NFC_TAG_T4T_CC_MLC_LSB_INDEX
     spec_value: "6"
-    ref: "NFC Forum Type 4 Tag Operation Spec 2.0 §5.1 Table 5 — MLc is at offsets 0005h..0006h; low byte index 6."
+    ref: "NFC Forum Type 4 Tag Operation Spec 2.0 §5.1 Table 5 -- MLc is at offsets 0005h..0006h; low byte index 6."
     source: firmware/libraries/NeroNfc/src/nfc_tag_info.h
 
   - spec_prefix: T4T-ISO14443-4
     symbol: NFC_TAG_T4T_CC_MLC_MSB_INDEX
     spec_value: "5"
-    ref: "NFC Forum Type 4 Tag Operation Spec 2.0 §5.1 Table 5 — MLc is at offsets 0005h..0006h; high byte index 5."
+    ref: "NFC Forum Type 4 Tag Operation Spec 2.0 §5.1 Table 5 -- MLc is at offsets 0005h..0006h; high byte index 5."
     source: firmware/libraries/NeroNfc/src/nfc_tag_info.h
 
   - spec_prefix: T4T-ISO14443-4
     symbol: NFC_TAG_T4T_CC_MLE_LSB_INDEX
     spec_value: "4"
-    ref: "NFC Forum Type 4 Tag Operation Spec 2.0 §5.1 Table 5 — MLe is at offsets 0003h..0004h; low byte index 4."
+    ref: "NFC Forum Type 4 Tag Operation Spec 2.0 §5.1 Table 5 -- MLe is at offsets 0003h..0004h; low byte index 4."
     source: firmware/libraries/NeroNfc/src/nfc_tag_info.h
 
   - spec_prefix: T4T-ISO14443-4
     symbol: NFC_TAG_T4T_CC_MLE_MSB_INDEX
     spec_value: "3"
-    ref: "NFC Forum Type 4 Tag Operation Spec 2.0 §5.1 Table 5 — MLe is at offsets 0003h..0004h; high byte index 3."
+    ref: "NFC Forum Type 4 Tag Operation Spec 2.0 §5.1 Table 5 -- MLe is at offsets 0003h..0004h; high byte index 3."
     source: firmware/libraries/NeroNfc/src/nfc_tag_info.h
 
   - spec_prefix: T4T-ISO14443-4
     symbol: NFC_TAG_T4T_CC_NDEF_FILE_ID_LSB_INDEX
     spec_value: "10"
-    ref: "NFC Forum Type 4 Tag Operation Spec 2.0 §5.1.2.1 RQ_T4T_NDA_016 — File Identifier is the first two NDEF File Control TLV value bytes; low byte index 10."
+    ref: "NFC Forum Type 4 Tag Operation Spec 2.0 §5.1.2.1 RQ_T4T_NDA_016 -- File Identifier is the first two NDEF File Control TLV value bytes; low byte index 10."
     source: firmware/libraries/NeroNfc/src/nfc_tag_info.h
 
   - spec_prefix: T4T-ISO14443-4
     symbol: NFC_TAG_T4T_CC_NDEF_FILE_ID_MSB_INDEX
     spec_value: "9"
-    ref: "NFC Forum Type 4 Tag Operation Spec 2.0 §5.1.2.1 RQ_T4T_NDA_016 — File Identifier is the first two NDEF File Control TLV value bytes; high byte index 9."
+    ref: "NFC Forum Type 4 Tag Operation Spec 2.0 §5.1.2.1 RQ_T4T_NDA_016 -- File Identifier is the first two NDEF File Control TLV value bytes; high byte index 9."
     source: firmware/libraries/NeroNfc/src/nfc_tag_info.h
 
   - spec_prefix: T4T-ISO14443-4
     symbol: NFC_TAG_T4T_CC_NDEF_SIZE_LSB_INDEX
     spec_value: "12"
-    ref: "NFC Forum Type 4 Tag Operation Spec 2.0 §5.1.2.1 RQ_T4T_NDA_017 — maximum NDEF file size is at offsets 11..12; low byte index 12."
+    ref: "NFC Forum Type 4 Tag Operation Spec 2.0 §5.1.2.1 RQ_T4T_NDA_017 -- maximum NDEF file size is at offsets 11..12; low byte index 12."
     source: firmware/libraries/NeroNfc/src/nfc_tag_info.h
 
   - spec_prefix: T4T-ISO14443-4
     symbol: NFC_TAG_T4T_CC_NDEF_SIZE_MSB_INDEX
     spec_value: "11"
-    ref: "NFC Forum Type 4 Tag Operation Spec 2.0 §5.1.2.1 RQ_T4T_NDA_017 — maximum NDEF file size is at offsets 11..12; high byte index 11."
+    ref: "NFC Forum Type 4 Tag Operation Spec 2.0 §5.1.2.1 RQ_T4T_NDA_017 -- maximum NDEF file size is at offsets 11..12; high byte index 11."
     source: firmware/libraries/NeroNfc/src/nfc_tag_info.h
 
   - spec_prefix: T4T-ISO14443-4
     symbol: NFC_TAG_T4T_CC_NDEF_TLV_LEN_INDEX
     spec_value: "8"
-    ref: "NFC Forum Type 4 Tag Operation Spec 2.0 §5.1 Table 5 / §5.1.2.1 — mandatory NDEF File Control TLV begins at offset 0007h; L byte index 8."
+    ref: "NFC Forum Type 4 Tag Operation Spec 2.0 §5.1 Table 5 / §5.1.2.1 -- mandatory NDEF File Control TLV begins at offset 0007h; L byte index 8."
     source: firmware/libraries/NeroNfc/src/nfc_tag_info.h
 
   - spec_prefix: T4T-ISO14443-4
     symbol: NFC_TAG_T4T_CC_NDEF_TLV_TAG_INDEX
     spec_value: "7"
-    ref: "NFC Forum Type 4 Tag Operation Spec 2.0 §5.1 Table 5 / §5.1.2.1 — mandatory NDEF File Control TLV begins at offset 0007h; T byte index 7."
+    ref: "NFC Forum Type 4 Tag Operation Spec 2.0 §5.1 Table 5 / §5.1.2.1 -- mandatory NDEF File Control TLV begins at offset 0007h; T byte index 7."
     source: firmware/libraries/NeroNfc/src/nfc_tag_info.h
 
   - spec_prefix: T4T-ISO14443-4
     symbol: NFC_TAG_T4T_CC_READ_ACCESS_INDEX
     spec_value: "13"
-    ref: "NFC Forum Type 4 Tag Operation Spec 2.0 §5.1.2.1 RQ_T4T_NDA_018 — NDEF read-access byte index is 13."
+    ref: "NFC Forum Type 4 Tag Operation Spec 2.0 §5.1.2.1 RQ_T4T_NDA_018 -- NDEF read-access byte index is 13."
     source: firmware/libraries/NeroNfc/src/nfc_tag_info.h
 
   - spec_prefix: T4T-ISO14443-4
     symbol: NFC_TAG_T4T_CC_WRITE_ACCESS_INDEX
     spec_value: "14"
-    ref: "NFC Forum Type 4 Tag Operation Spec 2.0 §5.1.2.1 RQ_T4T_NDA_019 — NDEF write-access byte index is 14."
+    ref: "NFC Forum Type 4 Tag Operation Spec 2.0 §5.1.2.1 RQ_T4T_NDA_019 -- NDEF write-access byte index is 14."
     source: firmware/libraries/NeroNfc/src/nfc_tag_info.h
 
   - spec_prefix: T4T-ISO14443-4
     symbol: NFC_TAG_T4T_MLC_MIN
     spec_value: "0x0001"
-    ref: "NFC Forum Type 4 Tag Operation Spec 2.0 §5.1 Table 5 RQ_T4T_NDA_005 — MLc valid range is 0001h..FFFFh; 0000h is RFU."
+    ref: "NFC Forum Type 4 Tag Operation Spec 2.0 §5.1 Table 5 RQ_T4T_NDA_005 -- MLc valid range is 0001h..FFFFh; 0000h is RFU."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T4T-ISO14443-4
     symbol: NFC_TAG_T4T_MLE_MIN
     spec_value: "0x000F"
-    ref: "NFC Forum Type 4 Tag Operation Spec 2.0 §5.1 Table 5 RQ_T4T_NDA_004 — MLe valid range is 000Fh..FFFFh; 0000h..000Eh are RFU."
+    ref: "NFC Forum Type 4 Tag Operation Spec 2.0 §5.1 Table 5 RQ_T4T_NDA_004 -- MLe valid range is 000Fh..FFFFh; 0000h..000Eh are RFU."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T4T-ISO14443-4
     symbol: NFC_TAG_T4T_NDEF_APP_AID_LEN
     spec_value: "7"
-    ref: "NFC Forum Type 4 Tag Operation Spec 2.0 §5.4.2 Tables 10–11 — NDEF Tag Application name D2760000850101h has Lc=07h."
+    ref: "NFC Forum Type 4 Tag Operation Spec 2.0 §5.4.2 Tables 10-11 -- NDEF Tag Application name D2760000850101h has Lc=07h."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T4T-ISO14443-4
     symbol: NFC_TAG_T4T_NDEF_TLV_LEN
     spec_value: "0x06"
-    ref: "NFC Forum Type 4 Tag Operation Spec 2.0 §5.1.2.1 RQ_T4T_NDA_015 — NDEF File Control TLV L=06h."
+    ref: "NFC Forum Type 4 Tag Operation Spec 2.0 §5.1.2.1 RQ_T4T_NDA_015 -- NDEF File Control TLV L=06h."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T4T-ISO14443-4
     symbol: NFC_TAG_T4T_NDEF_TLV_TYPE
     spec_value: "0x04"
-    ref: "NFC Forum Type 4 Tag Operation Spec 2.0 §5.1.2.1 RQ_T4T_NDA_015 — NDEF File Control TLV T=04h."
+    ref: "NFC Forum Type 4 Tag Operation Spec 2.0 §5.1.2.1 RQ_T4T_NDA_015 -- NDEF File Control TLV T=04h."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T4T-ISO14443-4-NT4H424
     symbol: NFC_TAG_NT4H424_AES_KEY_COUNT
     spec_value: "5"
-    ref: "NXP NT4H2421Gx DS §8.2.4.2 — five application AES-128 keys (key numbers 0..4)."
+    ref: "NXP NT4H2421Gx DS §8.2.4.2 -- five application AES-128 keys (key numbers 0..4)."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T4T-ISO14443-4-NT4H424
     symbol: NFC_TAG_NT4H424_CC_FILE_LEN
     spec_value: "23"
-    ref: "NXP NT4H2421Gx DS §8.2.3.2 — delivery CC file CCLEN is 0017h (23 bytes), including the proprietary File Control TLV."
+    ref: "NXP NT4H2421Gx DS §8.2.3.2 -- delivery CC file CCLEN is 0017h (23 bytes), including the proprietary File Control TLV."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T4T-ISO14443-4-NT4H424
     symbol: NFC_TAG_NT4H424_CC_FILE_STORAGE_BYTES
     spec_value: "32"
-    ref: "NXP NT4H2421Gx DS §8.2.3 — CC file E103h has 32 bytes of allocated file storage."
+    ref: "NXP NT4H2421Gx DS §8.2.3 -- CC file E103h has 32 bytes of allocated file storage."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T4T-ISO14443-4-NT4H424
     symbol: NFC_TAG_NT4H424_DEFAULT_MLC_LSB
     spec_value: "0xFF"
-    ref: "NXP NT4H2421Gx DS §8.2.3.2 — factory CC MLe/MLc (mapping version 2.0); CC bytes 3..6 big-endian."
+    ref: "NXP NT4H2421Gx DS §8.2.3.2 -- factory CC MLe/MLc (mapping version 2.0); CC bytes 3..6 big-endian."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T4T-ISO14443-4-NT4H424
     symbol: NFC_TAG_NT4H424_DEFAULT_MLC_MSB
     spec_value: "0x00"
-    ref: "NXP NT4H2421Gx DS §8.2.3.2 — factory CC MLe/MLc (mapping version 2.0); CC bytes 3..6 big-endian."
+    ref: "NXP NT4H2421Gx DS §8.2.3.2 -- factory CC MLe/MLc (mapping version 2.0); CC bytes 3..6 big-endian."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T4T-ISO14443-4-NT4H424
     symbol: NFC_TAG_NT4H424_DEFAULT_MLE_LSB
     spec_value: "0x00"
-    ref: "NXP NT4H2421Gx DS §8.2.3.2 — factory CC MLe/MLc (mapping version 2.0); CC bytes 3..6 big-endian."
+    ref: "NXP NT4H2421Gx DS §8.2.3.2 -- factory CC MLe/MLc (mapping version 2.0); CC bytes 3..6 big-endian."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T4T-ISO14443-4-NT4H424
     symbol: NFC_TAG_NT4H424_DEFAULT_MLE_MSB
     spec_value: "0x01"
-    ref: "NXP NT4H2421Gx DS §8.2.3.2 — factory CC MLe/MLc (mapping version 2.0); CC bytes 3..6 big-endian."
+    ref: "NXP NT4H2421Gx DS §8.2.3.2 -- factory CC MLe/MLc (mapping version 2.0); CC bytes 3..6 big-endian."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T4T-ISO14443-4-NT4H424
     symbol: NFC_TAG_NT4H424_NDEF_FILE_ID
     spec_value: "0xE104"
-    ref: "NXP NT4H2421Gx DS §8.2.3 — NDEF StandardData file identifier is E104h at delivery."
+    ref: "NXP NT4H2421Gx DS §8.2.3 -- NDEF StandardData file identifier is E104h at delivery."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T4T-ISO14443-4-NT4H424
     symbol: NFC_TAG_NT4H424_NDEF_FILE_SIZE
     spec_value: "256"
-    ref: "NXP NT4H2421Gx DS §8.2.3.2 — NDEF StandardData file E104h has 0100h bytes at delivery."
+    ref: "NXP NT4H2421Gx DS §8.2.3.2 -- NDEF StandardData file E104h has 0100h bytes at delivery."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T4T-ISO14443-4-NT4H424
     symbol: NFC_TAG_NT4H424_PROP_FILE_ID
     spec_value: "0xE105"
-    ref: "NXP NT4H2421Gx DS §8.2.3 — proprietary StandardData file identifier is E105h at delivery."
+    ref: "NXP NT4H2421Gx DS §8.2.3 -- proprietary StandardData file identifier is E105h at delivery."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T4T-ISO14443-4-NT4H424
     symbol: NFC_TAG_NT4H424_PROP_FILE_SIZE
     spec_value: "128"
-    ref: "NXP NT4H2421Gx DS §8.2.3.2 — proprietary StandardData file E105h has 0080h bytes at delivery."
+    ref: "NXP NT4H2421Gx DS §8.2.3.2 -- proprietary StandardData file E105h has 0080h bytes at delivery."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T4T-ISO14443-4-NT4H424
     symbol: NFC_TAG_NT4H424_USER_MEMORY_BYTES
     spec_value: "416"
-    ref: "NXP NT4H2421Gx DS §1 — 416-byte user-visible file system (T4T certified)."
+    ref: "NXP NT4H2421Gx DS §1 -- 416-byte user-visible file system (T4T certified)."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T5T-ISO15693
     symbol: NFC_FRONTEND_ISO15693_UID_LEN
     spec_value: "8"
-    ref: "ISO/IEC 15693-3:2026 §4.1 Table 1 — the VICC UID is 64 bits, hence eight bytes."
+    ref: "ISO/IEC 15693-3:2026 §4.1 Table 1 -- the VICC UID is 64 bits, hence eight bytes."
     source: firmware/libraries/NeroNfc/src/nero_nfc_frontend.h
 
   - spec_prefix: T5T-ISO15693
     symbol: NFC_TAG_T5T_ISO15693_BLOCK_SIZE_MASK
     spec_value: "0x1F"
-    ref: "ISO/IEC 15693-3:2026 §10.4.12 Get system information — memory-size block-size byte encodes block size minus one in its low five bits."
+    ref: "ISO/IEC 15693-3:2026 §10.4.12 Get system information -- memory-size block-size byte encodes block size minus one in its low five bits."
     source: firmware/libraries/NeroNfc/src/nfc_tag_info.h
 
   - spec_prefix: T5T-ISO15693
     symbol: NFC_TAG_T5T_ISO15693_CMD_EXT_GET_SYS_INFO
     spec_value: "0x3B"
-    ref: "ISO/IEC 15693-3:2026 §10.2 and §10.4.26 — Extended get system information command code is 3Bh."
+    ref: "ISO/IEC 15693-3:2026 §10.2 and §10.4.26 -- Extended get system information command code is 3Bh."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T5T-ISO15693
     symbol: NFC_TAG_T5T_ISO15693_CMD_EXT_READ_MULTIPLE
     spec_value: "0x33"
-    ref: "ISO/IEC 15693-3:2026 §10.2 and §10.4.18 — Extended read multiple block command code is 33h."
+    ref: "ISO/IEC 15693-3:2026 §10.2 and §10.4.18 -- Extended read multiple block command code is 33h."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T5T-ISO15693
     symbol: NFC_TAG_T5T_ISO15693_CMD_EXT_READ_SINGLE
     spec_value: "0x30"
-    ref: "ISO/IEC 15693-3:2026 §10.2 and §10.4.15 — Extended read single block command code is 30h."
+    ref: "ISO/IEC 15693-3:2026 §10.2 and §10.4.15 -- Extended read single block command code is 30h."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T5T-ISO15693
     symbol: NFC_TAG_T5T_ISO15693_CMD_EXT_WRITE_SINGLE
     spec_value: "0x31"
-    ref: "ISO/IEC 15693-3:2026 §10.2 and §10.4.16 — Extended write single block command code is 31h."
+    ref: "ISO/IEC 15693-3:2026 §10.2 and §10.4.16 -- Extended write single block command code is 31h."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T5T-ISO15693
     symbol: NFC_TAG_T5T_ISO15693_CMD_GET_SYS_INFO
     spec_value: "0x2B"
-    ref: "ISO/IEC 15693-3:2026 §10.2 and §10.4.12 — Get system information command code is 2Bh."
+    ref: "ISO/IEC 15693-3:2026 §10.2 and §10.4.12 -- Get system information command code is 2Bh."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T5T-ISO15693
     symbol: NFC_TAG_T5T_ISO15693_CMD_READ_MULTIPLE
     spec_value: "0x23"
-    ref: "ISO/IEC 15693-3:2026 §10.2 and §10.4.4 — Read multiple blocks command code is 23h."
+    ref: "ISO/IEC 15693-3:2026 §10.2 and §10.4.4 -- Read multiple blocks command code is 23h."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T5T-ISO15693
     symbol: NFC_TAG_T5T_ISO15693_CMD_READ_SINGLE
     spec_value: "0x20"
-    ref: "ISO/IEC 15693-3:2026 §10.2 and §10.4.1 — Read single block command code is 20h."
+    ref: "ISO/IEC 15693-3:2026 §10.2 and §10.4.1 -- Read single block command code is 20h."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T5T-ISO15693
     symbol: NFC_TAG_T5T_ISO15693_CMD_WRITE_SINGLE
     spec_value: "0x21"
-    ref: "ISO/IEC 15693-3:2026 §10.2 and §10.4.2 — Write single block command code is 21h."
+    ref: "ISO/IEC 15693-3:2026 §10.2 and §10.4.2 -- Write single block command code is 21h."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T5T-ISO15693
     symbol: NFC_TAG_T5T_ISO15693_FLAG_PROTOCOL_EXTENSION
     spec_value: "0x08"
-    ref: "ISO/IEC 15693-3:2026 §7.3.2 Table 5 — request flag b4 (08h) is the protocol Extension_flag; its legacy-command use is constrained by Annex D."
+    ref: "ISO/IEC 15693-3:2026 §7.3.2 Table 5 -- request flag b4 (08h) is the protocol Extension_flag; its legacy-command use is constrained by Annex D."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T5T-ISO15693
     symbol: NFC_TAG_T5T_ISO15693_INFO_FLAG_AFI
     spec_value: "0x02"
-    ref: "ISO/IEC 15693-3:2026 §10.4.12 — response information flag b2 (02h) indicates an AFI field."
+    ref: "ISO/IEC 15693-3:2026 §10.4.12 -- response information flag b2 (02h) indicates an AFI field."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T5T-ISO15693
     symbol: NFC_TAG_T5T_ISO15693_INFO_FLAG_DSFID
     spec_value: "0x01"
-    ref: "ISO/IEC 15693-3:2026 §10.4.12 — response information flag b1 (01h) indicates a DSFID field."
+    ref: "ISO/IEC 15693-3:2026 §10.4.12 -- response information flag b1 (01h) indicates a DSFID field."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T5T-ISO15693
     symbol: NFC_TAG_T5T_ISO15693_INFO_FLAG_IC_REF
     spec_value: "0x08"
-    ref: "ISO/IEC 15693-3:2026 §10.4.12 — response information flag b4 (08h) indicates an IC-reference field."
+    ref: "ISO/IEC 15693-3:2026 §10.4.12 -- response information flag b4 (08h) indicates an IC-reference field."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T5T-ISO15693
     symbol: NFC_TAG_T5T_ISO15693_INFO_FLAG_MEMORY_SIZE
     spec_value: "0x04"
-    ref: "ISO/IEC 15693-3:2026 §10.4.12 — response information flag b3 (04h) indicates a memory-size field."
+    ref: "ISO/IEC 15693-3:2026 §10.4.12 -- response information flag b3 (04h) indicates a memory-size field."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T5T-ISO15693
@@ -2965,167 +2977,167 @@ constants:
   - spec_prefix: T5T-ISO15693
     symbol: NFC_TAG_T5T_ISO15693_RESP_FLAG_ERROR
     spec_value: "0x01"
-    ref: "ISO/IEC 15693-3:2026 §7.4.2 — response flag b1 (01h) is Error_flag."
+    ref: "ISO/IEC 15693-3:2026 §7.4.2 -- response flag b1 (01h) is Error_flag."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T5T-ISO15693
     symbol: NFC_TAG_T5T_ISO15693_SYS_INFO_UID_FIELD_LEN
     spec_value: "8"
-    ref: "ISO/IEC 15693-3:2026 §4.1 and §10.4.12 — the mandatory UID field in a Get system information response is eight bytes."
+    ref: "ISO/IEC 15693-3:2026 §4.1 and §10.4.12 -- the mandatory UID field in a Get system information response is eight bytes."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T5T-ISO15693-ST25DV
     symbol: NFC_TAG_ST25DV04KC_IC_REF
     spec_value: "0x50"
-    ref: "ST DS13519 Rev 8 §7.6.23 Table 169 (page 110) — IC reference 50h identifies ST25DV04KC."
+    ref: "ST DS13519 Rev 8 §7.6.23 Table 169 (page 110) -- IC reference 50h identifies ST25DV04KC."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T5T-ISO15693-ST25DV
     symbol: NFC_TAG_ST25DV_IC_REF
     spec_value: "0x51"
-    ref: "ST DS13519 Rev 8 §7.6.23 Table 169 (page 110) — IC reference 51h identifies ST25DV16KC and ST25DV64KC."
+    ref: "ST DS13519 Rev 8 §7.6.23 Table 169 (page 110) -- IC reference 51h identifies ST25DV16KC and ST25DV64KC."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T5T-ISO15693-ST25TV
     symbol: NFC_TAG_ST25TV02KC_BLOCK_COUNT
     spec_value: "80"
-    ref: "ST DS13304 Rev 7 §4.2 (page 7) — ST25TV02KC user memory has 80 four-byte blocks addressed 00h through 4Fh."
+    ref: "ST DS13304 Rev 7 §4.2 (page 7) -- ST25TV02KC user memory has 80 four-byte blocks addressed 00h through 4Fh."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T5T-NFCFORUM
     symbol: NFC_T5T_CC_MAGIC_8BYTE
     spec_value: "0xE2"
-    ref: "NFC Forum Type 5 Tag Specification §4.3 Capability Container; corroborated by ST AN4911 §3.2 — magic byte E2h selects two-byte block-address mode and an eight-byte CC."
+    ref: "NFC Forum Type 5 Tag Specification §4.3 Capability Container; corroborated by ST AN4911 §3.2 -- magic byte E2h selects two-byte block-address mode and an eight-byte CC."
     source: firmware/libraries/NeroNfc/src/nfc_tag_info.h
 
   - spec_prefix: T5T-NFCFORUM
     symbol: NFC_T5T_CC_VER_ACCESS
     spec_value: "0x40"
-    ref: "NFC Forum Type 5 Tag Specification §4.3 Capability Container — byte 1 value 40h is mapping major 1, minor 0, unrestricted read access, and unrestricted write access."
+    ref: "NFC Forum Type 5 Tag Specification §4.3 Capability Container -- byte 1 value 40h is mapping major 1, minor 0, unrestricted read access, and unrestricted write access."
     source: firmware/libraries/NeroNfc/src/nfc_tag_info.h
 
   - spec_prefix: T5T-NFCFORUM
     symbol: NFC_TAG_T5T_AREA_SIZE_UNIT_BYTES
     spec_value: "8"
-    ref: "NFC Forum Type 5 Tag Specification §4.3 Capability Container; corroborated by ST AN4911/AN5608 — MLEN expresses T5T_Area size in eight-byte units."
+    ref: "NFC Forum Type 5 Tag Specification §4.3 Capability Container; corroborated by ST AN4911/AN5608 -- MLEN expresses T5T_Area size in eight-byte units."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T5T-NFCFORUM
     symbol: NFC_TAG_T5T_CC_ACCESS_READ_MASK
     spec_value: "0x0C"
-    ref: "NFC Forum Type 5 Tag Specification §4.3 Capability Container — [DERIVED] mask 0Ch selects the two read-access bits in CC byte 1."
+    ref: "NFC Forum Type 5 Tag Specification §4.3 Capability Container -- [DERIVED] mask 0Ch selects the two read-access bits in CC byte 1."
     source: firmware/libraries/NeroNfc/src/nfc_tag_info.h
 
   - spec_prefix: T5T-NFCFORUM
     symbol: NFC_TAG_T5T_CC_ACCESS_WRITE_MASK
     spec_value: "0x03"
-    ref: "NFC Forum Type 5 Tag Specification §4.3 Capability Container — [DERIVED] mask 03h selects the two write-access bits in CC byte 1."
+    ref: "NFC Forum Type 5 Tag Specification §4.3 Capability Container -- [DERIVED] mask 03h selects the two write-access bits in CC byte 1."
     source: firmware/libraries/NeroNfc/src/nfc_tag_info.h
 
   - spec_prefix: T5T-NFCFORUM
     symbol: NFC_TAG_T5T_CC_EXT_SIZE_LSB_INDEX
     spec_value: "7"
-    ref: "[DERIVED] Zero-based index from NFC Forum Type 5 Tag Specification §4.3 eight-byte Capability Container — extended MLEN least-significant byte is CC byte 7."
+    ref: "[DERIVED] Zero-based index from NFC Forum Type 5 Tag Specification §4.3 eight-byte Capability Container -- extended MLEN least-significant byte is CC byte 7."
     source: firmware/libraries/NeroNfc/src/nfc_tag_info.h
 
   - spec_prefix: T5T-NFCFORUM
     symbol: NFC_TAG_T5T_CC_EXT_SIZE_MSB_INDEX
     spec_value: "6"
-    ref: "[DERIVED] Zero-based index from NFC Forum Type 5 Tag Specification §4.3 eight-byte Capability Container — extended MLEN most-significant byte is CC byte 6."
+    ref: "[DERIVED] Zero-based index from NFC Forum Type 5 Tag Specification §4.3 eight-byte Capability Container -- extended MLEN most-significant byte is CC byte 6."
     source: firmware/libraries/NeroNfc/src/nfc_tag_info.h
 
   - spec_prefix: T5T-NFCFORUM
     symbol: NFC_TAG_T5T_CC_FLAGS_BYTE_INDEX
     spec_value: "3"
-    ref: "[DERIVED] Zero-based index from NFC Forum Type 5 Tag Specification §4.3 Capability Container — additional-feature information is CC byte 3."
+    ref: "[DERIVED] Zero-based index from NFC Forum Type 5 Tag Specification §4.3 Capability Container -- additional-feature information is CC byte 3."
     source: firmware/libraries/NeroNfc/src/nfc_tag_info.h
 
   - spec_prefix: T5T-NFCFORUM
     symbol: NFC_TAG_T5T_CC_LEN_EXTENDED
     spec_value: "8"
-    ref: "NFC Forum Type 5 Tag Specification §4.3 Capability Container; corroborated by ST AN4911 — the extended CC occupies eight bytes."
+    ref: "NFC Forum Type 5 Tag Specification §4.3 Capability Container; corroborated by ST AN4911 -- the extended CC occupies eight bytes."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T5T-NFCFORUM
     symbol: NFC_TAG_T5T_CC_LEN_SHORT
     spec_value: "4"
-    ref: "NFC Forum Type 5 Tag Specification §4.3 Capability Container; corroborated by ST AN4911/AN5608 — the short CC occupies four bytes."
+    ref: "NFC Forum Type 5 Tag Specification §4.3 Capability Container; corroborated by ST AN4911/AN5608 -- the short CC occupies four bytes."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: T5T-NFCFORUM
     symbol: NFC_TAG_T5T_CC_MAPPING_MAJOR_SHIFT
     spec_value: "6"
-    ref: "[DERIVED] From NFC Forum Type 5 Tag Specification §4.3 Capability Container — mapping major version occupies CC byte 1 bits b8-b7, requiring a six-bit right shift."
+    ref: "[DERIVED] From NFC Forum Type 5 Tag Specification §4.3 Capability Container -- mapping major version occupies CC byte 1 bits b8-b7, requiring a six-bit right shift."
     source: firmware/libraries/NeroNfc/src/nfc_tag_info.h
 
   - spec_prefix: T5T-NFCFORUM
     symbol: NFC_TAG_T5T_CC_MAPPING_MINOR_MASK
     spec_value: "0x03"
-    ref: "[DERIVED] From NFC Forum Type 5 Tag Specification §4.3 Capability Container — after a four-bit shift, mask 03h selects the two mapping-minor bits."
+    ref: "[DERIVED] From NFC Forum Type 5 Tag Specification §4.3 Capability Container -- after a four-bit shift, mask 03h selects the two mapping-minor bits."
     source: firmware/libraries/NeroNfc/src/nfc_tag_info.h
 
   - spec_prefix: T5T-NFCFORUM
     symbol: NFC_TAG_T5T_CC_MAPPING_MINOR_SHIFT
     spec_value: "4"
-    ref: "[DERIVED] From NFC Forum Type 5 Tag Specification §4.3 Capability Container — mapping minor version occupies CC byte 1 bits b6-b5, requiring a four-bit right shift."
+    ref: "[DERIVED] From NFC Forum Type 5 Tag Specification §4.3 Capability Container -- mapping minor version occupies CC byte 1 bits b6-b5, requiring a four-bit right shift."
     source: firmware/libraries/NeroNfc/src/nfc_tag_info.h
 
   - spec_prefix: T5T-NFCFORUM
     symbol: NFC_TAG_T5T_CC_MLEN_BYTE_INDEX
     spec_value: "2"
-    ref: "[DERIVED] Zero-based index from NFC Forum Type 5 Tag Specification §4.3 short Capability Container — one-byte MLEN is CC byte 2."
+    ref: "[DERIVED] Zero-based index from NFC Forum Type 5 Tag Specification §4.3 short Capability Container -- one-byte MLEN is CC byte 2."
     source: firmware/libraries/NeroNfc/src/nfc_tag_info.h
 
   - spec_prefix: T5T-NFCFORUM
     symbol: NFC_TAG_T5T_CC_MLEN_OVERFLOW
     spec_value: "0xFF"
-    ref: "NFC Forum Type 5 Tag Specification §4.3 Capability Container — short-CC MLEN FFh is the overflow/special-size marker interpreted with the additional-feature information."
+    ref: "NFC Forum Type 5 Tag Specification §4.3 Capability Container -- short-CC MLEN FFh is the overflow/special-size marker interpreted with the additional-feature information."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: WebAuthn
     symbol: NFC_CTAP_CLIENT_HASH_LEN
     spec_value: "32"
-    ref: "[DERIVED] W3C WebAuthn Level 3 §5.8.1 — clientDataHash uses SHA-256; 256 bits = 32 octets."
+    ref: "[DERIVED] W3C WebAuthn Level 3 §5.8.1 -- clientDataHash uses SHA-256; 256 bits = 32 octets."
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: WSC
     symbol: NFC_WSC_ATTR_AUTH_TYPE
     spec_value: "0x1003"
-    ref: "Wi-Fi Simple Configuration Technical Specification §12, Attribute Definitions — Authentication Type attribute type 1003h; also listed among Credential attributes."
+    ref: "Wi-Fi Simple Configuration Technical Specification §12, Attribute Definitions -- Authentication Type attribute type 1003h; also listed among Credential attributes."
     source: firmware/libraries/NeroNfc/src/nfc_wsc.h
 
   - spec_prefix: WSC
     symbol: NFC_WSC_ATTR_CREDENTIAL
     spec_value: "0x100E"
-    ref: "Wi-Fi Simple Configuration Technical Specification §12, Attribute Definitions — Credential attribute type 100Eh, containing the WLAN Credential attributes."
+    ref: "Wi-Fi Simple Configuration Technical Specification §12, Attribute Definitions -- Credential attribute type 100Eh, containing the WLAN Credential attributes."
     source: firmware/libraries/NeroNfc/src/nfc_wsc.h
 
   - spec_prefix: WSC
     symbol: NFC_WSC_ATTR_ENCR_TYPE
     spec_value: "0x100F"
-    ref: "Wi-Fi Simple Configuration Technical Specification §12, Attribute Definitions — Encryption Type attribute type 100Fh; also listed among Credential attributes."
+    ref: "Wi-Fi Simple Configuration Technical Specification §12, Attribute Definitions -- Encryption Type attribute type 100Fh; also listed among Credential attributes."
     source: firmware/libraries/NeroNfc/src/nfc_wsc.h
 
   - spec_prefix: WSC
     symbol: NFC_WSC_ATTR_MAC_ADDRESS
     spec_value: "0x1020"
-    ref: "Wi-Fi Simple Configuration Technical Specification §12, Attribute Definitions — MAC Address attribute type 1020h; Credential uses the Enrollee or broadcast MAC address."
+    ref: "Wi-Fi Simple Configuration Technical Specification §12, Attribute Definitions -- MAC Address attribute type 1020h; Credential uses the Enrollee or broadcast MAC address."
     source: firmware/libraries/NeroNfc/src/nfc_wsc.h
 
   - spec_prefix: WSC
     symbol: NFC_WSC_ATTR_NETWORK_INDEX
     spec_value: "0x1026"
-    ref: "Wi-Fi Simple Configuration Technical Specification §12, Attribute Definitions — Network Index attribute type 1026h; Credential value is deprecated and set to 1."
+    ref: "Wi-Fi Simple Configuration Technical Specification §12, Attribute Definitions -- Network Index attribute type 1026h; Credential value is deprecated and set to 1."
     source: firmware/libraries/NeroNfc/src/nfc_wsc.h
 
   - spec_prefix: WSC
     symbol: NFC_WSC_ATTR_NETWORK_KEY
     spec_value: "0x1027"
-    ref: "Wi-Fi Simple Configuration Technical Specification §12, Attribute Definitions — Network Key attribute type 1027h."
+    ref: "Wi-Fi Simple Configuration Technical Specification §12, Attribute Definitions -- Network Key attribute type 1027h."
     source: firmware/libraries/NeroNfc/src/nfc_wsc.h
 
   - spec_prefix: WSC
     symbol: NFC_WSC_ATTR_SSID
     spec_value: "0x1045"
-    ref: "Wi-Fi Simple Configuration Technical Specification §12, Attribute Definitions — SSID attribute type 1045h."
+    ref: "Wi-Fi Simple Configuration Technical Specification §12, Attribute Definitions -- SSID attribute type 1045h."
     source: firmware/libraries/NeroNfc/src/nfc_wsc.h

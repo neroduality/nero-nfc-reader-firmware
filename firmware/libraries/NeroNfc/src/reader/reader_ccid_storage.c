@@ -15,7 +15,7 @@
 // limitations under the License.
 
 /*
- * reader_ccid_storage.c — PC/SC Part 3 storage-card APDU handlers.
+ * reader_ccid_storage.c -- PC/SC Part 3 storage-card APDU handlers.
  */
 
 #if defined(NERO_CCID_USB_BUILD)

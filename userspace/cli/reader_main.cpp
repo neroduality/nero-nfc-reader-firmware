@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// reader — read NFC tags through CDC serial or PC/SC CCID.
+// reader -- read NFC tags through CDC serial or PC/SC CCID.
 //
 // Serial port: set PORT=/dev/ttyACM0 (optional); otherwise auto-detect.
 //
@@ -68,12 +68,12 @@ int main(int argc, char** argv) {
   std::optional<nero_nfc::HostBridge> requested_bridge;
   std::string pcsc_reader;
   bool pcsc_share_specified = false;
-  const auto kArgs = std::span(argv, static_cast<std::size_t>(argc));
+  const auto args = std::span(argv, static_cast<std::size_t>(argc));
 
-  for (std::size_t i = 1u; i < kArgs.size(); ++i) {
-    std::string arg(kArgs[i]);
+  for (std::size_t i = 1u; i < args.size(); ++i) {
+    std::string arg(args[i]);
     if (IsHelpArg(arg)) {
-      Usage(kArgs[0]);
+      Usage(args[0]);
       return nero_nfc::kCliExitSuccess;
     }
     if (arg.starts_with("--bridge=")) {
@@ -83,7 +83,7 @@ int main(int argc, char** argv) {
         nero_nfc::NeroNfcStderrLine(
             "error: unsupported --bridge value \"{}\" (use cdc or pcsc)",
             arg.substr(std::string("--bridge=").size()));
-        Usage(kArgs[0]);
+        Usage(args[0]);
         return nero_nfc::kCliExitUsageError;
       }
       requested_bridge = parsed;
@@ -97,7 +97,7 @@ int main(int argc, char** argv) {
             "error: unsupported --pcsc-share value \"{}\" (use shared or "
             "exclusive)",
             arg.substr(std::string("--pcsc-share=").size()));
-        Usage(kArgs[0]);
+        Usage(args[0]);
         return nero_nfc::kCliExitUsageError;
       }
       pcsc_opts.share_mode_ = *parsed;
@@ -108,7 +108,7 @@ int main(int argc, char** argv) {
       opts.open_urls_ = false;
     } else {
       nero_nfc::NeroNfcStderrLine("error: unrecognized argument \"{}\"", arg);
-      Usage(kArgs[0]);
+      Usage(args[0]);
       return nero_nfc::kCliExitUsageError;
     }
   }

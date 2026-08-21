@@ -49,8 +49,8 @@ class GlobResult {
         pattern_len == 0u) {
       return GLOB_NOMATCH;
     }
-    const int kRc = ::glob(pattern, 0, NERO_NFC_NULL, &g_);
-    if (kRc == 0) {
+    const int rc = ::glob(pattern, 0, NERO_NFC_NULL, &g_);
+    if (rc == 0) {
       owned_ = true;
     } else {
       /* glob() may leave partial allocations on failure (notably
@@ -58,7 +58,7 @@ class GlobResult {
       ::globfree(&g_);
       g_ = {};
     }
-    return kRc;
+    return rc;
   }
 
   void Release() {
@@ -75,9 +75,9 @@ class GlobResult {
     if (!owned_ || g_.gl_pathv == NERO_NFC_NULL || index >= g_.gl_pathc) {
       return NERO_NFC_NULL;
     }
-    const auto kPaths =
+    const auto paths =
         std::span<char* const>{g_.gl_pathv, static_cast<size_t>(g_.gl_pathc)};
-    return kPaths[index];
+    return paths[index];
   }
 
  private:

@@ -57,7 +57,7 @@ void RunReaderLoop(int fd, const nero_nfc::DriverOptions& opts,
   std::array<char, kReadBufBytes> buf{};
   while (!stop->load()) {
     struct pollfd pfd{.fd = fd, .events = POLLIN, .revents = 0};
-    int r = poll(&pfd, 1, kPollTimeoutMs);
+    int const r = poll(&pfd, 1, kPollTimeoutMs);
     if (r < 0) {
       if (errno == EINTR) {
         continue;
@@ -70,7 +70,7 @@ void RunReaderLoop(int fd, const nero_nfc::DriverOptions& opts,
     if ((pfd.revents & (POLLERR | POLLHUP | POLLNVAL)) != 0) {
       break;
     }
-    ssize_t n = read(fd, buf.data(), buf.size());
+    ssize_t const n = read(fd, buf.data(), buf.size());
     if (n < 0 && (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK)) {
       continue;
     }
@@ -100,29 +100,29 @@ int SendLine(int fd, const std::string& command) {
         nero_nfc::LinePump::kMaxBufBytes);
     return -1;
   }
-  std::string line = command + "\n";
+  std::string const line = command + "\n";
   size_t off = 0u;
   while (off < line.size()) {
-    const std::string_view kChunk = std::string_view{line}.substr(off);
-    const ssize_t kN = write(fd, kChunk.data(), kChunk.size());
-    if (kN < 0) {
+    const std::string_view chunk = std::string_view{line}.substr(off);
+    const ssize_t n = write(fd, chunk.data(), chunk.size());
+    if (n < 0) {
       if (errno == EINTR) {
         continue;
       }
       if (errno == EAGAIN || errno == EWOULDBLOCK) {
         struct pollfd pfd{.fd = fd, .events = POLLOUT, .revents = 0};
-        const int kPollRc = poll(&pfd, 1, kPollTimeoutMs);
-        if (kPollRc > 0 && (pfd.revents & POLLOUT) != 0) {
+        const int poll_rc = poll(&pfd, 1, kPollTimeoutMs);
+        if (poll_rc > 0 && (pfd.revents & POLLOUT) != 0) {
           continue;
         }
       }
       nero_nfc::NeroNfcStderrLine("write: {}", std::strerror(errno));
       return -1;
     }
-    if (kN == 0) {
+    if (n == 0) {
       return -1;
     }
-    off += static_cast<size_t>(kN);
+    off += static_cast<size_t>(n);
   }
   return 0;
 }
@@ -148,7 +148,7 @@ int RunListenOnly(const DriverOptions& opts) {
   if (port.empty()) {
     return 1;
   }
-  int fd = SerialOpen(port);
+  int const fd = SerialOpen(port);
   if (fd < 0) {
     nero_nfc::NeroNfcStderrLine("error: cannot open {}: {}", port,
                                 std::strerror(errno));
@@ -173,7 +173,7 @@ int RunInteractive(const DriverOptions& opts) {
   if (port.empty()) {
     return 1;
   }
-  int fd = SerialOpen(port);
+  int const fd = SerialOpen(port);
   if (fd < 0) {
     nero_nfc::NeroNfcStderrLine("error: cannot open {}: {}", port,
                                 std::strerror(errno));
@@ -214,13 +214,13 @@ int RunSend(const DriverOptions& opts, const std::string& command) {
   if (port.empty()) {
     return 1;
   }
-  int fd = SerialOpen(port);
+  int const fd = SerialOpen(port);
   if (fd < 0) {
     nero_nfc::NeroNfcStderrLine("error: cannot open {}: {}", port,
                                 std::strerror(errno));
     return 1;
   }
-  int rc = SendLine(fd, command);
+  int const rc = SendLine(fd, command);
   (void)SerialClose(fd);
   return (rc == 0) ? 0 : 1;
 }
@@ -230,7 +230,7 @@ int RunSendThenMonitor(const DriverOptions& opts, const std::string& command) {
   if (port.empty()) {
     return 1;
   }
-  int fd = SerialOpen(port);
+  int const fd = SerialOpen(port);
   if (fd < 0) {
     nero_nfc::NeroNfcStderrLine("error: cannot open {}: {}", port,
                                 std::strerror(errno));
@@ -260,7 +260,7 @@ int RunSendThenInteractive(const DriverOptions& opts,
   if (port.empty()) {
     return 1;
   }
-  int fd = SerialOpen(port);
+  int const fd = SerialOpen(port);
   if (fd < 0) {
     nero_nfc::NeroNfcStderrLine("error: cannot open {}: {}", port,
                                 std::strerror(errno));
@@ -273,17 +273,17 @@ int RunSendThenInteractive(const DriverOptions& opts,
   }
   size_t start = 0u;
   while (start < full_cmd.size()) {
-    const size_t kEnd = full_cmd.find('\n', start);
-    const std::string kLine = full_cmd.substr(
-        start, kEnd == std::string::npos ? std::string::npos : kEnd - start);
-    if (!kLine.empty() && SendLine(fd, kLine) != 0) {
+    const size_t end = full_cmd.find('\n', start);
+    const std::string line = full_cmd.substr(
+        start, end == std::string::npos ? std::string::npos : end - start);
+    if (!line.empty() && SendLine(fd, line) != 0) {
       (void)SerialClose(fd);
       return 1;
     }
-    if (kEnd == std::string::npos) {
+    if (end == std::string::npos) {
       break;
     }
-    start = kEnd + 1u;
+    start = end + 1u;
   }
   nero_nfc::NeroNfcStderrLine(
       "writer: CDC bridge on {}; ready to tap a writable NFC tag", port);

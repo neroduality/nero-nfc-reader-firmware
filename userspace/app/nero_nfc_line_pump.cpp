@@ -47,8 +47,8 @@ void LinePump::Feed(const char* data, size_t len) {
   if ((data == NERO_NFC_NULL) && (len != 0u)) {
     return;
   }
-  const auto kBytes = std::span<const char>(data, len);
-  for (char c : kBytes) {
+  const auto bytes = std::span<const char>(data, len);
+  for (char const c : bytes) {
     if (c == '\n') {
       if (!dropping_oversized_line_ && line_callback_) {
         line_callback_(StripCr(line_buffer_));

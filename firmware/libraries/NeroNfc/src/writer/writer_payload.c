@@ -53,7 +53,7 @@ enum {
   /* [WSC] big-endian 2-byte attribute ID/length serialization. */
   WRITER_WSC_BYTE_SHIFT8 = 8u,
   WRITER_WSC_BYTE_MASK = 0xFFu,
-  /* [WSC] AP MAC Address attribute placeholder — the writer does not know the
+  /* [WSC] AP MAC Address attribute placeholder -- the writer does not know the
    * AP BSSID, so it emits the all-zero MAC the enrollee fills in from the link.
    */
   WRITER_WSC_AP_MAC_PLACEHOLDER = 0x00u,
@@ -84,7 +84,7 @@ static uint16_t tlv_pack(const uint8_t* ndef, uint16_t nlen, uint8_t* out,
 static uint16_t ndef_emit_uri(uint8_t* out, uint16_t cap, uint8_t uri_id,
                               const char* uri) {
   size_t ul = 0u;
-  /* [NDEF-RTD] URI Record Type 1.0 — identifier codes 0x00..0x23 only; reject
+  /* [NDEF-RTD] URI Record Type 1.0 -- identifier codes 0x00..0x23 only; reject
    * RFU codes so the writer never emits a record its own decoder would reject.
    */
   if (uri_id >= (uint8_t)(NERO_NFC_URI_PREFIX_CODE_COUNT)) {
@@ -278,7 +278,7 @@ static bool build_wifi_wsc(uint8_t* blob, uint16_t blob_cap, uint16_t* out_len,
     return false;
   }
   uint8_t inner[WRITER_WIFI_WSC_INNER_MAX]; /* max fill: 5+36+6+6+67+10 = 130
-                                               bytes (SSID≤32, PSK≤63) */
+                                               bytes (SSID<=32, PSK<=63) */
   uint16_t q = 0u;
   const uint8_t idx = 0x01u;
   if (!wps_put_attr(inner, (uint16_t)(sizeof(inner)), &q,
@@ -313,7 +313,7 @@ static bool build_wifi_wsc(uint8_t* blob, uint16_t blob_cap, uint16_t* out_len,
   }
   uint16_t inner_len = q;
   uint8_t cred[WRITER_WIFI_WSC_CRED_MAX]; /* max fill: 4 (TLV header) + inner
-                                             (≤130) = 134 bytes */
+                                             (<=130) = 134 bytes */
   uint16_t cred_len = 0u;
   if (!wps_put_attr(cred, (uint16_t)(sizeof(cred)), &cred_len,
                     NFC_WSC_ATTR_CREDENTIAL, inner, inner_len)) {

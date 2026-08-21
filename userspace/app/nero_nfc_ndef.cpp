@@ -91,18 +91,18 @@ std::vector<std::string> TextLines(std::string_view text) {
   std::vector<std::string> lines;
   std::size_t start = 0u;
   while (start <= text.size()) {
-    const std::size_t kPos = text.find_first_of("\r\n", start);
-    if (kPos == std::string_view::npos) {
+    const std::size_t pos = text.find_first_of("\r\n", start);
+    if (pos == std::string_view::npos) {
       if (start < text.size()) {
         lines.emplace_back(text.substr(start));
       }
       break;
     }
-    if (kPos > start) {
-      lines.emplace_back(text.substr(start, kPos - start));
+    if (pos > start) {
+      lines.emplace_back(text.substr(start, pos - start));
     }
-    start = kPos + 1u;
-    if (start < text.size() && text[kPos] == '\r' && text[start] == '\n') {
+    start = pos + 1u;
+    if (start < text.size() && text[pos] == '\r' && text[start] == '\n') {
       ++start;
     }
   }
@@ -112,13 +112,13 @@ std::vector<std::string> TextLines(std::string_view text) {
 std::optional<std::string> VcardProperty(std::string_view body,
                                          std::string_view name) {
   for (const auto& line : TextLines(body)) {
-    const auto kColon = line.find(':');
-    if (kColon == std::string::npos) {
+    const auto colon = line.find(':');
+    if (colon == std::string::npos) {
       continue;
     }
-    const std::string_view kEy(line.data(), kColon);
-    if (kEy == name || kEy.starts_with(std::string(name) + ";")) {
-      return line.substr(kColon + 1u);
+    const std::string_view ey(line.data(), colon);
+    if (ey == name || ey.starts_with(std::string(name) + ";")) {
+      return line.substr(colon + 1u);
     }
   }
   return std::nullopt;
@@ -126,26 +126,26 @@ std::optional<std::string> VcardProperty(std::string_view body,
 
 std::optional<std::string> DecodeVcardPayload(
     const std::vector<std::uint8_t>& payload) {
-  const auto kBody = TextPayload(payload);
-  if (!kBody.has_value() || kBody->find("BEGIN:VCARD") == std::string::npos) {
+  const auto body = TextPayload(payload);
+  if (!body.has_value() || body->find("BEGIN:VCARD") == std::string::npos) {
     return std::nullopt;
   }
-  const auto kName = VcardProperty(*kBody, "FN");
-  const auto kTel = VcardProperty(*kBody, "TEL");
-  const auto kEmail = VcardProperty(*kBody, "EMAIL");
-  if (!kName.has_value() && !kTel.has_value() && !kEmail.has_value()) {
+  const auto name = VcardProperty(*body, "FN");
+  const auto tel = VcardProperty(*body, "TEL");
+  const auto email = VcardProperty(*body, "EMAIL");
+  if (!name.has_value() && !tel.has_value() && !email.has_value()) {
     return std::nullopt;
   }
   std::ostringstream out;
   out << "Contact:";
-  if (kName.has_value()) {
-    out << " name=" << *kName;
+  if (name.has_value()) {
+    out << " name=" << *name;
   }
-  if (kTel.has_value()) {
-    out << " tel=" << *kTel;
+  if (tel.has_value()) {
+    out << " tel=" << *tel;
   }
-  if (kEmail.has_value()) {
-    out << " email=" << *kEmail;
+  if (email.has_value()) {
+    out << " email=" << *email;
   }
   return out.str();
 }
@@ -188,11 +188,11 @@ std::optional<std::vector<std::uint8_t>> WscAttrPayload(
 
 std::optional<std::string> AsciiAttr(const std::vector<std::uint8_t>& payload,
                                      std::uint16_t attr_id) {
-  const auto kAttr = WscAttrPayload(payload, attr_id);
-  if (!kAttr.has_value() || !BytesAreDisplayText(*kAttr)) {
+  const auto attr = WscAttrPayload(payload, attr_id);
+  if (!attr.has_value() || !BytesAreDisplayText(*attr)) {
     return std::nullopt;
   }
-  return std::string(kAttr->begin(), kAttr->end());
+  return std::string(attr->begin(), attr->end());
 }
 
 std::string WscAuthName(const std::optional<std::vector<std::uint8_t>>& attr) {
@@ -215,22 +215,22 @@ std::string WscEncrName(const std::optional<std::vector<std::uint8_t>>& attr) {
 
 std::optional<std::string> DecodeWifiWscPayload(
     const std::vector<std::uint8_t>& payload) {
-  const auto kCredential = WscAttrPayload(payload, NFC_WSC_ATTR_CREDENTIAL);
-  if (!kCredential.has_value()) {
+  const auto credential = WscAttrPayload(payload, NFC_WSC_ATTR_CREDENTIAL);
+  if (!credential.has_value()) {
     return std::nullopt;
   }
-  const auto kSsid = AsciiAttr(*kCredential, NFC_WSC_ATTR_SSID);
-  const auto kEy = AsciiAttr(*kCredential, NFC_WSC_ATTR_NETWORK_KEY);
-  if (!kSsid.has_value()) {
+  const auto ssid = AsciiAttr(*credential, NFC_WSC_ATTR_SSID);
+  const auto ey = AsciiAttr(*credential, NFC_WSC_ATTR_NETWORK_KEY);
+  if (!ssid.has_value()) {
     return std::nullopt;
   }
   std::ostringstream out;
-  out << "Wi-Fi: ssid=" << *kSsid << " auth="
-      << WscAuthName(WscAttrPayload(*kCredential, NFC_WSC_ATTR_AUTH_TYPE))
+  out << "Wi-Fi: ssid=" << *ssid << " auth="
+      << WscAuthName(WscAttrPayload(*credential, NFC_WSC_ATTR_AUTH_TYPE))
       << " encryption="
-      << WscEncrName(WscAttrPayload(*kCredential, NFC_WSC_ATTR_ENCR_TYPE));
-  if (kEy.has_value()) {
-    out << " key=" << *kEy;
+      << WscEncrName(WscAttrPayload(*credential, NFC_WSC_ATTR_ENCR_TYPE));
+  if (ey.has_value()) {
+    out << " key=" << *ey;
   }
   return out.str();
 }
@@ -247,16 +247,16 @@ std::optional<std::string> DecodeBluetoothOobPayload(
     if (i != 0u) {
       out.push_back(':');
     }
-    const auto kPayloadIndex =
+    const auto payload_index =
         static_cast<std::size_t>(kBtOobAddrOffset + kBtOobAddrLen - 1u - i);
-    if (!nero_nfc_span_ok(kPayloadIndex, 1u, payload.size())) {
+    if (!nero_nfc_span_ok(payload_index, 1u, payload.size())) {
       return std::nullopt;
     }
-    const int kWritten =
+    const int written =
         nero_nfc_snprintf(&byte_text[0], sizeof(byte_text), "%02X",
-                          static_cast<unsigned>(payload[kPayloadIndex]));
-    if (kWritten <= 0 ||
-        static_cast<std::size_t>(kWritten) >= sizeof(byte_text)) {
+                          static_cast<unsigned>(payload[payload_index]));
+    if (written <= 0 ||
+        static_cast<std::size_t>(written) >= sizeof(byte_text)) {
       return std::nullopt;
     }
     out.append(&byte_text[0]);
@@ -270,18 +270,18 @@ std::optional<std::string> DecodeRecordPayload(
   if (payload.size() > UINT32_MAX) {
     return std::nullopt;
   }
-  const auto kPayloadLen = static_cast<std::uint32_t>(payload.size());
+  const auto payload_len = static_cast<std::uint32_t>(payload.size());
   char decoded[NERO_NFC_NDEF_DECODE_OUT_MAX];
 
   if (tnf == NFC_NDEF_TNF_WELL_KNOWN && type == "T") {
-    if (!nfc_ndef_decode_text_payload(payload.data(), kPayloadLen, &decoded[0],
+    if (!nfc_ndef_decode_text_payload(payload.data(), payload_len, &decoded[0],
                                       NERO_NFC_NDEF_DECODE_OUT_MAX)) {
       return std::nullopt;
     }
     return std::string(&decoded[0]);
   }
   if (tnf == NFC_NDEF_TNF_WELL_KNOWN && type == "U") {
-    if (!nfc_ndef_decode_uri_payload(payload.data(), kPayloadLen, &decoded[0],
+    if (!nfc_ndef_decode_uri_payload(payload.data(), payload_len, &decoded[0],
                                      NERO_NFC_NDEF_DECODE_OUT_MAX)) {
       return std::nullopt;
     }
@@ -337,12 +337,12 @@ std::vector<std::uint8_t> BuildNdefUriRecord(std::string_view uri) {
   std::uint8_t prefix_code = 0;
   std::string_view suffix = uri;
   for (std::size_t i = 1; i < NERO_NFC_URI_PREFIX_CODE_COUNT; ++i) {
-    const std::string_view kPrefix{NFC_NDEF_URI_PREFIXES[i]};
-    const std::string_view kBest{NFC_NDEF_URI_PREFIXES[prefix_code]};
-    if (!kPrefix.empty() && uri.starts_with(kPrefix) &&
-        kPrefix.size() > kBest.size()) {
+    const std::string_view prefix{NFC_NDEF_URI_PREFIXES[i]};
+    const std::string_view best{NFC_NDEF_URI_PREFIXES[prefix_code]};
+    if (!prefix.empty() && uri.starts_with(prefix) &&
+        prefix.size() > best.size()) {
       prefix_code = static_cast<std::uint8_t>(i);
-      suffix = uri.substr(kPrefix.size());
+      suffix = uri.substr(prefix.size());
     }
   }
   if (suffix.size() > NERO_NFC_NDEF_SHORT_URI_SUFFIX_MAX) {
@@ -413,20 +413,20 @@ std::vector<NdefRecordSummary> ParseNdefRecords(
   if (ndef.size() > NERO_NFC_NDEF_MAX_TOTAL_BYTES || ndef.size() > UINT16_MAX) {
     return records;
   }
-  const auto kNdefLen = static_cast<uint16_t>(ndef.size());
+  const auto ndef_len = static_cast<uint16_t>(ndef.size());
   std::size_t total_payload = 0u;
   uint16_t pos = 0u;
-  while (pos < kNdefLen) {
+  while (pos < ndef_len) {
     nfc_ndef_record_t rec{};
     uint16_t next = pos;
-    const nfc_ndef_record_status_t kStatus =
-        nfc_ndef_record_next(ndef.data(), kNdefLen, pos, &rec, &next);
+    const nfc_ndef_record_status_t status =
+        nfc_ndef_record_next(ndef.data(), ndef_len, pos, &rec, &next);
 
-    if (kStatus == NFC_NDEF_RECORD_EMPTY) {
+    if (status == NFC_NDEF_RECORD_EMPTY) {
       pos = next;
       continue;
     }
-    if (kStatus != NFC_NDEF_RECORD_OK) {
+    if (status != NFC_NDEF_RECORD_OK) {
       break;
     }
     if (records.size() >= NERO_NFC_NDEF_MAX_RECORDS) {
@@ -437,15 +437,16 @@ std::vector<NdefRecordSummary> ParseNdefRecords(
         total_payload > NERO_NFC_NDEF_MAX_TOTAL_BYTES) {
       break;
     }
-    const auto kMsg = std::span<const std::uint8_t>(ndef);
-    const auto kRecord = kMsg.subspan(pos);
-    std::string type(reinterpret_cast<const char*>(
-                         kRecord.subspan(rec.type_offset, rec.type_len).data()),
-                     rec.type_len);
-    const auto kPayloadBytes =
-        kRecord.subspan(rec.payload_offset, rec.payload_len);
-    std::vector<std::uint8_t> payload(kPayloadBytes.begin(),
-                                      kPayloadBytes.end());
+    const auto msg = std::span<const std::uint8_t>(ndef);
+    const auto record = msg.subspan(pos);
+    std::string const type(
+        reinterpret_cast<const char*>(
+            record.subspan(rec.type_offset, rec.type_len).data()),
+        rec.type_len);
+    const auto payload_bytes =
+        record.subspan(rec.payload_offset, rec.payload_len);
+    std::vector<std::uint8_t> const payload(payload_bytes.begin(),
+                                            payload_bytes.end());
     records.push_back(
         {rec.tnf, type, payload, DecodeRecordPayload(rec.tnf, type, payload)});
     pos = next;

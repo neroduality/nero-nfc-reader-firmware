@@ -90,7 +90,7 @@ do_core() {
   if ! core_ok; then
     echo "── arduino-cli core update-index ──" >&2
     "${CLI_BIN}" core update-index "${arduino_url_args[@]}"
-    echo "── arduino-cli core install ${CORE_PACKAGE}@${CORE_VERSION} (→ ${ARDUINO_USER_DIR}) ──" >&2
+    echo "── arduino-cli core install ${CORE_PACKAGE}@${CORE_VERSION} (-> ${ARDUINO_USER_DIR}) ──" >&2
     "${CLI_BIN}" core install "${CORE_PACKAGE}@${CORE_VERSION}" "${arduino_url_args[@]}"
   fi
 

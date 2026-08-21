@@ -25,7 +25,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-/* Fail-closed decimal parsers — replacements for atoi/strtol family. */
+/* Fail-closed decimal parsers -- replacements for atoi/strtol family. */
 
 NERO_NFC_NODISCARD static inline bool nero_nfc_parse_u32(const char* text,
                                                          uint32_t* out) {

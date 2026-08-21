@@ -79,8 +79,8 @@ TEST(WriterSerialCli, RejectsOversizedNdefHexWithoutClearingPreviousPayload) {
   WriterHalUtestFeed("ndef-hex D101015500\n");
   ASSERT_TRUE(PollUntilIdle(&cfg));
   ASSERT_EQ(cfg.kind, WRITER_PAYLOAD_RAW_NDEF);
-  const uint16_t kPreviousLen = cfg.raw_ndef_len;
-  const uint8_t kPreviousFirst =
+  const uint16_t previous_len = cfg.raw_ndef_len;
+  const uint8_t previous_first =
       nero_nfc_u8_at(cfg.raw_ndef, cfg.raw_ndef_len, 0u);
 
   std::string too_large = "ndef-hex ";
@@ -92,9 +92,9 @@ TEST(WriterSerialCli, RejectsOversizedNdefHexWithoutClearingPreviousPayload) {
   EXPECT_FALSE(PollUntilIdle(&cfg));
 
   EXPECT_EQ(cfg.kind, WRITER_PAYLOAD_RAW_NDEF);
-  EXPECT_EQ(cfg.raw_ndef_len, kPreviousLen);
+  EXPECT_EQ(cfg.raw_ndef_len, previous_len);
   ASSERT_NE(cfg.raw_ndef, NERO_NFC_NULL);
-  EXPECT_EQ(nero_nfc_u8_at(cfg.raw_ndef, cfg.raw_ndef_len, 0u), kPreviousFirst);
+  EXPECT_EQ(nero_nfc_u8_at(cfg.raw_ndef, cfg.raw_ndef_len, 0u), previous_first);
   EXPECT_NE(WriterHalUtestOutput().find("invalid or oversized"),
             std::string::npos);
 }

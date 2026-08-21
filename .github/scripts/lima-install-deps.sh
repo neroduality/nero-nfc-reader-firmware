@@ -16,7 +16,7 @@
 # limitations under the License.
 
 # CI deps install inside the Lima guest (root via sudo).
-# Lint runs in debian:sid-slim via run-ci-locally.sh — do not install lint tools on the VM host.
+# Lint runs in debian:sid-slim via run-ci-locally.sh -- do not install lint tools on the VM host.
 set -euo pipefail
 
 FIRMWARE_ROOT="${1:-/src}"

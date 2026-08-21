@@ -37,7 +37,7 @@ NERO_NFC_NODISCARD bool SerialReset(int fd);
 NERO_NFC_NODISCARD bool SerialClose(int fd);
 
 #ifdef NERO_HOST_UNIT_TEST_HOOKS
-// Replace serial_open behavior (non-null → hook runs instead of
+// Replace serial_open behavior (non-null -> hook runs instead of
 // open/tcsetattr).
 void NeroNfcUtestSetSerialOpenHook(
     std::function<int(const std::string& path)> hook);

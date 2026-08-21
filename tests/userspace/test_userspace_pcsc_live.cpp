@@ -23,8 +23,8 @@
 #if defined(NERO_USERSPACE_HAVE_PCSC)
 
 TEST(UserspacePcscLive, ListReadersOverrideStillWorksWithPcscLinked) {
-  const std::vector<std::string> kReadersIn = {"Nero NFC Test Reader"};
-  nero_nfc::NeroNfcUtestSetListPcscReadersOverride(&kReadersIn);
+  const std::vector<std::string> readers_in = {"Nero NFC Test Reader"};
+  nero_nfc::NeroNfcUtestSetListPcscReadersOverride(&readers_in);
   std::vector<std::string> readers_out;
   std::string err;
   ASSERT_TRUE(nero_nfc::ListPcscReaders(readers_out, err)) << err;

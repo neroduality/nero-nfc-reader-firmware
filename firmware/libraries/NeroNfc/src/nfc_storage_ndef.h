@@ -145,7 +145,7 @@ static inline uint16_t nfc_storage_type5_cc_len_or_default(
     return parsed_cc_len;
   }
   /*
-   * [T5T-ISO15693] section 4.3.1.17 — MLEN (CC byte 2) == 0 marks
+   * [T5T-ISO15693] section 4.3.1.17 -- MLEN (CC byte 2) == 0 marks
    * NFC_TAG_T5T_CC_LEN_EXTENDED; only claim extended length when that many
    * bytes are available.
    */
@@ -163,7 +163,7 @@ static inline uint16_t nfc_storage_type5_declared_cc_len_from_first_block(
     return 0u;
   }
   /*
-   * [T5T-ISO15693] section 4.3.1.17 — MLEN (CC byte 2) == 0 declares an
+   * [T5T-ISO15693] section 4.3.1.17 -- MLEN (CC byte 2) == 0 declares an
    * 8-byte CC. This helper is for deciding whether block 1 must be read before
    * calling nfc_tag_type5_apply_cc().
    */

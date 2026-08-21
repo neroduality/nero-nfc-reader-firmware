@@ -42,7 +42,7 @@ ifeq ($(filter $(TARGET),$(VALID_BOARD_TARGETS)),)
   $(error Unknown TARGET '$(TARGET)'. Supported boards: $(VALID_BOARD_TARGETS))
 endif
 
-# CDC serial line / RX sizing — keep equal to WRITER_CLI_LINE_CAP in writer_payload.h.
+# CDC serial line / RX sizing -- keep equal to WRITER_CLI_LINE_CAP in writer_payload.h.
 NFC_CDC_SERIAL_LINE_CAP := 1776
 
 include $(CURDIR)/make/board-$(TARGET).mk
@@ -53,7 +53,7 @@ include $(CURDIR)/make/nfc-frontends.mk
 # ── NFC analogue front end ─────────────────────────────────────────────────────
 NFC_FRONTEND ?= $(if $(BOARD_DEFAULT_NFC_FRONTEND),$(BOARD_DEFAULT_NFC_FRONTEND),st25r3916)
 ifeq ($(filter $(VALID_NFC_FRONTENDS),$(NFC_FRONTEND)),)
-$(error NFC_FRONTEND '$(NFC_FRONTEND)' is not allowed — supported: $(VALID_NFC_FRONTENDS))
+$(error NFC_FRONTEND '$(NFC_FRONTEND)' is not allowed -- supported: $(VALID_NFC_FRONTENDS))
 endif
 ifeq ($(NFC_FRONTEND),st25r3916)
 NFC_FRONTEND_CPPFLAGS := -DNFC_FRONTEND_ID_ST25R3916=1
@@ -84,10 +84,10 @@ NFC_USB_MODE ?= $(BOARD_DEFAULT_NFC_USB_MODE)
 # Flash size: the arduino:renesas_uno core already builds with -Os, -ffunction-sections /
 # -fdata-sections, -Wl,--gc-sections, and newlib nano.specs. Uploaded .hex/.bin
 # only include .text and .data, so strip/objcopy strip-debug does not shrink
-# what the MCU stores — it only shrinks the ELF on disk.
+# what the MCU stores -- it only shrinks the ELF on disk.
 #
 # FIRMWARE_MIN_SIZE=1 trades hardening and firmware backtraces for smaller code
-# (~7–8 KiB program flash in typical builds): drops _FORTIFY_SOURCE /
+# (~7-8 KiB program flash in typical builds): drops _FORTIFY_SOURCE /
 # -fstack-protector-strong from this Makefile and adds -UBACKTRACE_SUPPORT
 # (see arduino:renesas_uno build.defines).
 #
@@ -174,13 +174,13 @@ BOARD_UPLOAD_HINT ?= Arduino CLI upload
 BOARD_UPLOAD_PREP ?= true
 BOARD_UPLOAD_READY_MARKER ?=
 BOARD_UPLOAD_READY_BANNER ?=
-BOARD_UPLOAD_WAIT_MESSAGE ?= Processing — wait
+BOARD_UPLOAD_WAIT_MESSAGE ?= Processing -- wait
 INSTALL_DEPS ?= 0
 AUTO_INSTALL_LINUX_DEPS ?= $(INSTALL_DEPS)
 FORCE_EXTERNAL ?=
 
-# Distro dev packages (cmake, valgrind, …) — opt-in via INSTALL_DEPS=1.
-# Pinned third-party trees (arduino-cli, NFC-RFAL, …) are fetched by build targets.
+# Distro dev packages (cmake, valgrind, ...) -- opt-in via INSTALL_DEPS=1.
+# Pinned third-party trees (arduino-cli, NFC-RFAL, ...) are fetched by build targets.
 
 FIRMWARE_DIR  = firmware
 
@@ -239,12 +239,21 @@ INSTALL_PREFIX ?= $(HOME)/.local
 INSTALL_BINDIR ?= $(INSTALL_PREFIX)/bin
 USERSPACE_TOOLS := nero_nfc_uart reader writer
 
+# `make install userspace` -> install only (same as install-userspace). Without this,
+# Make runs both goals and parallel -j rebuilds (rm -rf) while copying binaries.
+_INSTALL_WITH_USERSPACE := $(and $(filter install,$(MAKECMDGOALS)),$(filter userspace,$(MAKECMDGOALS)))
+
+ifeq ($(_INSTALL_WITH_USERSPACE),)
 userspace: maybe-deps
 	@rm -rf $(USERSPACE_BUILD_DIR)
 	@cmake -S $(CURDIR)/$(USERSPACE_DIR) -B $(USERSPACE_BUILD_DIR) \
 	  -DCMAKE_BUILD_TYPE=$(USERSPACE_BUILD_TYPE) -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=$(CURDIR)/$(USERSPACE_BIN_DIR) --log-level=WARNING \
 	  $(USERSPACE_CMAKE_EXTRA)
 	@env -u MAKEFLAGS cmake --build $(USERSPACE_BUILD_DIR) -j$(_CPU_COUNT)
+else
+userspace:
+	@:
+endif
 
 require-userspace-binaries:
 	@missing=0; \
@@ -264,7 +273,7 @@ install-userspace: require-userspace-binaries
 	@for tool in $(USERSPACE_TOOLS); do \
 	  install -m 0755 "$(CURDIR)/$(USERSPACE_BIN_DIR)/$$tool" "$(DESTDIR)$(INSTALL_BINDIR)/$$tool"; \
 	done
-	@echo "Installed userspace CLIs ($(USERSPACE_TOOLS)) → $(DESTDIR)$(INSTALL_BINDIR)"
+	@echo "Installed userspace CLIs ($(USERSPACE_TOOLS)) -> $(DESTDIR)$(INSTALL_BINDIR)"
 	@echo "Make sure $(INSTALL_BINDIR) is in your PATH."
 
 install: install-userspace
@@ -275,7 +284,7 @@ install-udev:
 
 install-pcsc-driver:
 	@echo "Registering MCU board CCID VID:PID entries with pcscd (requires sudo)..."
-	@echo "Note: commercial PC/SC readers (ACS, OMNIKEY, etc.) use upstream libccid — skip this target."
+	@echo "Note: commercial PC/SC readers (ACS, OMNIKEY, etc.) use upstream libccid -- skip this target."
 	@if [ "$$(id -u)" -eq 0 ]; then \
 		bash "$(CURDIR)/scripts/install-pcsc-driver.sh"; \
 	else \
@@ -399,7 +408,7 @@ help:
 	@printf '  %-38s %s\n' 'make' 'Compile nfc firmware + userspace (no upload; use make flash or make flash-cdc)'
 	@printf '  %-38s %s\n' 'make nfc' 'Compile combined reader/writer CDC firmware'
 	@printf '  %-38s %s\n' 'make userspace' 'Compile Linux host CLIs only (reader, writer, nero_nfc_uart)'
-	@printf '  %-38s %s\n' 'make install-userspace' 'Install built userspace CLIs to ~/.local/bin (no rebuild; alias: make install)'
+	@printf '  %-38s %s\n' 'make install-userspace' 'Install built userspace CLIs to ~/.local/bin (no rebuild; aliases: make install, make install userspace)'
 	@printf '  %-38s %s\n' 'make flash' 'Build + upload USB CCID reader on any supported board (NFC_USB_MODE=ccid)'
 	@printf '  %-38s %s\n' 'make flash-cdc' 'Build + upload serial reader/writer shell (NFC_USB_MODE=cdc)'
 	@printf '  %-38s %s\n' 'make flash-ccid' 'Build + upload USB CCID reader (NFC_USB_MODE=ccid)'
@@ -416,9 +425,9 @@ help:
 	@printf '  %-38s %s\n' 'make lima' 'Main CI in fresh ubuntu-24.04 Lima VM (isolated guest work tree; no host build/third-party)'
 	@printf '  %-38s %s\n' 'sudo make install-udev' 'Install packaging/70-nero-nfc-arduino.rules (ModemManager + serial permissions)'
 	@printf '  %-38s %s\n' 'sudo make install-pcsc-driver' 'Register MCU board CCID in pcscd (docs/CCID.md)'
-	@printf '  %-38s %s\n' 'make clean' 'Remove build/, tests/build/, third-party/, lint-kit clone, and tool caches'
+	@printf '  %-38s %s\n' 'make clean' 'Remove build/, tests/build{,-scan,-codeql}/, third-party/, lint-kit clone, and tool caches'
 	@printf '\nFirst-time host setup (optional):\n\n'
-	@printf '  %-38s %s\n' 'make deps' 'Install missing Linux dev packages (build, test, lint, WBA65 OpenOCD compile tools; same as INSTALL_DEPS=1 make …)'
+	@printf '  %-38s %s\n' 'make deps' 'Install missing Linux dev packages (build, test, lint, WBA65 OpenOCD compile tools; same as INSTALL_DEPS=1 make ...)'
 	@printf '  %-38s %s\n' 'INSTALL_DEPS=1 make' 'Install missing Linux dev packages, then compile firmware + userspace'
 	@printf '\nmake ci-local (pass flags via CI_LOCAL_FLAGS, not as make arguments):\n\n'
 	@printf '  %-52s %s\n' 'make ci-local' 'Isolated work tree + lint/test containers (live repo untouched)'
@@ -427,7 +436,7 @@ help:
 	@printf '  %-52s %s\n' 'make ci-local CI_LOCAL_FLAGS=--containers-only' 'Skip host lint'
 	@printf '  %-52s %s\n' 'make ci-local CI_LOCAL_FLAGS=--debian-only' 'Debian container only'
 	@printf '  %-52s %s\n' 'make ci-local CI_LOCAL_FLAGS='\''--lima --skip-lint'\''' 'Multiple flags: quote the value'
-	@printf '\nKey variables (VAR=value make …):\n\n'
+	@printf '\nKey variables (VAR=value make ...):\n\n'
 	@printf '  %-38s %s\n' 'TARGET=$(TARGET)' 'Board target ($(BOARD_DESCRIPTION)); supported: $(VALID_BOARD_TARGETS)'
 	@printf '  %-38s %s\n' 'NFC_MODE=reader|writer' 'Combined-sketch boot default (default: $(NFC_MODE))'
 	@printf '  %-38s %s\n' 'NFC_USB_MODE=cdc|ccid' 'USB personality (default: $(NFC_USB_MODE); see board mk for supported modes)'
@@ -461,7 +470,9 @@ clean:
 		$(CURDIR)/.pytest_cache $(CURDIR)/.cache
 	@echo "Removing build artifacts..."
 	rm -rf $(BUILD_DIR)
-	rm -rf $(CURDIR)/tests/build $(CURDIR)/tests/build-scan $(CURDIR)/tests/scan-build-report
+	rm -rf $(CURDIR)/tests/build $(CURDIR)/tests/build-scan \
+		$(CURDIR)/tests/build-codeql $(CURDIR)/tests/scan-build-report \
+		$(CURDIR)/tests/__pycache__
 	@echo "Done. Port released for other tools."
 
 # Combined NFC build + flash (see make/target-$(BOARD_TARGET_DRIVER).mk).

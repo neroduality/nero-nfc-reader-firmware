@@ -46,6 +46,7 @@ enum {
 #include <fcntl.h>
 #include <gtest/gtest.h>
 #include <string>
+#include <chrono>
 #include <thread>
 
 namespace {
@@ -72,7 +73,7 @@ TEST_F(UserspaceDriverTest, FormattedStdoutLineUsesPublicOverload) {
 static bool WaitFdReadable(int fd, int timeout_ms) {
   for (int elapsed = 0; elapsed < timeout_ms; elapsed += kTestLit20) {
     pollfd p{.fd = fd, .events = POLLIN, .revents = 0};
-    int r = poll(&p, 1, kTestLit20);
+    int const r = poll(&p, 1, kTestLit20);
     if (r > 0 && (p.revents & POLLIN) != 0) {
       return true;
     }
@@ -87,7 +88,7 @@ TEST_F(UserspaceDriverTest, DispatchLinePrintsAndOpensBrowserWhenEnabled) {
 
   int pipefd[kTestLit2];
   ASSERT_EQ(pipe(&pipefd[0]), 0);
-  int saved_out = dup(STDOUT_FILENO);
+  int const saved_out = fcntl(STDOUT_FILENO, F_DUPFD_CLOEXEC, 0);
   ASSERT_GE(saved_out, 0);
   ASSERT_EQ(nero_nfc::NeroNfcStdoutFlush(), 0);
   dup2(pipefd[1], STDOUT_FILENO);
@@ -104,7 +105,7 @@ TEST_F(UserspaceDriverTest, DispatchLinePrintsAndOpensBrowserWhenEnabled) {
 
   char buf[kSerialReadScratchCap]{};
   ASSERT_TRUE(WaitFdReadable(pipefd[0], 500));
-  ssize_t n = read(pipefd[0], &buf[0], sizeof(buf) - 1);
+  ssize_t const n = read(pipefd[0], &buf[0], sizeof(buf) - 1);
   close(pipefd[0]);
   ASSERT_GT(n, 0);
   nero_nfc::At(buf, static_cast<std::size_t>(n)) = '\0';
@@ -115,7 +116,7 @@ TEST_F(UserspaceDriverTest, DispatchLinePrintsAndOpensBrowserWhenEnabled) {
 TEST_F(UserspaceDriverTest, DispatchLineSkipsBrowserWhenDisabled) {
   int pipefd[kTestLit2];
   ASSERT_EQ(pipe(&pipefd[0]), 0);
-  int saved_out = dup(STDOUT_FILENO);
+  int const saved_out = fcntl(STDOUT_FILENO, F_DUPFD_CLOEXEC, 0);
   ASSERT_EQ(nero_nfc::NeroNfcStdoutFlush(), 0);
   dup2(pipefd[1], STDOUT_FILENO);
   close(pipefd[1]);
@@ -139,7 +140,7 @@ TEST_F(UserspaceDriverTest, ReaderThreadFeedsLinesToDispatch) {
 
   int pipefd[kTestLit2];
   ASSERT_EQ(pipe(&pipefd[0]), 0);
-  int saved_out = dup(STDOUT_FILENO);
+  int const saved_out = fcntl(STDOUT_FILENO, F_DUPFD_CLOEXEC, 0);
   ASSERT_EQ(nero_nfc::NeroNfcStdoutFlush(), 0);
   dup2(pipefd[1], STDOUT_FILENO);
   close(pipefd[1]);
@@ -158,7 +159,7 @@ TEST_F(UserspaceDriverTest, ReaderThreadFeedsLinesToDispatch) {
   bool got = false;
   for (int i = 0; i < kTestLit100 && !got; ++i) {
     if (WaitFdReadable(pipefd[0], kTestLit50)) {
-      ssize_t n = read(pipefd[0], &buf[0], sizeof(buf) - 1);
+      ssize_t const n = read(pipefd[0], &buf[0], sizeof(buf) - 1);
       if (n > 0) {
         nero_nfc::At(buf, static_cast<std::size_t>(n)) = '\0';
         got = true;
@@ -188,16 +189,16 @@ TEST_F(UserspaceDriverTest, RunSendWritesNewlineTerminatedCommand) {
   nero_nfc::NeroNfcUtestSetSerialOpenHook(
       [&](const std::string&) { return sp[0]; });
 
-  std::vector<std::string> ports = {"/dev/ttyUSB0"};
+  std::vector<std::string> const ports = {"/dev/ttyUSB0"};
   nero_nfc::NeroNfcUtestSetFindSerialPortsOverride(&ports);
 
-  nero_nfc::DriverOptions opts;
-  int rc = nero_nfc::RunSend(opts, "HELLO");
+  nero_nfc::DriverOptions const opts;
+  int const rc = nero_nfc::RunSend(opts, "HELLO");
   EXPECT_EQ(rc, 0);
 
   char buf[kTestLit64]{};
   ASSERT_TRUE(WaitFdReadable(sp[1], 1000));
-  ssize_t n = read(sp[1], &buf[0], sizeof(buf) - 1);
+  ssize_t const n = read(sp[1], &buf[0], sizeof(buf) - 1);
   close(sp[1]);
   ASSERT_GT(n, 0);
   nero_nfc::At(buf, static_cast<std::size_t>(n)) = '\0';
@@ -207,28 +208,28 @@ TEST_F(UserspaceDriverTest, RunSendWritesNewlineTerminatedCommand) {
 TEST_F(UserspaceDriverTest, RunSendFailsWhenSerialOpenFails) {
   nero_nfc::NeroNfcUtestSetSerialOpenHook(
       [&](const std::string&) { return -1; });
-  std::vector<std::string> ports = {"/dev/ttyACM9"};
+  std::vector<std::string> const ports = {"/dev/ttyACM9"};
   nero_nfc::NeroNfcUtestSetFindSerialPortsOverride(&ports);
-  nero_nfc::DriverOptions opts;
+  nero_nfc::DriverOptions const opts;
   EXPECT_EQ(nero_nfc::RunSend(opts, "X"), 1);
 }
 
 TEST_F(UserspaceDriverTest, RunSendFailsWhenWriteFails) {
   nero_nfc::NeroNfcUtestSetSerialOpenHook([&](const std::string&) {
-    int fd = open("/dev/null", O_RDONLY);
+    int const fd = open("/dev/null", O_RDONLY | O_CLOEXEC);
     EXPECT_GE(fd, 0);
     return fd;
   });
-  std::vector<std::string> ports = {"/dev/ttyACM0"};
+  std::vector<std::string> const ports = {"/dev/ttyACM0"};
   nero_nfc::NeroNfcUtestSetFindSerialPortsOverride(&ports);
-  nero_nfc::DriverOptions opts;
+  nero_nfc::DriverOptions const opts;
   EXPECT_EQ(nero_nfc::RunSend(opts, "CMD"), 1);
 }
 
 TEST_F(UserspaceDriverTest, RunFnsReturnEarlyWhenNoPortDetected) {
-  std::vector<std::string> empty;
+  std::vector<std::string> const empty;
   nero_nfc::NeroNfcUtestSetFindSerialPortsOverride(&empty);
-  nero_nfc::DriverOptions opts;
+  nero_nfc::DriverOptions const opts;
   EXPECT_EQ(nero_nfc::RunListenOnly(opts), 1);
   EXPECT_EQ(nero_nfc::RunInteractive(opts), 1);
   EXPECT_EQ(nero_nfc::RunSend(opts, "X"), 1);
@@ -239,27 +240,27 @@ TEST_F(UserspaceDriverTest, RunFnsReturnEarlyWhenNoPortDetected) {
 TEST_F(UserspaceDriverTest, RunListenOnlyReturnsEarlyWhenSerialOpenFails) {
   nero_nfc::NeroNfcUtestSetSerialOpenHook(
       [&](const std::string&) { return -1; });
-  std::vector<std::string> ports = {"/dev/ttyACM0"};
+  std::vector<std::string> const ports = {"/dev/ttyACM0"};
   nero_nfc::NeroNfcUtestSetFindSerialPortsOverride(&ports);
-  nero_nfc::DriverOptions opts;
+  nero_nfc::DriverOptions const opts;
   EXPECT_EQ(nero_nfc::RunListenOnly(opts), 1);
 }
 
 TEST_F(UserspaceDriverTest, RunInteractiveReturnsEarlyWhenSerialOpenFails) {
   nero_nfc::NeroNfcUtestSetSerialOpenHook(
       [&](const std::string&) { return -1; });
-  std::vector<std::string> ports = {"/dev/ttyACM0"};
+  std::vector<std::string> const ports = {"/dev/ttyACM0"};
   nero_nfc::NeroNfcUtestSetFindSerialPortsOverride(&ports);
-  nero_nfc::DriverOptions opts;
+  nero_nfc::DriverOptions const opts;
   EXPECT_EQ(nero_nfc::RunInteractive(opts), 1);
 }
 
 TEST_F(UserspaceDriverTest, RunSendThenMonitorReturnsEarlyWhenSerialOpenFails) {
   nero_nfc::NeroNfcUtestSetSerialOpenHook(
       [&](const std::string&) { return -1; });
-  std::vector<std::string> ports = {"/dev/ttyACM0"};
+  std::vector<std::string> const ports = {"/dev/ttyACM0"};
   nero_nfc::NeroNfcUtestSetFindSerialPortsOverride(&ports);
-  nero_nfc::DriverOptions opts;
+  nero_nfc::DriverOptions const opts;
   EXPECT_EQ(nero_nfc::RunSendThenMonitor(opts, "X"), 1);
 }
 
@@ -267,16 +268,16 @@ TEST_F(UserspaceDriverTest,
        RunSendThenInteractiveReturnsEarlyWhenSerialOpenFails) {
   nero_nfc::NeroNfcUtestSetSerialOpenHook(
       [&](const std::string&) { return -1; });
-  std::vector<std::string> ports = {"/dev/ttyACM0"};
+  std::vector<std::string> const ports = {"/dev/ttyACM0"};
   nero_nfc::NeroNfcUtestSetFindSerialPortsOverride(&ports);
-  nero_nfc::DriverOptions opts;
+  nero_nfc::DriverOptions const opts;
   EXPECT_EQ(nero_nfc::RunSendThenInteractive(opts, "X", {}), 1);
 }
 
 TEST_F(UserspaceDriverTest, RunListenOnlyUntilStdinEof) {
   int inpipe[kTestLit2];
   ASSERT_EQ(pipe(&inpipe[0]), 0);
-  int saved_in = dup(STDIN_FILENO);
+  int const saved_in = fcntl(STDIN_FILENO, F_DUPFD_CLOEXEC, 0);
   ASSERT_GE(saved_in, 0);
   dup2(inpipe[0], STDIN_FILENO);
   close(inpipe[0]);
@@ -285,13 +286,13 @@ TEST_F(UserspaceDriverTest, RunListenOnlyUntilStdinEof) {
   ASSERT_EQ(socketpair(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0, &sp[0]), 0);
   nero_nfc::NeroNfcUtestSetSerialOpenHook(
       [&](const std::string&) { return sp[0]; });
-  std::vector<std::string> ports = {"/dev/ttyACM0"};
+  std::vector<std::string> const ports = {"/dev/ttyACM0"};
   nero_nfc::NeroNfcUtestSetFindSerialPortsOverride(&ports);
   nero_nfc::DriverOptions opts;
   opts.open_urls_ = false;
 
   std::thread closer([&] {
-    usleep(kTestLit40000);
+    std::this_thread::sleep_for(std::chrono::microseconds(kTestLit40000));
     close(inpipe[1]);
   });
 
@@ -306,7 +307,7 @@ TEST_F(UserspaceDriverTest, RunListenOnlyUntilStdinEof) {
 TEST_F(UserspaceDriverTest, RunInteractiveForwardsLineToSerial) {
   int inpipe[kTestLit2];
   ASSERT_EQ(pipe(&inpipe[0]), 0);
-  int saved_in = dup(STDIN_FILENO);
+  int const saved_in = fcntl(STDIN_FILENO, F_DUPFD_CLOEXEC, 0);
   ASSERT_GE(saved_in, 0);
   dup2(inpipe[0], STDIN_FILENO);
   close(inpipe[0]);
@@ -315,17 +316,17 @@ TEST_F(UserspaceDriverTest, RunInteractiveForwardsLineToSerial) {
   ASSERT_EQ(socketpair(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0, &sp[0]), 0);
   nero_nfc::NeroNfcUtestSetSerialOpenHook(
       [&](const std::string&) { return sp[0]; });
-  std::vector<std::string> ports = {"/dev/ttyACM0"};
+  std::vector<std::string> const ports = {"/dev/ttyACM0"};
   nero_nfc::NeroNfcUtestSetFindSerialPortsOverride(&ports);
   nero_nfc::DriverOptions opts;
   opts.open_urls_ = false;
 
   std::thread feeder([&] {
-    usleep(kTestLit40000);
-    const char kCmd[] = "FROM_STDIN\n";
-    EXPECT_EQ(write(inpipe[1], &kCmd[0], sizeof(kCmd) - 1),
-              static_cast<ssize_t>(sizeof(kCmd) - 1));
-    usleep(kTestLit40000);
+    std::this_thread::sleep_for(std::chrono::microseconds(kTestLit40000));
+    const char cmd[] = "FROM_STDIN\n";
+    EXPECT_EQ(write(inpipe[1], &cmd[0], sizeof(cmd) - 1),
+              static_cast<ssize_t>(sizeof(cmd) - 1));
+    std::this_thread::sleep_for(std::chrono::microseconds(kTestLit40000));
     close(inpipe[1]);
   });
 
@@ -337,7 +338,7 @@ TEST_F(UserspaceDriverTest, RunInteractiveForwardsLineToSerial) {
 
   char buf[kTestLit64]{};
   ASSERT_TRUE(WaitFdReadable(sp[1], 1000));
-  ssize_t n = read(sp[1], &buf[0], sizeof(buf) - 1);
+  ssize_t const n = read(sp[1], &buf[0], sizeof(buf) - 1);
   close(sp[1]);
   ASSERT_GT(n, 0);
   nero_nfc::At(buf, static_cast<std::size_t>(n)) = '\0';
@@ -347,7 +348,7 @@ TEST_F(UserspaceDriverTest, RunInteractiveForwardsLineToSerial) {
 TEST_F(UserspaceDriverTest, RunSendThenMonitorSendsThenReadsUntilStdinEof) {
   int inpipe[kTestLit2];
   ASSERT_EQ(pipe(&inpipe[0]), 0);
-  int saved_in = dup(STDIN_FILENO);
+  int const saved_in = fcntl(STDIN_FILENO, F_DUPFD_CLOEXEC, 0);
   ASSERT_GE(saved_in, 0);
   dup2(inpipe[0], STDIN_FILENO);
   close(inpipe[0]);
@@ -356,13 +357,13 @@ TEST_F(UserspaceDriverTest, RunSendThenMonitorSendsThenReadsUntilStdinEof) {
   ASSERT_EQ(socketpair(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0, &sp[0]), 0);
   nero_nfc::NeroNfcUtestSetSerialOpenHook(
       [&](const std::string&) { return sp[0]; });
-  std::vector<std::string> ports = {"/dev/ttyACM0"};
+  std::vector<std::string> const ports = {"/dev/ttyACM0"};
   nero_nfc::NeroNfcUtestSetFindSerialPortsOverride(&ports);
   nero_nfc::DriverOptions opts;
   opts.open_urls_ = false;
 
   std::thread closer([&] {
-    usleep(kTestLit40000);
+    std::this_thread::sleep_for(std::chrono::microseconds(kTestLit40000));
     close(inpipe[1]);
   });
 
@@ -374,7 +375,7 @@ TEST_F(UserspaceDriverTest, RunSendThenMonitorSendsThenReadsUntilStdinEof) {
 
   char buf[kTestLit64]{};
   ASSERT_TRUE(WaitFdReadable(sp[1], 1000));
-  ssize_t n = read(sp[1], &buf[0], sizeof(buf) - 1);
+  ssize_t const n = read(sp[1], &buf[0], sizeof(buf) - 1);
   ASSERT_GT(n, 0);
   nero_nfc::At(buf, static_cast<std::size_t>(n)) = '\0';
   EXPECT_STREQ(&buf[0], "FIRST\n");
@@ -383,13 +384,13 @@ TEST_F(UserspaceDriverTest, RunSendThenMonitorSendsThenReadsUntilStdinEof) {
 
 TEST_F(UserspaceDriverTest, RunSendThenMonitorFailsWhenInitialSendFails) {
   nero_nfc::NeroNfcUtestSetSerialOpenHook([&](const std::string&) {
-    int fd = open("/dev/null", O_RDONLY);
+    int const fd = open("/dev/null", O_RDONLY | O_CLOEXEC);
     EXPECT_GE(fd, 0);
     return fd;
   });
-  std::vector<std::string> ports = {"/dev/ttyACM0"};
+  std::vector<std::string> const ports = {"/dev/ttyACM0"};
   nero_nfc::NeroNfcUtestSetFindSerialPortsOverride(&ports);
-  nero_nfc::DriverOptions opts;
+  nero_nfc::DriverOptions const opts;
   EXPECT_EQ(nero_nfc::RunSendThenMonitor(opts, "N"), 1);
 }
 
@@ -397,7 +398,7 @@ TEST_F(UserspaceDriverTest,
        RunSendThenInteractiveSendsCombinedCommandThenStdin) {
   int inpipe[kTestLit2];
   ASSERT_EQ(pipe(&inpipe[0]), 0);
-  int saved_in = dup(STDIN_FILENO);
+  int const saved_in = fcntl(STDIN_FILENO, F_DUPFD_CLOEXEC, 0);
   ASSERT_GE(saved_in, 0);
   dup2(inpipe[0], STDIN_FILENO);
   close(inpipe[0]);
@@ -406,17 +407,17 @@ TEST_F(UserspaceDriverTest,
   ASSERT_EQ(socketpair(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0, &sp[0]), 0);
   nero_nfc::NeroNfcUtestSetSerialOpenHook(
       [&](const std::string&) { return sp[0]; });
-  std::vector<std::string> ports = {"/dev/ttyACM0"};
+  std::vector<std::string> const ports = {"/dev/ttyACM0"};
   nero_nfc::NeroNfcUtestSetFindSerialPortsOverride(&ports);
   nero_nfc::DriverOptions opts;
   opts.open_urls_ = false;
 
   std::thread feeder([&] {
-    usleep(kTestLit40000);
-    const char kLine2[] = "SECOND\n";
-    EXPECT_EQ(write(inpipe[1], &kLine2[0], sizeof(kLine2) - 1),
-              static_cast<ssize_t>(sizeof(kLine2) - 1));
-    usleep(kTestLit40000);
+    std::this_thread::sleep_for(std::chrono::microseconds(kTestLit40000));
+    const char line2[] = "SECOND\n";
+    EXPECT_EQ(write(inpipe[1], &line2[0], sizeof(line2) - 1),
+              static_cast<ssize_t>(sizeof(line2) - 1));
+    std::this_thread::sleep_for(std::chrono::microseconds(kTestLit40000));
     close(inpipe[1]);
   });
 
@@ -435,7 +436,7 @@ TEST_F(UserspaceDriverTest,
     if (!WaitFdReadable(sp[1], kTestLit200)) {
       continue;
     }
-    ssize_t n = read(sp[1], &chunk[0], sizeof(chunk));
+    ssize_t const n = read(sp[1], &chunk[0], sizeof(chunk));
     if (n > 0) {
       acc.append(&chunk[0], static_cast<size_t>(n));
     }
@@ -447,12 +448,12 @@ TEST_F(UserspaceDriverTest,
 
 TEST_F(UserspaceDriverTest, RunSendThenInteractiveFailsWhenInitialSendFails) {
   nero_nfc::NeroNfcUtestSetSerialOpenHook([&](const std::string&) {
-    int fd = open("/dev/null", O_RDONLY);
+    int const fd = open("/dev/null", O_RDONLY | O_CLOEXEC);
     EXPECT_GE(fd, 0);
     return fd;
   });
-  std::vector<std::string> ports = {"/dev/ttyACM0"};
+  std::vector<std::string> const ports = {"/dev/ttyACM0"};
   nero_nfc::NeroNfcUtestSetFindSerialPortsOverride(&ports);
-  nero_nfc::DriverOptions opts;
+  nero_nfc::DriverOptions const opts;
   EXPECT_EQ(nero_nfc::RunSendThenInteractive(opts, "Q", {"z"}), 1);
 }

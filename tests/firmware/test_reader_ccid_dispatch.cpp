@@ -117,28 +117,26 @@ enum {
 
 namespace {
 std::span<const uint8_t> LastCcidSend() {
-  const uint8_t* const kData = reader_ccid_utest_last_send();
-  const auto kLen = static_cast<size_t>(reader_ccid_utest_last_send_len());
+  const uint8_t* const data = reader_ccid_utest_last_send();
+  const auto len = static_cast<size_t>(reader_ccid_utest_last_send_len());
   // Paren ctor: brace-init `{ptr,len}` is misread by cppcheck as size 2.
-  const std::span<const uint8_t> kSpan(kData, kLen);
-  return kSpan;
+  const std::span<const uint8_t> span(data, len);
+  return span;
 }
+
+constexpr uint16_t kSwPayloadEnd =
+    static_cast<uint16_t>(NFC_CCID_BULK_PAYLOAD_OFFSET) +
+    static_cast<uint16_t>(NFC_ISO7816_SW_LEN);
 }  // namespace
 
 class ReaderCcidDispatchTest : public NeroNfcReaderAppFixture {
  protected:
-  static constexpr uint16_t kSwPayloadEnd =
-      static_cast<uint16_t>(NFC_CCID_BULK_PAYLOAD_OFFSET) +
-      static_cast<uint16_t>(NFC_ISO7816_SW_LEN);
-
   void SetUp() override {
     BindReaderApp();
     reader_ccid_utest_setup();
     reader_ccid_utest_reset();
     reader_tags_utest_reset();
   }
-
-  void TearDown() override { UnbindReaderApp(); }
 
   static std::array<uint8_t, kTestLit10> MakeBulk(uint8_t msg_type,
                                                   uint8_t seq) {
@@ -175,12 +173,12 @@ class ReaderCcidDispatchTest : public NeroNfcReaderAppFixture {
   }
 
   static void SetType5UidForTests() {
-    const std::array<uint8_t, NFC_FRONTEND_ISO15693_UID_LEN> kUid = {
+    const std::array<uint8_t, NFC_FRONTEND_ISO15693_UID_LEN> uid = {
         0xE0u, 0x02u, 0x11u, 0x22u, 0x33u, 0x44u, 0x55u, 0x66u,
     };
     EXPECT_TRUE(nero_nfc_copy_bytes(&G_UID15[0], NFC_FRONTEND_ISO15693_UID_LEN,
-                                    0u, kUid.data(),
-                                    static_cast<uint16_t>(kUid.size())));
+                                    0u, uid.data(),
+                                    static_cast<uint16_t>(uid.size())));
   }
 
   static std::vector<uint8_t> MismatchedType5UidLsb() {
@@ -241,10 +239,10 @@ TEST_F(ReaderCcidDispatchTest, SlotStatusReportsNoIccWhenEmpty) {
   reader_ccid_utest_handle_bulk(frame.data(),
                                 static_cast<uint16_t>(frame.size()));
   ASSERT_GE(reader_ccid_utest_last_send_len(), 10u);
-  const std::span<const uint8_t> kRsp = LastCcidSend();
-  EXPECT_EQ(kRsp[0], NFC_CCID_MSG_RDR_TO_PC_SLOTSTATUS);
-  EXPECT_EQ(kRsp[6], 0x11u);
-  EXPECT_EQ(kRsp[7] & 0x03u, 0x02u);
+  const std::span<const uint8_t> rsp = LastCcidSend();
+  EXPECT_EQ(rsp[0], NFC_CCID_MSG_RDR_TO_PC_SLOTSTATUS);
+  EXPECT_EQ(rsp[6], 0x11u);
+  EXPECT_EQ(rsp[7] & 0x03u, 0x02u);
 }
 
 TEST_F(ReaderCcidDispatchTest, SlotStatusReportsInactiveWhenTagPresent) {
@@ -252,9 +250,9 @@ TEST_F(ReaderCcidDispatchTest, SlotStatusReportsInactiveWhenTagPresent) {
   auto frame = MakeBulk(NFC_CCID_MSG_PC_TO_RDR_SLOTSTATUS, kTestLit0x12u);
   reader_ccid_utest_handle_bulk(frame.data(),
                                 static_cast<uint16_t>(frame.size()));
-  const std::span<const uint8_t> kRsp = LastCcidSend();
-  EXPECT_EQ(kRsp[0], NFC_CCID_MSG_RDR_TO_PC_SLOTSTATUS);
-  EXPECT_EQ(kRsp[7] & 0x03u, 0x01u);
+  const std::span<const uint8_t> rsp = LastCcidSend();
+  EXPECT_EQ(rsp[0], NFC_CCID_MSG_RDR_TO_PC_SLOTSTATUS);
+  EXPECT_EQ(rsp[7] & 0x03u, 0x01u);
 }
 
 TEST_F(ReaderCcidDispatchTest, IccPowerOnReturnsAtrForType4Tag) {
@@ -262,26 +260,26 @@ TEST_F(ReaderCcidDispatchTest, IccPowerOnReturnsAtrForType4Tag) {
   auto frame = MakeBulk(kTestLit0x62u, kTestLit0x20u);
   reader_ccid_utest_handle_bulk(frame.data(),
                                 static_cast<uint16_t>(frame.size()));
-  const std::span<const uint8_t> kRsp = LastCcidSend();
-  EXPECT_EQ(kRsp[0], NFC_CCID_MSG_RDR_TO_PC_DATABLOCK);
-  EXPECT_GT(nfc_ccid_u32_load_le(&kRsp[1]), 0u);
+  const std::span<const uint8_t> rsp = LastCcidSend();
+  EXPECT_EQ(rsp[0], NFC_CCID_MSG_RDR_TO_PC_DATABLOCK);
+  EXPECT_GT(nfc_ccid_u32_load_le(&rsp[1]), 0u);
 }
 
 TEST_F(ReaderCcidDispatchTest, IccPowerOnWithoutCardRepliesDataBlockError) {
-  /* [CCID1.10] Rev 1.10 §6.2.1 — IccPowerOn always answers with
+  /* [CCID1.10] Rev 1.10 §6.2.1 -- IccPowerOn always answers with
    * RDR_to_PC_DataBlock, even on failure: dwLength=0, bmCommandStatus=failed,
    * bError set. */
   auto frame = MakeBulk(kTestLit0x62u, kTestLit0x33u);
   reader_ccid_utest_handle_bulk(frame.data(),
                                 static_cast<uint16_t>(frame.size()));
   ASSERT_GE(reader_ccid_utest_last_send_len(), 10u);
-  const std::span<const uint8_t> kRsp = LastCcidSend();
-  EXPECT_EQ(kRsp[0], NFC_CCID_MSG_RDR_TO_PC_DATABLOCK);
-  EXPECT_EQ(kRsp[6], 0x33u);
-  EXPECT_EQ(nfc_ccid_u32_load_le(&kRsp[1]), 0u);
-  EXPECT_EQ(kRsp[7] & 0xC0u, 0x40u); /* bmCommandStatus = failed */
-  EXPECT_EQ(kRsp[7] & 0x03u, 0x02u); /* bmICCStatus = no ICC */
-  EXPECT_EQ(kRsp[8], 0xFEu);         /* bError = ICC mute */
+  const std::span<const uint8_t> rsp = LastCcidSend();
+  EXPECT_EQ(rsp[0], NFC_CCID_MSG_RDR_TO_PC_DATABLOCK);
+  EXPECT_EQ(rsp[6], 0x33u);
+  EXPECT_EQ(nfc_ccid_u32_load_le(&rsp[1]), 0u);
+  EXPECT_EQ(rsp[7] & 0xC0u, 0x40u); /* bmCommandStatus = failed */
+  EXPECT_EQ(rsp[7] & 0x03u, 0x02u); /* bmICCStatus = no ICC */
+  EXPECT_EQ(rsp[8], 0xFEu);         /* bError = ICC mute */
 }
 
 TEST_F(ReaderCcidDispatchTest,
@@ -292,14 +290,14 @@ TEST_F(ReaderCcidDispatchTest,
                                 static_cast<uint16_t>(frame.size()));
 
   ASSERT_GE(reader_hal_utest_ccid_last_send_len(), 10u);
-  const std::span<const uint8_t> kRsp = LastCcidSend();
+  const std::span<const uint8_t> rsp = LastCcidSend();
   EXPECT_EQ(reader_hal_utest_ccid_send_count(), 1u);
   EXPECT_EQ(reader_hal_utest_ccid_time_extension_send_count(), 0u);
   EXPECT_EQ(reader_security_key_utest_select_fido_probe_count(), 0u);
-  EXPECT_EQ(kRsp[0], NFC_CCID_MSG_RDR_TO_PC_DATABLOCK);
-  EXPECT_EQ(kRsp[6], 0x22u);
-  EXPECT_EQ(kRsp[7] & NFC_CCID_ICC_CMD_TIME_EXTENSION, 0u);
-  EXPECT_GT(nfc_ccid_u32_load_le(&kRsp[1]), 0u);
+  EXPECT_EQ(rsp[0], NFC_CCID_MSG_RDR_TO_PC_DATABLOCK);
+  EXPECT_EQ(rsp[6], 0x22u);
+  EXPECT_EQ(rsp[7] & NFC_CCID_ICC_CMD_TIME_EXTENSION, 0u);
+  EXPECT_GT(nfc_ccid_u32_load_le(&rsp[1]), 0u);
 }
 
 TEST_F(ReaderCcidDispatchTest, IccClockReturnsNotSupported) {
@@ -307,9 +305,9 @@ TEST_F(ReaderCcidDispatchTest, IccClockReturnsNotSupported) {
   auto frame = MakeBulk(NFC_CCID_MSG_PC_TO_RDR_ICC_CLOCK, kTestLit0x21u);
   reader_ccid_utest_handle_bulk(frame.data(),
                                 static_cast<uint16_t>(frame.size()));
-  const std::span<const uint8_t> kRsp = LastCcidSend();
-  EXPECT_EQ(kRsp[0], NFC_CCID_MSG_RDR_TO_PC_SLOTSTATUS);
-  EXPECT_EQ(kRsp[7] & 0x40u, 0x40u);
+  const std::span<const uint8_t> rsp = LastCcidSend();
+  EXPECT_EQ(rsp[0], NFC_CCID_MSG_RDR_TO_PC_SLOTSTATUS);
+  EXPECT_EQ(rsp[7] & 0x40u, 0x40u);
 }
 
 TEST_F(ReaderCcidDispatchTest, RejectsNonZeroSlot) {
@@ -317,9 +315,9 @@ TEST_F(ReaderCcidDispatchTest, RejectsNonZeroSlot) {
   frame[kTestLit5] = 0x01u;
   reader_ccid_utest_handle_bulk(frame.data(),
                                 static_cast<uint16_t>(frame.size()));
-  const std::span<const uint8_t> kRsp = LastCcidSend();
-  EXPECT_EQ(kRsp[0], NFC_CCID_MSG_RDR_TO_PC_SLOTSTATUS);
-  EXPECT_EQ(kRsp[8], 0x05u);
+  const std::span<const uint8_t> rsp = LastCcidSend();
+  EXPECT_EQ(rsp[0], NFC_CCID_MSG_RDR_TO_PC_SLOTSTATUS);
+  EXPECT_EQ(rsp[8], 0x05u);
 }
 
 TEST_F(ReaderCcidDispatchTest, HeaderCompleteLengthMismatchReturnsError) {
@@ -328,12 +326,12 @@ TEST_F(ReaderCcidDispatchTest, HeaderCompleteLengthMismatchReturnsError) {
   reader_ccid_utest_handle_bulk(frame.data(),
                                 static_cast<uint16_t>(frame.size()));
 
-  const std::span<const uint8_t> kRsp = LastCcidSend();
+  const std::span<const uint8_t> rsp = LastCcidSend();
   ASSERT_GE(reader_ccid_utest_last_send_len(), NFC_CCID_BULK_HEADER_LEN);
-  EXPECT_EQ(kRsp[0], NFC_CCID_MSG_RDR_TO_PC_SLOTSTATUS);
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_SEQ_OFFSET], kTestLit0x30u);
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_LEVEL_PARAM_OFFSET] & 0x40u, 0x40u);
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_LEVEL_PARAM2_OFFSET], 0x01u);
+  EXPECT_EQ(rsp[0], NFC_CCID_MSG_RDR_TO_PC_SLOTSTATUS);
+  EXPECT_EQ(rsp[NFC_CCID_BULK_SEQ_OFFSET], kTestLit0x30u);
+  EXPECT_EQ(rsp[NFC_CCID_BULK_LEVEL_PARAM_OFFSET] & 0x40u, 0x40u);
+  EXPECT_EQ(rsp[NFC_CCID_BULK_LEVEL_PARAM2_OFFSET], 0x01u);
 }
 
 TEST_F(ReaderCcidDispatchTest,
@@ -343,13 +341,13 @@ TEST_F(ReaderCcidDispatchTest,
   reader_ccid_utest_handle_bulk(frame.data(),
                                 static_cast<uint16_t>(frame.size()));
 
-  const std::span<const uint8_t> kRsp = LastCcidSend();
+  const std::span<const uint8_t> rsp = LastCcidSend();
   ASSERT_GE(reader_ccid_utest_last_send_len(), NFC_CCID_BULK_HEADER_LEN);
-  EXPECT_EQ(kRsp[0], NFC_CCID_MSG_RDR_TO_PC_DATABLOCK);
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_SEQ_OFFSET], kTestLit0x31u);
-  EXPECT_EQ(nfc_ccid_u32_load_le(&kRsp[1]), 0u);
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_LEVEL_PARAM_OFFSET] & 0x40u, 0x40u);
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_LEVEL_PARAM2_OFFSET], 0x01u);
+  EXPECT_EQ(rsp[0], NFC_CCID_MSG_RDR_TO_PC_DATABLOCK);
+  EXPECT_EQ(rsp[NFC_CCID_BULK_SEQ_OFFSET], kTestLit0x31u);
+  EXPECT_EQ(nfc_ccid_u32_load_le(&rsp[1]), 0u);
+  EXPECT_EQ(rsp[NFC_CCID_BULK_LEVEL_PARAM_OFFSET] & 0x40u, 0x40u);
+  EXPECT_EQ(rsp[NFC_CCID_BULK_LEVEL_PARAM2_OFFSET], 0x01u);
 }
 
 TEST_F(ReaderCcidDispatchTest, FailedChainSendClearsUnrecoverableState) {
@@ -423,10 +421,10 @@ TEST_F(ReaderCcidDispatchTest, RemovalProbeDeadlineIsSafeAcrossMillisWrap) {
       UINT32_MAX - (CCID_REMOVE_DEFER_MS / 2u);
   reader_ccid_utest_set_millis(kActivityStartMs);
   PowerOnStorageTag(READER_TAG_KIND_TYPE5);
-  const uint32_t kDeadline = kActivityStartMs + CCID_REMOVE_DEFER_MS;
+  const uint32_t deadline = kActivityStartMs + CCID_REMOVE_DEFER_MS;
 
-  EXPECT_FALSE(reader_ccid_removal_probe_due(kDeadline - 1u));
-  EXPECT_TRUE(reader_ccid_removal_probe_due(kDeadline));
+  EXPECT_FALSE(reader_ccid_removal_probe_due(deadline - 1u));
+  EXPECT_TRUE(reader_ccid_removal_probe_due(deadline));
 }
 
 TEST_F(ReaderCcidDispatchTest, AbortRequestAppliesOnlyToSupportedSlotZero) {
@@ -459,13 +457,13 @@ TEST_F(ReaderCcidDispatchTest, Type4ShortXfrAddsNoTimeExtensionAfterPowerOn) {
   reader_ccid_utest_handle_bulk(frame.data(),
                                 static_cast<uint16_t>(frame.size()));
 
-  const std::span<const uint8_t> kRsp = LastCcidSend();
+  const std::span<const uint8_t> rsp = LastCcidSend();
   EXPECT_EQ(reader_hal_utest_ccid_time_extension_send_count(), 0u);
   EXPECT_EQ(reader_security_key_utest_time_extension_binding_count(), 5u);
-  EXPECT_EQ(kRsp[0], NFC_CCID_MSG_RDR_TO_PC_DATABLOCK);
-  EXPECT_EQ(kRsp[6], 0x41u);
-  EXPECT_EQ(kRsp[7] & NFC_CCID_ICC_CMD_TIME_EXTENSION, 0u);
-  EXPECT_EQ(nfc_ccid_u32_load_le(&kRsp[1]), 2u);
+  EXPECT_EQ(rsp[0], NFC_CCID_MSG_RDR_TO_PC_DATABLOCK);
+  EXPECT_EQ(rsp[6], 0x41u);
+  EXPECT_EQ(rsp[7] & NFC_CCID_ICC_CMD_TIME_EXTENSION, 0u);
+  EXPECT_EQ(nfc_ccid_u32_load_le(&rsp[1]), 2u);
 }
 
 TEST_F(ReaderCcidDispatchTest, XfrBlockEmptyPayloadReachesApduDispatcher) {
@@ -481,14 +479,14 @@ TEST_F(ReaderCcidDispatchTest, XfrBlockEmptyPayloadReachesApduDispatcher) {
   reader_ccid_utest_handle_bulk(frame.data(),
                                 static_cast<uint16_t>(frame.size()));
 
-  const std::span<const uint8_t> kRsp = LastCcidSend();
+  const std::span<const uint8_t> rsp = LastCcidSend();
   ASSERT_GE(reader_ccid_utest_last_send_len(), 12u);
-  EXPECT_EQ(kRsp[0], NFC_CCID_MSG_RDR_TO_PC_DATABLOCK);
-  EXPECT_EQ(kRsp[6], 0x43u);
-  EXPECT_EQ(kRsp[7] & NFC_CCID_ICC_CMD_TIME_EXTENSION, 0u);
-  EXPECT_EQ(nfc_ccid_u32_load_le(&kRsp[1]), 2u);
-  EXPECT_EQ(kRsp[10], 0x6Fu);
-  EXPECT_EQ(kRsp[11], 0x00u);
+  EXPECT_EQ(rsp[0], NFC_CCID_MSG_RDR_TO_PC_DATABLOCK);
+  EXPECT_EQ(rsp[6], 0x43u);
+  EXPECT_EQ(rsp[7] & NFC_CCID_ICC_CMD_TIME_EXTENSION, 0u);
+  EXPECT_EQ(nfc_ccid_u32_load_le(&rsp[1]), 2u);
+  EXPECT_EQ(rsp[10], 0x6Fu);
+  EXPECT_EQ(rsp[11], 0x00u);
 }
 
 TEST_F(ReaderCcidDispatchTest, Type4FfAcr122DirectDoesNotRelayInnerFidoSelect) {
@@ -497,33 +495,33 @@ TEST_F(ReaderCcidDispatchTest, Type4FfAcr122DirectDoesNotRelayInnerFidoSelect) {
   reader_ccid_utest_handle_bulk(power_on.data(),
                                 static_cast<uint16_t>(power_on.size()));
 
-  const std::vector<uint8_t> kPayload = {
+  const std::vector<uint8_t> payload = {
       0xFFu, 0x00u, 0x00u, 0x00u, 0x11u, 0xD4u, 0x40u, 0x01u,
       0x00u, 0xA4u, 0x04u, 0x00u, 0x08u, 0xA0u, 0x00u, 0x00u,
       0x06u, 0x47u, 0x2Fu, 0x00u, 0x01u, 0x00u,
   };
-  std::vector<uint8_t> frame = MakeXfr(kTestLit0x33u, kPayload);
+  std::vector<uint8_t> frame = MakeXfr(kTestLit0x33u, payload);
 
   reader_ccid_utest_handle_bulk(frame.data(),
                                 static_cast<uint16_t>(frame.size()));
 
-  const std::span<const uint8_t> kRsp = LastCcidSend();
+  const std::span<const uint8_t> rsp = LastCcidSend();
   ASSERT_GE(reader_ccid_utest_last_send_len(), 15u);
   EXPECT_EQ(reader_security_key_utest_last_apdu_rsp_cap(), 0u);
-  EXPECT_EQ(kRsp[0], NFC_CCID_MSG_RDR_TO_PC_DATABLOCK);
-  EXPECT_EQ(kRsp[6], 0x33u);
-  EXPECT_EQ(nfc_ccid_u32_load_le(&kRsp[1]), 5u);
-  EXPECT_EQ(kRsp[10], 0xD5u);
-  EXPECT_EQ(kRsp[11], 0x41u);
-  EXPECT_EQ(kRsp[12], 0x01u);
-  EXPECT_EQ(kRsp[13], 0x90u);
-  EXPECT_EQ(kRsp[14], 0x00u);
+  EXPECT_EQ(rsp[0], NFC_CCID_MSG_RDR_TO_PC_DATABLOCK);
+  EXPECT_EQ(rsp[6], 0x33u);
+  EXPECT_EQ(nfc_ccid_u32_load_le(&rsp[1]), 5u);
+  EXPECT_EQ(rsp[10], 0xD5u);
+  EXPECT_EQ(rsp[11], 0x41u);
+  EXPECT_EQ(rsp[12], 0x01u);
+  EXPECT_EQ(rsp[13], 0x90u);
+  EXPECT_EQ(rsp[14], 0x00u);
 }
 
 TEST_F(ReaderCcidDispatchTest, Type4Pn53xExchangeAppendsOuterStatusWord) {
   PowerOnStorageTag(READER_TAG_KIND_TYPE4);
 
-  const std::vector<uint8_t> kPayload = {
+  const std::vector<uint8_t> payload = {
       static_cast<uint8_t>(NFC_PN532_HOST_TO_PN532),
       static_cast<uint8_t>(NFC_PN532_CMD_IN_DATA_EXCHANGE),
       0x01u,
@@ -532,110 +530,110 @@ TEST_F(ReaderCcidDispatchTest, Type4Pn53xExchangeAppendsOuterStatusWord) {
       0x00u,
       0x00u,
   };
-  auto frame = MakeXfr(kTestLit0x34u, MakeAcr122DirectApdu(kPayload));
+  auto frame = MakeXfr(kTestLit0x34u, MakeAcr122DirectApdu(payload));
   reader_ccid_utest_handle_bulk(frame.data(),
                                 static_cast<uint16_t>(frame.size()));
 
-  const std::span<const uint8_t> kRsp = LastCcidSend();
+  const std::span<const uint8_t> rsp = LastCcidSend();
   ASSERT_GE(reader_ccid_utest_last_send_len(),
             static_cast<uint16_t>(NFC_CCID_BULK_PAYLOAD_OFFSET + 7u));
-  EXPECT_EQ(nfc_ccid_u32_load_le(&kRsp[1]), 7u);
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET],
+  EXPECT_EQ(nfc_ccid_u32_load_le(&rsp[1]), 7u);
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET],
             static_cast<uint8_t>(NFC_PN532_PN532_TO_HOST));
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 1u],
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 1u],
             static_cast<uint8_t>(NFC_PN532_RSP_IN_DATA_EXCHANGE));
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 2u], 0x00u);
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 3u],
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 2u], 0x00u);
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 3u],
             static_cast<uint8_t>(NFC_ISO7816_SW1_SUCCESS));
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 4u],
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 4u],
             static_cast<uint8_t>(NFC_ISO7816_SW2_SUCCESS));
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 5u],
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 5u],
             static_cast<uint8_t>(NFC_ISO7816_SW1_SUCCESS));
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 6u],
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 6u],
             static_cast<uint8_t>(NFC_ISO7816_SW2_SUCCESS));
 }
 
 TEST_F(ReaderCcidDispatchTest, Acr122GetFirmwareVersionReturnsAsciiString) {
   PowerOnStorageTag(READER_TAG_KIND_TYPE4);
 
-  const std::vector<uint8_t> kApdu = {
+  const std::vector<uint8_t> apdu = {
       static_cast<uint8_t>(NFC_ISO7816_CLA_PROPRIETARY),
       static_cast<uint8_t>(NFC_ISO7816_CLA_ISO),
       static_cast<uint8_t>(NFC_ACR122U_P1_GET_FIRMWARE_VERSION),
       static_cast<uint8_t>(NFC_ISO7816_P2_SELECT_FIRST),
       static_cast<uint8_t>(NFC_ISO7816_SW2_SUCCESS),
   };
-  auto frame = MakeXfr(kTestLit0x30u, kApdu);
+  auto frame = MakeXfr(kTestLit0x30u, apdu);
   reader_ccid_utest_handle_bulk(frame.data(),
                                 static_cast<uint16_t>(frame.size()));
 
-  const std::span<const uint8_t> kRsp = LastCcidSend();
+  const std::span<const uint8_t> rsp = LastCcidSend();
   ASSERT_GE(reader_ccid_utest_last_send_len(),
             static_cast<uint16_t>(NFC_CCID_BULK_PAYLOAD_OFFSET + 10u));
-  EXPECT_EQ(nfc_ccid_u32_load_le(&kRsp[1]), 10u);
-  EXPECT_EQ(std::memcmp(&kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET], "ACR122U203", 10),
+  EXPECT_EQ(nfc_ccid_u32_load_le(&rsp[1]), 10u);
+  EXPECT_EQ(std::memcmp(&rsp[NFC_CCID_BULK_PAYLOAD_OFFSET], "ACR122U203", 10),
             0);
 }
 
 TEST_F(ReaderCcidDispatchTest, Pn53xGetFirmwareVersionReturnsIcRevision) {
   PowerOnStorageTag(READER_TAG_KIND_TYPE4);
 
-  const std::vector<uint8_t> kPayload = {
+  const std::vector<uint8_t> payload = {
       static_cast<uint8_t>(NFC_PN532_HOST_TO_PN532),
       static_cast<uint8_t>(NFC_PN532_CMD_GET_FIRMWARE_VERSION),
   };
-  auto frame = MakeXfr(kTestLit0x31u, MakeAcr122DirectApdu(kPayload));
+  auto frame = MakeXfr(kTestLit0x31u, MakeAcr122DirectApdu(payload));
   reader_ccid_utest_handle_bulk(frame.data(),
                                 static_cast<uint16_t>(frame.size()));
 
-  const std::span<const uint8_t> kRsp = LastCcidSend();
+  const std::span<const uint8_t> rsp = LastCcidSend();
   ASSERT_GE(reader_ccid_utest_last_send_len(),
             static_cast<uint16_t>(NFC_CCID_BULK_PAYLOAD_OFFSET + 8u));
-  EXPECT_EQ(nfc_ccid_u32_load_le(&kRsp[1]), 8u);
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET],
+  EXPECT_EQ(nfc_ccid_u32_load_le(&rsp[1]), 8u);
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET],
             static_cast<uint8_t>(NFC_PN532_PN532_TO_HOST));
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 1u],
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 1u],
             static_cast<uint8_t>(NFC_PN532_GET_FIRMWARE_VERSION_RSP_SUB));
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 2u],
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 2u],
             static_cast<uint8_t>(NFC_PN532_FW_VERSION_IC));
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 3u],
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 3u],
             static_cast<uint8_t>(NFC_PN532_FW_VERSION_VER));
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 4u],
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 4u],
             static_cast<uint8_t>(NFC_PN532_FW_VERSION_REV));
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 5u],
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 5u],
             static_cast<uint8_t>(NFC_PN532_FW_VERSION_SUPPORT));
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 6u],
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 6u],
             static_cast<uint8_t>(NFC_ISO7816_SW1_SUCCESS));
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 7u],
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 7u],
             static_cast<uint8_t>(NFC_ISO7816_SW2_SUCCESS));
 }
 
 TEST_F(ReaderCcidDispatchTest, Pn53xInListPassiveEmptyWhenTypeaUnavailable) {
   PowerOnStorageTag(READER_TAG_KIND_TYPE4);
 
-  const std::vector<uint8_t> kPayload = {
+  const std::vector<uint8_t> payload = {
       static_cast<uint8_t>(NFC_PN532_HOST_TO_PN532),
       static_cast<uint8_t>(NFC_PN532_CMD_IN_LIST_PASSIVE_TARGET),
       static_cast<uint8_t>(NFC_PN532_SINGLE_TARGET),
       static_cast<uint8_t>(NFC_PN532_BRTY_106KBPS_TYPE_A),
   };
-  auto frame = MakeXfr(kTestLit0x32u, MakeAcr122DirectApdu(kPayload));
+  auto frame = MakeXfr(kTestLit0x32u, MakeAcr122DirectApdu(payload));
   reader_ccid_utest_handle_bulk(frame.data(),
                                 static_cast<uint16_t>(frame.size()));
 
-  const std::span<const uint8_t> kRsp = LastCcidSend();
+  const std::span<const uint8_t> rsp = LastCcidSend();
   ASSERT_GE(reader_ccid_utest_last_send_len(),
             static_cast<uint16_t>(NFC_CCID_BULK_PAYLOAD_OFFSET + 5u));
-  EXPECT_EQ(nfc_ccid_u32_load_le(&kRsp[1]), 5u);
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET],
+  EXPECT_EQ(nfc_ccid_u32_load_le(&rsp[1]), 5u);
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET],
             static_cast<uint8_t>(NFC_PN532_PN532_TO_HOST));
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 1u],
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 1u],
             static_cast<uint8_t>(NFC_PN532_RSP_IN_LIST_PASSIVE_TARGET));
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 2u],
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 2u],
             static_cast<uint8_t>(NFC_PN532_STATUS_OK));
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 3u],
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 3u],
             static_cast<uint8_t>(NFC_ISO7816_SW1_SUCCESS));
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 4u],
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 4u],
             static_cast<uint8_t>(NFC_ISO7816_SW2_SUCCESS));
 }
 
@@ -643,121 +641,121 @@ TEST_F(ReaderCcidDispatchTest, Pn53xInListPassiveReturnsTypeaTargetFields) {
   PowerOnStorageTag(READER_TAG_KIND_TYPE4);
 
   constexpr uint8_t kSakIsoDep = kTestLit0x20u;
-  const std::array<uint8_t, 4u> kUid = {kTestLit0x04u, kTestLit0x11u,
-                                        kTestLit0x22u, kTestLit0x33u};
-  const std::array<uint8_t, 2u> kAtqa = {kTestLit0x04u, 0x00u};
-  const std::array<uint8_t, 5u> kAts = {kTestLit0x05u, kTestLit0x75u,
-                                        kTestLit0x80u, kTestLit0x02u,
-                                        kTestLit0x80u};
-  reader_tags_utest_set_typea_info(
-      kUid.data(), static_cast<uint8_t>(kUid.size()), kAtqa.data(), kSakIsoDep,
-      kAts.data(), static_cast<uint8_t>(kAts.size()));
+  const std::array<uint8_t, 4u> uid = {kTestLit0x04u, kTestLit0x11u,
+                                       kTestLit0x22u, kTestLit0x33u};
+  const std::array<uint8_t, 2u> atqa = {kTestLit0x04u, 0x00u};
+  const std::array<uint8_t, 5u> ats = {kTestLit0x05u, kTestLit0x75u,
+                                       kTestLit0x80u, kTestLit0x02u,
+                                       kTestLit0x80u};
+  reader_tags_utest_set_typea_info(uid.data(), static_cast<uint8_t>(uid.size()),
+                                   atqa.data(), kSakIsoDep, ats.data(),
+                                   static_cast<uint8_t>(ats.size()));
 
-  const std::vector<uint8_t> kPayload = {
+  const std::vector<uint8_t> payload = {
       static_cast<uint8_t>(NFC_PN532_HOST_TO_PN532),
       static_cast<uint8_t>(NFC_PN532_CMD_IN_LIST_PASSIVE_TARGET),
       static_cast<uint8_t>(NFC_PN532_SINGLE_TARGET),
       static_cast<uint8_t>(NFC_PN532_BRTY_106KBPS_TYPE_A),
   };
-  auto frame = MakeXfr(kTestLit0x33u, MakeAcr122DirectApdu(kPayload));
+  auto frame = MakeXfr(kTestLit0x33u, MakeAcr122DirectApdu(payload));
   reader_ccid_utest_handle_bulk(frame.data(),
                                 static_cast<uint16_t>(frame.size()));
 
-  const std::span<const uint8_t> kRsp = LastCcidSend();
+  const std::span<const uint8_t> rsp = LastCcidSend();
   constexpr uint16_t kPn53xPrefixLen = 2u;
   constexpr uint16_t kTargetHeaderLen = 6u; /* NbTg Tg ATQA SAK UIDLEN */
   constexpr uint16_t kExpectedPayloadLen =
-      kPn53xPrefixLen + kTargetHeaderLen + static_cast<uint16_t>(kUid.size()) +
-      1u + static_cast<uint16_t>(kAts.size()) +
+      kPn53xPrefixLen + kTargetHeaderLen + static_cast<uint16_t>(uid.size()) +
+      1u + static_cast<uint16_t>(ats.size()) +
       static_cast<uint16_t>(NFC_ISO7816_SW_LEN);
   ASSERT_GE(reader_ccid_utest_last_send_len(),
             static_cast<uint16_t>(NFC_CCID_BULK_PAYLOAD_OFFSET +
                                   kExpectedPayloadLen));
-  EXPECT_EQ(nfc_ccid_u32_load_le(&kRsp[1]), kExpectedPayloadLen);
-  const auto kBody = kRsp.subspan(NFC_CCID_BULK_PAYLOAD_OFFSET);
-  EXPECT_EQ(kBody[0], static_cast<uint8_t>(NFC_PN532_PN532_TO_HOST));
-  EXPECT_EQ(kBody[1],
+  EXPECT_EQ(nfc_ccid_u32_load_le(&rsp[1]), kExpectedPayloadLen);
+  const auto body = rsp.subspan(NFC_CCID_BULK_PAYLOAD_OFFSET);
+  EXPECT_EQ(body[0], static_cast<uint8_t>(NFC_PN532_PN532_TO_HOST));
+  EXPECT_EQ(body[1],
             static_cast<uint8_t>(NFC_PN532_RSP_IN_LIST_PASSIVE_TARGET));
-  EXPECT_EQ(kBody[2], static_cast<uint8_t>(NFC_PN532_SINGLE_TARGET));
-  EXPECT_EQ(kBody[3], static_cast<uint8_t>(NFC_PN532_SINGLE_TARGET));
-  EXPECT_EQ(kBody[4], kAtqa[0]);
-  EXPECT_EQ(kBody[5], kAtqa[1]);
-  EXPECT_EQ(kBody[6], kSakIsoDep);
-  EXPECT_EQ(kBody[7], static_cast<uint8_t>(kUid.size()));
-  EXPECT_TRUE(std::equal(kUid.begin(), kUid.end(), kBody.begin() + 8));
-  EXPECT_EQ(kBody[12], static_cast<uint8_t>(kAts.size()));
-  EXPECT_TRUE(std::equal(kAts.begin(), kAts.end(), kBody.begin() + 13));
-  EXPECT_EQ(kBody[18], static_cast<uint8_t>(NFC_ISO7816_SW1_SUCCESS));
-  EXPECT_EQ(kBody[19], static_cast<uint8_t>(NFC_ISO7816_SW2_SUCCESS));
+  EXPECT_EQ(body[2], static_cast<uint8_t>(NFC_PN532_SINGLE_TARGET));
+  EXPECT_EQ(body[3], static_cast<uint8_t>(NFC_PN532_SINGLE_TARGET));
+  EXPECT_EQ(body[4], atqa[0]);
+  EXPECT_EQ(body[5], atqa[1]);
+  EXPECT_EQ(body[6], kSakIsoDep);
+  EXPECT_EQ(body[7], static_cast<uint8_t>(uid.size()));
+  EXPECT_TRUE(std::equal(uid.begin(), uid.end(), body.begin() + 8));
+  EXPECT_EQ(body[12], static_cast<uint8_t>(ats.size()));
+  EXPECT_TRUE(std::equal(ats.begin(), ats.end(), body.begin() + 13));
+  EXPECT_EQ(body[18], static_cast<uint8_t>(NFC_ISO7816_SW1_SUCCESS));
+  EXPECT_EQ(body[19], static_cast<uint8_t>(NFC_ISO7816_SW2_SUCCESS));
 }
 
 TEST_F(ReaderCcidDispatchTest, Pn53xInDeselectReturnsOkStatus) {
   PowerOnStorageTag(READER_TAG_KIND_TYPE4);
 
-  const std::vector<uint8_t> kPayload = {
+  const std::vector<uint8_t> payload = {
       static_cast<uint8_t>(NFC_PN532_HOST_TO_PN532),
       static_cast<uint8_t>(NFC_PN532_CMD_IN_DESELECT),
       static_cast<uint8_t>(NFC_PN532_SINGLE_TARGET),
   };
-  auto frame = MakeXfr(kTestLit0x39u, MakeAcr122DirectApdu(kPayload));
+  auto frame = MakeXfr(kTestLit0x39u, MakeAcr122DirectApdu(payload));
   reader_ccid_utest_handle_bulk(frame.data(),
                                 static_cast<uint16_t>(frame.size()));
 
-  const std::span<const uint8_t> kRsp = LastCcidSend();
+  const std::span<const uint8_t> rsp = LastCcidSend();
   ASSERT_GE(reader_ccid_utest_last_send_len(),
             static_cast<uint16_t>(NFC_CCID_BULK_PAYLOAD_OFFSET + 5u));
-  EXPECT_EQ(nfc_ccid_u32_load_le(&kRsp[1]), 5u);
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET],
+  EXPECT_EQ(nfc_ccid_u32_load_le(&rsp[1]), 5u);
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET],
             static_cast<uint8_t>(NFC_PN532_PN532_TO_HOST));
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 1u],
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 1u],
             static_cast<uint8_t>(NFC_PN532_RSP_IN_DESELECT));
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 2u],
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 2u],
             static_cast<uint8_t>(NFC_PN532_STATUS_OK));
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 3u],
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 3u],
             static_cast<uint8_t>(NFC_ISO7816_SW1_SUCCESS));
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 4u],
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 4u],
             static_cast<uint8_t>(NFC_ISO7816_SW2_SUCCESS));
 }
 
 TEST_F(ReaderCcidDispatchTest, Type2Pn53xGetVersionAllowedThroughTunnel) {
   PowerOnStorageTag(READER_TAG_KIND_TYPE2);
   reader_tags_utest_set_type2_storage_info(kTestLit144u, true, true);
-  const std::array<uint8_t, 8u> kVersion = {
+  const std::array<uint8_t, 8u> version = {
       0x00u,         kTestLit0x04u, kTestLit0x04u, kTestLit0x02u,
       kTestLit0x01u, 0x00u,         kTestLit0x0Fu, kTestLit0x03u};
   reader_tags_utest_set_type2_transceive_response(
-      kVersion.data(), static_cast<uint16_t>(kVersion.size()));
+      version.data(), static_cast<uint16_t>(version.size()));
 
-  const std::vector<uint8_t> kPayload = {
+  const std::vector<uint8_t> payload = {
       static_cast<uint8_t>(NFC_PN532_HOST_TO_PN532),
       static_cast<uint8_t>(NFC_PN532_CMD_IN_DATA_EXCHANGE),
       0x01u,
       static_cast<uint8_t>(CCID_RAW_T2_CMD_GET_VERSION),
   };
-  auto frame = MakeXfr(kTestLit0x3Au, MakeAcr122DirectApdu(kPayload));
+  auto frame = MakeXfr(kTestLit0x3Au, MakeAcr122DirectApdu(payload));
   reader_ccid_utest_handle_bulk(frame.data(),
                                 static_cast<uint16_t>(frame.size()));
 
-  const std::span<const uint8_t> kRsp = LastCcidSend();
+  const std::span<const uint8_t> rsp = LastCcidSend();
   ASSERT_GE(reader_ccid_utest_last_send_len(),
             static_cast<uint16_t>(NFC_CCID_BULK_PAYLOAD_OFFSET + 13u));
   EXPECT_EQ(reader_tags_utest_type2_transceive_count(), 1u);
-  EXPECT_EQ(nfc_ccid_u32_load_le(&kRsp[1]), 13u);
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET],
+  EXPECT_EQ(nfc_ccid_u32_load_le(&rsp[1]), 13u);
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET],
             static_cast<uint8_t>(NFC_PN532_PN532_TO_HOST));
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 1u],
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 1u],
             static_cast<uint8_t>(NFC_PN532_RSP_IN_DATA_EXCHANGE));
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 2u],
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 2u],
             static_cast<uint8_t>(NFC_PN532_STATUS_OK));
-  EXPECT_EQ(std::memcmp(&kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 3u],
-                        kVersion.data(), kVersion.size()),
+  EXPECT_EQ(std::memcmp(&rsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 3u], version.data(),
+                        version.size()),
             0);
 }
 
 TEST_F(ReaderCcidDispatchTest, Type2Pn53xTunnelRejectsRawWriteBeforeRf) {
   PowerOnStorageTag(READER_TAG_KIND_TYPE2);
 
-  const std::vector<uint8_t> kType2Write = {
+  const std::vector<uint8_t> type2_write = {
       static_cast<uint8_t>(NFC_PN532_HOST_TO_PN532),
       static_cast<uint8_t>(NFC_PN532_CMD_IN_DATA_EXCHANGE),
       0x01u,
@@ -768,30 +766,30 @@ TEST_F(ReaderCcidDispatchTest, Type2Pn53xTunnelRejectsRawWriteBeforeRf) {
       0x33u,
       0x44u,
   };
-  auto frame = MakeXfr(kTestLit0x34u, MakeAcr122DirectApdu(kType2Write));
+  auto frame = MakeXfr(kTestLit0x34u, MakeAcr122DirectApdu(type2_write));
   reader_ccid_utest_handle_bulk(frame.data(),
                                 static_cast<uint16_t>(frame.size()));
 
-  const std::span<const uint8_t> kRsp = LastCcidSend();
+  const std::span<const uint8_t> rsp = LastCcidSend();
   ASSERT_GE(reader_ccid_utest_last_send_len(),
             static_cast<uint16_t>(NFC_CCID_BULK_PAYLOAD_OFFSET + 5u));
   EXPECT_EQ(reader_tags_utest_type2_transceive_count(), 0u);
-  EXPECT_EQ(nfc_ccid_u32_load_le(&kRsp[1]), 5u);
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET],
+  EXPECT_EQ(nfc_ccid_u32_load_le(&rsp[1]), 5u);
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET],
             static_cast<uint8_t>(NFC_PN532_PN532_TO_HOST));
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 1u],
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 1u],
             static_cast<uint8_t>(NFC_PN532_RSP_IN_DATA_EXCHANGE));
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 2u], 0x01u);
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 3u],
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 2u], 0x01u);
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 3u],
             static_cast<uint8_t>(NFC_ISO7816_SW1_SUCCESS));
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 4u],
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 4u],
             static_cast<uint8_t>(NFC_ISO7816_SW2_SUCCESS));
 }
 
 TEST_F(ReaderCcidDispatchTest, Type5Pn53xTunnelRejectsRawWriteBeforeRf) {
   PowerOnStorageTag(READER_TAG_KIND_TYPE5);
 
-  const std::vector<uint8_t> kType5WriteSingle = {
+  const std::vector<uint8_t> type5_write_single = {
       static_cast<uint8_t>(NFC_PN532_HOST_TO_PN532),
       static_cast<uint8_t>(NFC_PN532_CMD_IN_COMMUNICATE_THRU),
       static_cast<uint8_t>(NFC_TAG_T5T_ISO15693_FLAGS_ADDRESSED),
@@ -802,30 +800,30 @@ TEST_F(ReaderCcidDispatchTest, Type5Pn53xTunnelRejectsRawWriteBeforeRf) {
       0x03u,
       0x04u,
   };
-  auto frame = MakeXfr(kTestLit0x35u, MakeAcr122DirectApdu(kType5WriteSingle));
+  auto frame = MakeXfr(kTestLit0x35u, MakeAcr122DirectApdu(type5_write_single));
   reader_ccid_utest_handle_bulk(frame.data(),
                                 static_cast<uint16_t>(frame.size()));
 
-  const std::span<const uint8_t> kRsp = LastCcidSend();
+  const std::span<const uint8_t> rsp = LastCcidSend();
   ASSERT_GE(reader_ccid_utest_last_send_len(),
             static_cast<uint16_t>(NFC_CCID_BULK_PAYLOAD_OFFSET + 5u));
   EXPECT_EQ(reader_tags_utest_type5_transceive_count(), 0u);
-  EXPECT_EQ(nfc_ccid_u32_load_le(&kRsp[1]), 5u);
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET],
+  EXPECT_EQ(nfc_ccid_u32_load_le(&rsp[1]), 5u);
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET],
             static_cast<uint8_t>(NFC_PN532_PN532_TO_HOST));
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 1u],
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 1u],
             static_cast<uint8_t>(NFC_PN532_RSP_IN_COMMUNICATE_THRU));
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 2u], 0x01u);
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 3u],
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 2u], 0x01u);
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 3u],
             static_cast<uint8_t>(NFC_ISO7816_SW1_SUCCESS));
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 4u],
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 4u],
             static_cast<uint8_t>(NFC_ISO7816_SW2_SUCCESS));
 }
 
 TEST_F(ReaderCcidDispatchTest, Type5TransparentEscapeRejectsRawWriteBeforeRf) {
   PowerOnStorageTag(READER_TAG_KIND_TYPE5);
 
-  const std::vector<uint8_t> kEscapeWrite = {
+  const std::vector<uint8_t> escape_write = {
       static_cast<uint8_t>(NFC_ISO7816_CLA_PROPRIETARY),
       static_cast<uint8_t>(NFC_PCSC_ESCAPE_TRANSPARENT_INS),
       0x00u,
@@ -839,25 +837,25 @@ TEST_F(ReaderCcidDispatchTest, Type5TransparentEscapeRejectsRawWriteBeforeRf) {
       0x03u,
       0x04u,
   };
-  auto frame = MakeXfr(kTestLit0x36u, kEscapeWrite);
+  auto frame = MakeXfr(kTestLit0x36u, escape_write);
   reader_ccid_utest_handle_bulk(frame.data(),
                                 static_cast<uint16_t>(frame.size()));
 
-  const std::span<const uint8_t> kRsp = LastCcidSend();
+  const std::span<const uint8_t> rsp = LastCcidSend();
   ASSERT_GE(reader_ccid_utest_last_send_len(), kSwPayloadEnd);
   EXPECT_EQ(reader_tags_utest_type5_transceive_count(), 0u);
-  EXPECT_EQ(nfc_ccid_u32_load_le(&kRsp[1]),
+  EXPECT_EQ(nfc_ccid_u32_load_le(&rsp[1]),
             static_cast<uint32_t>(NFC_ISO7816_SW_LEN));
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET],
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET],
             static_cast<uint8_t>(NFC_ISO7816_SW1_INS_NOT_SUPPORTED));
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 1u],
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 1u],
             static_cast<uint8_t>(NFC_ISO7816_SW2_SUCCESS));
 }
 
 TEST_F(ReaderCcidDispatchTest, Type5TransparentEscapeRejectsStayQuietBeforeRf) {
   PowerOnStorageTag(READER_TAG_KIND_TYPE5);
 
-  const std::vector<uint8_t> kStayQuiet = {
+  const std::vector<uint8_t> stay_quiet = {
       static_cast<uint8_t>(NFC_ISO7816_CLA_PROPRIETARY),
       static_cast<uint8_t>(NFC_PCSC_ESCAPE_TRANSPARENT_INS),
       0x00u,
@@ -866,18 +864,18 @@ TEST_F(ReaderCcidDispatchTest, Type5TransparentEscapeRejectsStayQuietBeforeRf) {
       static_cast<uint8_t>(NFC_TAG_T5T_ISO15693_FLAGS_ADDRESSED),
       0x02u,
   };
-  auto frame = MakeXfr(kTestLit0x36u, kStayQuiet);
+  auto frame = MakeXfr(kTestLit0x36u, stay_quiet);
   reader_ccid_utest_handle_bulk(frame.data(),
                                 static_cast<uint16_t>(frame.size()));
 
-  const std::span<const uint8_t> kRsp = LastCcidSend();
+  const std::span<const uint8_t> rsp = LastCcidSend();
   ASSERT_GE(reader_ccid_utest_last_send_len(), kSwPayloadEnd);
   EXPECT_EQ(reader_tags_utest_type5_transceive_count(), 0u);
-  EXPECT_EQ(nfc_ccid_u32_load_le(&kRsp[1]),
+  EXPECT_EQ(nfc_ccid_u32_load_le(&rsp[1]),
             static_cast<uint32_t>(NFC_ISO7816_SW_LEN));
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET],
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET],
             static_cast<uint8_t>(NFC_ISO7816_SW1_INS_NOT_SUPPORTED));
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 1u],
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 1u],
             static_cast<uint8_t>(NFC_ISO7816_SW2_SUCCESS));
 }
 
@@ -897,22 +895,22 @@ TEST_F(ReaderCcidDispatchTest,
       static_cast<uint8_t>(NFC_TAG_T5T_ISO15693_FLAGS_ADDRESSED),
       static_cast<uint8_t>(NFC_TAG_T5T_ISO15693_CMD_READ_SINGLE),
   };
-  const std::vector<uint8_t> kUidLsb = MismatchedType5UidLsb();
-  escape_read.insert(escape_read.end(), kUidLsb.begin(), kUidLsb.end());
+  const std::vector<uint8_t> uid_lsb = MismatchedType5UidLsb();
+  escape_read.insert(escape_read.end(), uid_lsb.begin(), uid_lsb.end());
   escape_read.push_back(0x01u);
 
   auto frame = MakeXfr(kTestLit0x38u, escape_read);
   reader_ccid_utest_handle_bulk(frame.data(),
                                 static_cast<uint16_t>(frame.size()));
 
-  const std::span<const uint8_t> kRsp = LastCcidSend();
+  const std::span<const uint8_t> rsp = LastCcidSend();
   ASSERT_GE(reader_ccid_utest_last_send_len(), kSwPayloadEnd);
   EXPECT_EQ(reader_tags_utest_type5_transceive_count(), 0u);
-  EXPECT_EQ(nfc_ccid_u32_load_le(&kRsp[1]),
+  EXPECT_EQ(nfc_ccid_u32_load_le(&rsp[1]),
             static_cast<uint32_t>(NFC_ISO7816_SW_LEN));
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET],
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET],
             static_cast<uint8_t>(NFC_ISO7816_SW1_INS_NOT_SUPPORTED));
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 1u],
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 1u],
             static_cast<uint8_t>(NFC_ISO7816_SW2_SUCCESS));
 }
 
@@ -930,21 +928,21 @@ TEST_F(ReaderCcidDispatchTest,
       static_cast<uint8_t>(NFC_TAG_T5T_ISO15693_FLAGS_ADDRESSED),
       static_cast<uint8_t>(NFC_TAG_T5T_ISO15693_CMD_GET_SYS_INFO),
   };
-  const std::vector<uint8_t> kUidLsb = MismatchedType5UidLsb();
-  sys_info.insert(sys_info.end(), kUidLsb.begin(), kUidLsb.end());
+  const std::vector<uint8_t> uid_lsb = MismatchedType5UidLsb();
+  sys_info.insert(sys_info.end(), uid_lsb.begin(), uid_lsb.end());
 
   auto frame = MakeXfr(kTestLit0x39u, sys_info);
   reader_ccid_utest_handle_bulk(frame.data(),
                                 static_cast<uint16_t>(frame.size()));
 
-  const std::span<const uint8_t> kRsp = LastCcidSend();
+  const std::span<const uint8_t> rsp = LastCcidSend();
   ASSERT_GE(reader_ccid_utest_last_send_len(), kSwPayloadEnd);
   EXPECT_EQ(reader_tags_utest_type5_transceive_count(), 0u);
-  EXPECT_EQ(nfc_ccid_u32_load_le(&kRsp[1]),
+  EXPECT_EQ(nfc_ccid_u32_load_le(&rsp[1]),
             static_cast<uint32_t>(NFC_ISO7816_SW_LEN));
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET],
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET],
             static_cast<uint8_t>(NFC_ISO7816_SW1_INS_NOT_SUPPORTED));
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 1u],
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 1u],
             static_cast<uint8_t>(NFC_ISO7816_SW2_SUCCESS));
 }
 
@@ -961,27 +959,27 @@ TEST_F(ReaderCcidDispatchTest,
       static_cast<uint8_t>(NFC_TAG_T5T_ISO15693_FLAGS_ADDRESSED),
       static_cast<uint8_t>(NFC_TAG_T5T_ISO15693_CMD_READ_SINGLE),
   };
-  const std::vector<uint8_t> kUidLsb = MismatchedType5UidLsb();
-  type5_read.insert(type5_read.end(), kUidLsb.begin(), kUidLsb.end());
+  const std::vector<uint8_t> uid_lsb = MismatchedType5UidLsb();
+  type5_read.insert(type5_read.end(), uid_lsb.begin(), uid_lsb.end());
   type5_read.push_back(0x01u);
 
   auto frame = MakeXfr(kTestLit0x3Au, MakeAcr122DirectApdu(type5_read));
   reader_ccid_utest_handle_bulk(frame.data(),
                                 static_cast<uint16_t>(frame.size()));
 
-  const std::span<const uint8_t> kRsp = LastCcidSend();
+  const std::span<const uint8_t> rsp = LastCcidSend();
   ASSERT_GE(reader_ccid_utest_last_send_len(),
             static_cast<uint16_t>(NFC_CCID_BULK_PAYLOAD_OFFSET + 5u));
   EXPECT_EQ(reader_tags_utest_type5_transceive_count(), 0u);
-  EXPECT_EQ(nfc_ccid_u32_load_le(&kRsp[1]), 5u);
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET],
+  EXPECT_EQ(nfc_ccid_u32_load_le(&rsp[1]), 5u);
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET],
             static_cast<uint8_t>(NFC_PN532_PN532_TO_HOST));
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 1u],
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 1u],
             static_cast<uint8_t>(NFC_PN532_RSP_IN_COMMUNICATE_THRU));
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 2u], 0x01u);
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 3u],
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 2u], 0x01u);
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 3u],
             static_cast<uint8_t>(NFC_ISO7816_SW1_SUCCESS));
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 4u],
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 4u],
             static_cast<uint8_t>(NFC_ISO7816_SW2_SUCCESS));
 }
 
@@ -990,108 +988,107 @@ TEST_F(ReaderCcidDispatchTest,
   reader_tags_utest_set_type2_storage_info(kTestLit64u, true, true);
   PowerOnStorageTag(READER_TAG_KIND_TYPE2);
 
-  const std::vector<uint8_t> kType2ReadPage20 = {
+  const std::vector<uint8_t> type2_read_page20 = {
       static_cast<uint8_t>(NFC_PN532_HOST_TO_PN532),
       static_cast<uint8_t>(NFC_PN532_CMD_IN_DATA_EXCHANGE),
       0x01u,
       static_cast<uint8_t>(CCID_RAW_T2_CMD_READ),
       20u,
   };
-  auto frame = MakeXfr(kTestLit0x37u, MakeAcr122DirectApdu(kType2ReadPage20));
+  auto frame = MakeXfr(kTestLit0x37u, MakeAcr122DirectApdu(type2_read_page20));
   reader_ccid_utest_handle_bulk(frame.data(),
                                 static_cast<uint16_t>(frame.size()));
 
-  const std::span<const uint8_t> kRsp = LastCcidSend();
+  const std::span<const uint8_t> rsp = LastCcidSend();
   ASSERT_GE(reader_ccid_utest_last_send_len(),
             static_cast<uint16_t>(NFC_CCID_BULK_PAYLOAD_OFFSET + 5u));
   EXPECT_EQ(reader_tags_utest_type2_transceive_count(), 0u);
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET],
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET],
             static_cast<uint8_t>(NFC_PN532_PN532_TO_HOST));
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 1u],
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 1u],
             static_cast<uint8_t>(NFC_PN532_RSP_IN_DATA_EXCHANGE));
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 2u], 0x01u);
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 2u], 0x01u);
 }
 
 TEST_F(ReaderCcidDispatchTest,
        Type2GetDataVersionUsesNtagFingerprintWithoutNxpUid) {
-  const uint8_t kApdu[] = {
-      0xFFu, 0xCAu, static_cast<uint8_t>(NFC_PCSC_GET_DATA_TYPE2_VERSION),
-      0x00u, 0x00u};
-  const uint8_t kVersion[] = {0x00u, 0x04u, 0x04u, 0x02u,
-                              0x01u, 0x00u, 0x13u, 0x03u};
+  const uint8_t apdu[] = {0xFFu, 0xCAu,
+                          static_cast<uint8_t>(NFC_PCSC_GET_DATA_TYPE2_VERSION),
+                          0x00u, 0x00u};
+  const uint8_t version[] = {0x00u, 0x04u, 0x04u, 0x02u,
+                             0x01u, 0x00u, 0x13u, 0x03u};
   uint8_t rsp[kTestLit16];
 
   reader_tags_utest_set_type2_storage_info(kTestLit1016u, true, true);
   reader_tags_utest_set_type2_transceive_response(
-      &kVersion[0], static_cast<uint16_t>(sizeof(kVersion)));
+      &version[0], static_cast<uint16_t>(sizeof(version)));
   G_TAG_KIND = READER_TAG_KIND_TYPE2;
   G_UID14_LEN = kTestLit7u;
   G_UID14[0] = kTestLit0x53u;
 
-  const uint16_t kRlen = reader_ccid_handle_get_data_apdu(
-      &kApdu[0], static_cast<uint16_t>(sizeof(kApdu)), &rsp[0],
+  const uint16_t rlen = reader_ccid_handle_get_data_apdu(
+      &apdu[0], static_cast<uint16_t>(sizeof(apdu)), &rsp[0],
       static_cast<uint16_t>(sizeof(rsp)));
 
-  ASSERT_EQ(kRlen,
-            static_cast<uint16_t>(sizeof(kVersion) + NFC_ISO7816_SW_LEN));
-  EXPECT_TRUE(std::equal(std::begin(kVersion), std::end(kVersion), &rsp[0]));
-  EXPECT_EQ(rsp[sizeof(kVersion)],
+  ASSERT_EQ(rlen, static_cast<uint16_t>(sizeof(version) + NFC_ISO7816_SW_LEN));
+  EXPECT_TRUE(std::equal(std::begin(version), std::end(version), &rsp[0]));
+  EXPECT_EQ(rsp[sizeof(version)],
             static_cast<uint8_t>(NFC_ISO7816_SW1_SUCCESS));
-  EXPECT_EQ(rsp[sizeof(kVersion) + 1u],
+  EXPECT_EQ(rsp[sizeof(version) + 1u],
             static_cast<uint8_t>(NFC_ISO7816_SW2_SUCCESS));
   EXPECT_EQ(reader_tags_utest_type2_transceive_count(), 1u);
 }
 
 TEST_F(ReaderCcidDispatchTest, Type2GetDataVersionDoesNotProbeType4Tag) {
-  const uint8_t kApdu[] = {
-      0xFFu, 0xCAu, static_cast<uint8_t>(NFC_PCSC_GET_DATA_TYPE2_VERSION),
-      0x00u, 0x00u};
-  const uint8_t kVersion[] = {0x00u, 0x04u, 0x04u, 0x02u,
-                              0x01u, 0x00u, 0x13u, 0x03u};
+  const uint8_t apdu[] = {0xFFu, 0xCAu,
+                          static_cast<uint8_t>(NFC_PCSC_GET_DATA_TYPE2_VERSION),
+                          0x00u, 0x00u};
+  const uint8_t version[] = {0x00u, 0x04u, 0x04u, 0x02u,
+                             0x01u, 0x00u, 0x13u, 0x03u};
   uint8_t rsp[kTestLit16];
 
   reader_tags_utest_set_type2_storage_info(kTestLit1016u, true, true);
   reader_tags_utest_set_type2_transceive_response(
-      &kVersion[0], static_cast<uint16_t>(sizeof(kVersion)));
+      &version[0], static_cast<uint16_t>(sizeof(version)));
   G_TAG_KIND = READER_TAG_KIND_TYPE4;
 
-  const uint16_t kRlen = reader_ccid_handle_get_data_apdu(
-      &kApdu[0], static_cast<uint16_t>(sizeof(kApdu)), &rsp[0],
+  const uint16_t rlen = reader_ccid_handle_get_data_apdu(
+      &apdu[0], static_cast<uint16_t>(sizeof(apdu)), &rsp[0],
       static_cast<uint16_t>(sizeof(rsp)));
 
-  ASSERT_EQ(kRlen, static_cast<uint16_t>(NFC_ISO7816_SW_LEN));
+  ASSERT_EQ(rlen, static_cast<uint16_t>(NFC_ISO7816_SW_LEN));
   EXPECT_EQ(rsp[0], static_cast<uint8_t>(NFC_ISO7816_SW1_WRONG_DATA));
   EXPECT_EQ(rsp[1], static_cast<uint8_t>(NFC_ISO7816_SW2_FUNC_NOT_SUPPORTED));
   EXPECT_EQ(reader_tags_utest_type2_transceive_count(), 0u);
 }
 
 TEST_F(ReaderCcidDispatchTest, StorageTagsRejectIsoType4NdefSelect) {
-  const std::vector<uint8_t> kSelectNdefApp = MakeSelectNdefAppApdu();
-  const reader_tag_kind_t kStorageKinds[] = {READER_TAG_KIND_TYPE2,
+  const std::vector<uint8_t> select_ndef_app = MakeSelectNdefAppApdu();
+  const reader_tag_kind_t storage_kinds[] = {READER_TAG_KIND_TYPE2,
                                              READER_TAG_KIND_TYPE5};
 
-  for (reader_tag_kind_t kind : kStorageKinds) {
+  for (reader_tag_kind_t const kind : storage_kinds) {
     reader_ccid_utest_reset();
     reader_ccid_on_tag_detected(kind);
     auto power_on = MakeBulk(kTestLit0x62u, kTestLit0x50u);
     reader_ccid_utest_handle_bulk(power_on.data(),
                                   static_cast<uint16_t>(power_on.size()));
 
-    auto frame = MakeXfr(kTestLit0x51u, kSelectNdefApp);
+    auto frame = MakeXfr(kTestLit0x51u, select_ndef_app);
     reader_ccid_utest_handle_bulk(frame.data(),
                                   static_cast<uint16_t>(frame.size()));
 
-    const std::span<const uint8_t> kRsp = LastCcidSend();
+    const std::span<const uint8_t> rsp = LastCcidSend();
     ASSERT_GE(reader_ccid_utest_last_send_len(),
               static_cast<uint16_t>(NFC_CCID_BULK_HEADER_LEN) +
                   static_cast<uint16_t>(NFC_ISO7816_SW_LEN));
-    EXPECT_EQ(kRsp[0], NFC_CCID_MSG_RDR_TO_PC_DATABLOCK);
-    EXPECT_EQ(kRsp[6], 0x51u);
-    EXPECT_EQ(nfc_ccid_u32_load_le(&kRsp[1]),
+    EXPECT_EQ(rsp[0], NFC_CCID_MSG_RDR_TO_PC_DATABLOCK);
+    EXPECT_EQ(rsp[6], 0x51u);
+    EXPECT_EQ(nfc_ccid_u32_load_le(&rsp[1]),
               static_cast<uint32_t>(NFC_ISO7816_SW_LEN));
-    EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET],
+    EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET],
               static_cast<uint8_t>(NFC_ISO7816_SW1_INS_NOT_SUPPORTED));
-    EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 1u],
+    EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 1u],
               static_cast<uint8_t>(NFC_ISO7816_SW2_SUCCESS));
   }
 }
@@ -1104,13 +1101,13 @@ TEST_F(ReaderCcidDispatchTest, Type4NdefSelectRelaysOnNonFidoType4Tag) {
   reader_ccid_utest_handle_bulk(frame.data(),
                                 static_cast<uint16_t>(frame.size()));
 
-  const std::span<const uint8_t> kRsp = LastCcidSend();
+  const std::span<const uint8_t> rsp = LastCcidSend();
   ASSERT_GE(reader_ccid_utest_last_send_len(), kSwPayloadEnd);
-  EXPECT_EQ(nfc_ccid_u32_load_le(&kRsp[1]),
+  EXPECT_EQ(nfc_ccid_u32_load_le(&rsp[1]),
             static_cast<uint32_t>(NFC_ISO7816_SW_LEN));
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET],
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET],
             static_cast<uint8_t>(NFC_ISO7816_SW1_SUCCESS));
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 1u],
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 1u],
             static_cast<uint8_t>(NFC_ISO7816_SW2_SUCCESS));
   EXPECT_GT(reader_security_key_utest_last_apdu_rsp_cap(), 0u);
 }
@@ -1128,41 +1125,41 @@ TEST_F(ReaderCcidDispatchTest, Type4NdefSelectBlockedOnConfirmedSecurityKey) {
   reader_ccid_utest_handle_bulk(frame.data(),
                                 static_cast<uint16_t>(frame.size()));
 
-  const std::span<const uint8_t> kRsp = LastCcidSend();
+  const std::span<const uint8_t> rsp = LastCcidSend();
   ASSERT_GE(reader_ccid_utest_last_send_len(), kSwPayloadEnd);
-  EXPECT_EQ(nfc_ccid_u32_load_le(&kRsp[1]),
+  EXPECT_EQ(nfc_ccid_u32_load_le(&rsp[1]),
             static_cast<uint32_t>(NFC_ISO7816_SW_LEN));
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET],
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET],
             static_cast<uint8_t>(NFC_ISO7816_SW1_CONDITIONS_NOT_SATISFIED));
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 1u],
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 1u],
             static_cast<uint8_t>(NFC_ISO7816_SW2_COMMAND_NOT_ALLOWED));
 }
 
 TEST_F(ReaderCcidDispatchTest, FailedFidoSelectDoesNotBlockNdefApplication) {
-  const std::array<uint8_t, NFC_ISO7816_SW_LEN> kFailure = {
+  const std::array<uint8_t, NFC_ISO7816_SW_LEN> failure = {
       static_cast<uint8_t>(NFC_ISO7816_SW1_GENERAL_ERROR),
       static_cast<uint8_t>(NFC_ISO7816_SW2_SUCCESS)};
   PowerOnStorageTag(READER_TAG_KIND_TYPE4);
   reader_security_key_utest_set_apdu_response(
-      kFailure.data(), static_cast<uint16_t>(kFailure.size()));
+      failure.data(), static_cast<uint16_t>(failure.size()));
 
   auto fido_select = MakeXfr(kTestLit0x75u, MakeSelectFidoAppApdu());
   reader_ccid_utest_handle_bulk(fido_select.data(),
                                 static_cast<uint16_t>(fido_select.size()));
 
-  const std::array<uint8_t, NFC_ISO7816_SW_LEN> kSuccess = {
+  const std::array<uint8_t, NFC_ISO7816_SW_LEN> success = {
       static_cast<uint8_t>(NFC_ISO7816_SW1_SUCCESS),
       static_cast<uint8_t>(NFC_ISO7816_SW2_SUCCESS)};
   reader_security_key_utest_set_apdu_response(
-      kSuccess.data(), static_cast<uint16_t>(kSuccess.size()));
+      success.data(), static_cast<uint16_t>(success.size()));
   auto ndef_select = MakeXfr(kTestLit0x76u, MakeSelectNdefAppApdu());
   reader_ccid_utest_handle_bulk(ndef_select.data(),
                                 static_cast<uint16_t>(ndef_select.size()));
 
-  const std::span<const uint8_t> kRsp = LastCcidSend();
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET],
+  const std::span<const uint8_t> rsp = LastCcidSend();
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET],
             static_cast<uint8_t>(NFC_ISO7816_SW1_SUCCESS));
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 1u],
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 1u],
             static_cast<uint8_t>(NFC_ISO7816_SW2_SUCCESS));
 }
 
@@ -1171,7 +1168,7 @@ TEST_F(ReaderCcidDispatchTest, Type2UpdateBinaryRejectsWriteRestrictedTag) {
   reader_tags_utest_set_type2_write_ok(true);
   PowerOnStorageTag(READER_TAG_KIND_TYPE2);
 
-  const std::vector<uint8_t> kUpdatePage4 = {
+  const std::vector<uint8_t> update_page4 = {
       static_cast<uint8_t>(NFC_ISO7816_CLA_PROPRIETARY),
       static_cast<uint8_t>(NFC_ISO7816_INS_UPDATE_BINARY),
       0x00u,
@@ -1182,17 +1179,17 @@ TEST_F(ReaderCcidDispatchTest, Type2UpdateBinaryRejectsWriteRestrictedTag) {
       0xCCu,
       0xDDu,
   };
-  auto frame = MakeXfr(kTestLit0x72u, kUpdatePage4);
+  auto frame = MakeXfr(kTestLit0x72u, update_page4);
   reader_ccid_utest_handle_bulk(frame.data(),
                                 static_cast<uint16_t>(frame.size()));
 
-  const std::span<const uint8_t> kRsp = LastCcidSend();
+  const std::span<const uint8_t> rsp = LastCcidSend();
   ASSERT_GE(reader_ccid_utest_last_send_len(), kSwPayloadEnd);
-  EXPECT_EQ(nfc_ccid_u32_load_le(&kRsp[1]),
+  EXPECT_EQ(nfc_ccid_u32_load_le(&rsp[1]),
             static_cast<uint32_t>(NFC_ISO7816_SW_LEN));
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET],
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET],
             static_cast<uint8_t>(NFC_ISO7816_SW1_CONDITIONS_NOT_SATISFIED));
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 1u],
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 1u],
             static_cast<uint8_t>(NFC_ISO7816_SW2_CONDITIONS_NOT_SATISFIED));
   EXPECT_EQ(reader_tags_utest_type2_write_count(), 0u);
 }
@@ -1202,7 +1199,7 @@ TEST_F(ReaderCcidDispatchTest, StorageUpdateBinarySendsTimeExtension) {
   reader_tags_utest_set_type2_write_ok(true);
   PowerOnStorageTag(READER_TAG_KIND_TYPE2);
 
-  const std::vector<uint8_t> kUpdatePage4 = {
+  const std::vector<uint8_t> update_page4 = {
       static_cast<uint8_t>(NFC_ISO7816_CLA_PROPRIETARY),
       static_cast<uint8_t>(NFC_ISO7816_INS_UPDATE_BINARY),
       0x00u,
@@ -1213,13 +1210,13 @@ TEST_F(ReaderCcidDispatchTest, StorageUpdateBinarySendsTimeExtension) {
       0xCCu,
       0xDDu,
   };
-  auto frame = MakeXfr(kTestLit0x72u, kUpdatePage4);
+  auto frame = MakeXfr(kTestLit0x72u, update_page4);
   reader_ccid_utest_handle_bulk(frame.data(),
                                 static_cast<uint16_t>(frame.size()));
 
   EXPECT_EQ(reader_hal_utest_ccid_time_extension_send_count(), 1u);
-  const std::span<const uint8_t> kRsp = LastCcidSend();
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET],
+  const std::span<const uint8_t> rsp = LastCcidSend();
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET],
             static_cast<uint8_t>(NFC_ISO7816_SW1_SUCCESS));
 }
 
@@ -1229,7 +1226,7 @@ TEST_F(ReaderCcidDispatchTest, Type2WriteStopsBetweenPagesOnAbort) {
   reader_tags_utest_abort_after_type2_writes(1u);
   PowerOnStorageTag(READER_TAG_KIND_TYPE2);
 
-  const std::vector<uint8_t> kUpdateTwoPages = {
+  const std::vector<uint8_t> update_two_pages = {
       static_cast<uint8_t>(NFC_ISO7816_CLA_PROPRIETARY),
       static_cast<uint8_t>(NFC_ISO7816_INS_UPDATE_BINARY),
       0x00u,
@@ -1244,15 +1241,15 @@ TEST_F(ReaderCcidDispatchTest, Type2WriteStopsBetweenPagesOnAbort) {
       0x07u,
       0x08u,
   };
-  auto frame = MakeXfr(0u, kUpdateTwoPages);
+  auto frame = MakeXfr(0u, update_two_pages);
   reader_ccid_utest_handle_bulk(frame.data(),
                                 static_cast<uint16_t>(frame.size()));
 
-  const std::span<const uint8_t> kRsp = LastCcidSend();
+  const std::span<const uint8_t> rsp = LastCcidSend();
   EXPECT_EQ(reader_tags_utest_type2_write_count(), 1u);
-  EXPECT_EQ(kRsp[0], NFC_CCID_MSG_RDR_TO_PC_DATABLOCK);
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_LEVEL_PARAM_OFFSET] & 0x40u, 0x40u);
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_LEVEL_PARAM2_OFFSET], 0xFFu);
+  EXPECT_EQ(rsp[0], NFC_CCID_MSG_RDR_TO_PC_DATABLOCK);
+  EXPECT_EQ(rsp[NFC_CCID_BULK_LEVEL_PARAM_OFFSET] & 0x40u, 0x40u);
+  EXPECT_EQ(rsp[NFC_CCID_BULK_LEVEL_PARAM2_OFFSET], 0xFFu);
 }
 
 TEST_F(ReaderCcidDispatchTest, Type2UpdateBinaryRejectsPagePastDataArea) {
@@ -1260,7 +1257,7 @@ TEST_F(ReaderCcidDispatchTest, Type2UpdateBinaryRejectsPagePastDataArea) {
   reader_tags_utest_set_type2_write_ok(true);
   PowerOnStorageTag(READER_TAG_KIND_TYPE2);
 
-  const std::vector<uint8_t> kUpdatePage20 = {
+  const std::vector<uint8_t> update_page20 = {
       static_cast<uint8_t>(NFC_ISO7816_CLA_PROPRIETARY),
       static_cast<uint8_t>(NFC_ISO7816_INS_UPDATE_BINARY),
       0x00u,
@@ -1271,17 +1268,17 @@ TEST_F(ReaderCcidDispatchTest, Type2UpdateBinaryRejectsPagePastDataArea) {
       0xCCu,
       0xDDu,
   };
-  auto frame = MakeXfr(kTestLit0x73u, kUpdatePage20);
+  auto frame = MakeXfr(kTestLit0x73u, update_page20);
   reader_ccid_utest_handle_bulk(frame.data(),
                                 static_cast<uint16_t>(frame.size()));
 
-  const std::span<const uint8_t> kRsp = LastCcidSend();
+  const std::span<const uint8_t> rsp = LastCcidSend();
   ASSERT_GE(reader_ccid_utest_last_send_len(), kSwPayloadEnd);
-  EXPECT_EQ(nfc_ccid_u32_load_le(&kRsp[1]),
+  EXPECT_EQ(nfc_ccid_u32_load_le(&rsp[1]),
             static_cast<uint32_t>(NFC_ISO7816_SW_LEN));
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET],
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET],
             static_cast<uint8_t>(NFC_ISO7816_SW1_WRONG_P1P2));
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 1u],
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 1u],
             static_cast<uint8_t>(NFC_ISO7816_SW2_SUCCESS));
   EXPECT_EQ(reader_tags_utest_type2_write_count(), 0u);
 }
@@ -1291,7 +1288,7 @@ TEST_F(ReaderCcidDispatchTest, Type2UpdateBinaryAcceptsAlignedMultiPageWrite) {
   reader_tags_utest_set_type2_write_ok(true);
   PowerOnStorageTag(READER_TAG_KIND_TYPE2);
 
-  const std::vector<uint8_t> kUpdatePages4And5 = {
+  const std::vector<uint8_t> update_pages4_and5 = {
       static_cast<uint8_t>(NFC_ISO7816_CLA_PROPRIETARY),
       static_cast<uint8_t>(NFC_ISO7816_INS_UPDATE_BINARY),
       0x00u,
@@ -1306,17 +1303,17 @@ TEST_F(ReaderCcidDispatchTest, Type2UpdateBinaryAcceptsAlignedMultiPageWrite) {
       0x33u,
       0x44u,
   };
-  auto frame = MakeXfr(kTestLit0x75u, kUpdatePages4And5);
+  auto frame = MakeXfr(kTestLit0x75u, update_pages4_and5);
   reader_ccid_utest_handle_bulk(frame.data(),
                                 static_cast<uint16_t>(frame.size()));
 
-  const std::span<const uint8_t> kRsp = LastCcidSend();
+  const std::span<const uint8_t> rsp = LastCcidSend();
   ASSERT_GE(reader_ccid_utest_last_send_len(), kSwPayloadEnd);
-  EXPECT_EQ(nfc_ccid_u32_load_le(&kRsp[1]),
+  EXPECT_EQ(nfc_ccid_u32_load_le(&rsp[1]),
             static_cast<uint32_t>(NFC_ISO7816_SW_LEN));
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET],
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET],
             static_cast<uint8_t>(NFC_ISO7816_SW1_SUCCESS));
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 1u],
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 1u],
             static_cast<uint8_t>(NFC_ISO7816_SW2_SUCCESS));
   EXPECT_EQ(reader_tags_utest_type2_write_count(), 2u);
 }
@@ -1326,24 +1323,24 @@ TEST_F(ReaderCcidDispatchTest, Type5ReadBinaryGenericByteOffsetMapsToBlock) {
                                    kTestLit81u, true, true);
   PowerOnStorageTag(READER_TAG_KIND_TYPE5);
 
-  const std::vector<uint8_t> kReadFromTlvStart = {
+  const std::vector<uint8_t> read_from_tlv_start = {
       static_cast<uint8_t>(NFC_ISO7816_CLA_PROPRIETARY),
       static_cast<uint8_t>(NFC_ISO7816_INS_READ_BINARY),
       0x00u,
       static_cast<uint8_t>(NFC_STORAGE_TYPE5_BLOCK_SIZE),
       0x08u,
   };
-  auto frame = MakeXfr(kTestLit0x77u, kReadFromTlvStart);
+  auto frame = MakeXfr(kTestLit0x77u, read_from_tlv_start);
   reader_ccid_utest_handle_bulk(frame.data(),
                                 static_cast<uint16_t>(frame.size()));
 
-  const std::span<const uint8_t> kRsp = LastCcidSend();
+  const std::span<const uint8_t> rsp = LastCcidSend();
   ASSERT_GE(reader_ccid_utest_last_send_len(),
             static_cast<uint16_t>(NFC_CCID_BULK_PAYLOAD_OFFSET + 10u));
-  EXPECT_EQ(nfc_ccid_u32_load_le(&kRsp[1]), 10u);
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 8u],
+  EXPECT_EQ(nfc_ccid_u32_load_le(&rsp[1]), 10u);
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 8u],
             static_cast<uint8_t>(NFC_ISO7816_SW1_SUCCESS));
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 9u],
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 9u],
             static_cast<uint8_t>(NFC_ISO7816_SW2_SUCCESS));
   EXPECT_EQ(reader_tags_utest_type5_read_count(), 1u);
   EXPECT_EQ(reader_tags_utest_type5_last_read_block(), 1u);
@@ -1357,7 +1354,7 @@ TEST_F(ReaderCcidDispatchTest, Type5UpdateBinaryAcceptsValidCcRefresh) {
   reader_tags_utest_set_type5_write_ok(true);
   PowerOnStorageTag(READER_TAG_KIND_TYPE5);
 
-  const std::vector<uint8_t> kUpdateBlock0 = {
+  const std::vector<uint8_t> update_block0 = {
       static_cast<uint8_t>(NFC_ISO7816_CLA_PROPRIETARY),
       static_cast<uint8_t>(NFC_ISO7816_INS_UPDATE_BINARY),
       static_cast<uint8_t>(NFC_ISO7816_READ_BINARY_P1_BLOCK_IN_P2),
@@ -1368,17 +1365,17 @@ TEST_F(ReaderCcidDispatchTest, Type5UpdateBinaryAcceptsValidCcRefresh) {
       0x10u,
       0x00u,
   };
-  auto frame = MakeXfr(kTestLit0x74u, kUpdateBlock0);
+  auto frame = MakeXfr(kTestLit0x74u, update_block0);
   reader_ccid_utest_handle_bulk(frame.data(),
                                 static_cast<uint16_t>(frame.size()));
 
-  const std::span<const uint8_t> kRsp = LastCcidSend();
+  const std::span<const uint8_t> rsp = LastCcidSend();
   ASSERT_GE(reader_ccid_utest_last_send_len(), kSwPayloadEnd);
-  EXPECT_EQ(nfc_ccid_u32_load_le(&kRsp[1]),
+  EXPECT_EQ(nfc_ccid_u32_load_le(&rsp[1]),
             static_cast<uint32_t>(NFC_ISO7816_SW_LEN));
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET],
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET],
             static_cast<uint8_t>(NFC_ISO7816_SW1_SUCCESS));
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 1u],
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 1u],
             static_cast<uint8_t>(NFC_ISO7816_SW2_SUCCESS));
   EXPECT_EQ(reader_tags_utest_type5_write_count(), 1u);
 }
@@ -1389,7 +1386,7 @@ TEST_F(ReaderCcidDispatchTest, Type5UpdateBinaryRejectsInvalidCcRefresh) {
   reader_tags_utest_set_type5_write_ok(true);
   PowerOnStorageTag(READER_TAG_KIND_TYPE5);
 
-  const std::vector<uint8_t> kUpdateBlock0 = {
+  const std::vector<uint8_t> update_block0 = {
       static_cast<uint8_t>(NFC_ISO7816_CLA_PROPRIETARY),
       static_cast<uint8_t>(NFC_ISO7816_INS_UPDATE_BINARY),
       static_cast<uint8_t>(NFC_ISO7816_READ_BINARY_P1_BLOCK_IN_P2),
@@ -1400,17 +1397,17 @@ TEST_F(ReaderCcidDispatchTest, Type5UpdateBinaryRejectsInvalidCcRefresh) {
       0xCCu,
       0xDDu,
   };
-  auto frame = MakeXfr(kTestLit0x75u, kUpdateBlock0);
+  auto frame = MakeXfr(kTestLit0x75u, update_block0);
   reader_ccid_utest_handle_bulk(frame.data(),
                                 static_cast<uint16_t>(frame.size()));
 
-  const std::span<const uint8_t> kRsp = LastCcidSend();
+  const std::span<const uint8_t> rsp = LastCcidSend();
   ASSERT_GE(reader_ccid_utest_last_send_len(), kSwPayloadEnd);
-  EXPECT_EQ(nfc_ccid_u32_load_le(&kRsp[1]),
+  EXPECT_EQ(nfc_ccid_u32_load_le(&rsp[1]),
             static_cast<uint32_t>(NFC_ISO7816_SW_LEN));
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET],
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET],
             static_cast<uint8_t>(NFC_ISO7816_SW1_WRONG_DATA));
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 1u],
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 1u],
             static_cast<uint8_t>(NFC_ISO7816_SW2_SUCCESS));
   EXPECT_EQ(reader_tags_utest_type5_write_count(), 0u);
 }
@@ -1422,7 +1419,7 @@ TEST_F(ReaderCcidDispatchTest, Type5WriteStopsBetweenBlocksOnAbort) {
   reader_tags_utest_abort_after_type5_writes(1u);
   PowerOnStorageTag(READER_TAG_KIND_TYPE5);
 
-  const std::vector<uint8_t> kUpdateTwoBlocks = {
+  const std::vector<uint8_t> update_two_blocks = {
       static_cast<uint8_t>(NFC_ISO7816_CLA_PROPRIETARY),
       static_cast<uint8_t>(NFC_ISO7816_INS_UPDATE_BINARY),
       static_cast<uint8_t>(NFC_ISO7816_READ_BINARY_P1_BLOCK_IN_P2),
@@ -1437,15 +1434,15 @@ TEST_F(ReaderCcidDispatchTest, Type5WriteStopsBetweenBlocksOnAbort) {
       0x07u,
       0x08u,
   };
-  auto frame = MakeXfr(0u, kUpdateTwoBlocks);
+  auto frame = MakeXfr(0u, update_two_blocks);
   reader_ccid_utest_handle_bulk(frame.data(),
                                 static_cast<uint16_t>(frame.size()));
 
-  const std::span<const uint8_t> kRsp = LastCcidSend();
+  const std::span<const uint8_t> rsp = LastCcidSend();
   EXPECT_EQ(reader_tags_utest_type5_write_count(), 1u);
-  EXPECT_EQ(kRsp[0], NFC_CCID_MSG_RDR_TO_PC_DATABLOCK);
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_LEVEL_PARAM_OFFSET] & 0x40u, 0x40u);
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_LEVEL_PARAM2_OFFSET], 0xFFu);
+  EXPECT_EQ(rsp[0], NFC_CCID_MSG_RDR_TO_PC_DATABLOCK);
+  EXPECT_EQ(rsp[NFC_CCID_BULK_LEVEL_PARAM_OFFSET] & 0x40u, 0x40u);
+  EXPECT_EQ(rsp[NFC_CCID_BULK_LEVEL_PARAM2_OFFSET], 0xFFu);
 }
 
 TEST_F(ReaderCcidDispatchTest, Type5UpdateBinaryAcceptsAlignedMultiBlockWrite) {
@@ -1454,7 +1451,7 @@ TEST_F(ReaderCcidDispatchTest, Type5UpdateBinaryAcceptsAlignedMultiBlockWrite) {
   reader_tags_utest_set_type5_write_ok(true);
   PowerOnStorageTag(READER_TAG_KIND_TYPE5);
 
-  const std::vector<uint8_t> kUpdateBlocks1And2 = {
+  const std::vector<uint8_t> update_blocks1_and2 = {
       static_cast<uint8_t>(NFC_ISO7816_CLA_PROPRIETARY),
       static_cast<uint8_t>(NFC_ISO7816_INS_UPDATE_BINARY),
       static_cast<uint8_t>(NFC_ISO7816_READ_BINARY_P1_BLOCK_IN_P2),
@@ -1469,17 +1466,17 @@ TEST_F(ReaderCcidDispatchTest, Type5UpdateBinaryAcceptsAlignedMultiBlockWrite) {
       0x33u,
       0x44u,
   };
-  auto frame = MakeXfr(kTestLit0x76u, kUpdateBlocks1And2);
+  auto frame = MakeXfr(kTestLit0x76u, update_blocks1_and2);
   reader_ccid_utest_handle_bulk(frame.data(),
                                 static_cast<uint16_t>(frame.size()));
 
-  const std::span<const uint8_t> kRsp = LastCcidSend();
+  const std::span<const uint8_t> rsp = LastCcidSend();
   ASSERT_GE(reader_ccid_utest_last_send_len(), kSwPayloadEnd);
-  EXPECT_EQ(nfc_ccid_u32_load_le(&kRsp[1]),
+  EXPECT_EQ(nfc_ccid_u32_load_le(&rsp[1]),
             static_cast<uint32_t>(NFC_ISO7816_SW_LEN));
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET],
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET],
             static_cast<uint8_t>(NFC_ISO7816_SW1_SUCCESS));
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 1u],
+  EXPECT_EQ(rsp[NFC_CCID_BULK_PAYLOAD_OFFSET + 1u],
             static_cast<uint8_t>(NFC_ISO7816_SW2_SUCCESS));
   EXPECT_EQ(reader_tags_utest_type5_write_count(), 2u);
 }
@@ -1522,9 +1519,9 @@ TEST_F(ReaderCcidDispatchTest, AbortDuringXfrReturnsCommandAborted) {
   frame[kTestLit13] = 0x00u;
   reader_ccid_utest_handle_bulk(frame.data(),
                                 static_cast<uint16_t>(frame.size()));
-  const std::span<const uint8_t> kRsp = LastCcidSend();
-  EXPECT_EQ(kRsp[0], NFC_CCID_MSG_RDR_TO_PC_DATABLOCK);
-  EXPECT_EQ(kRsp[8], 0xFFu);
+  const std::span<const uint8_t> rsp = LastCcidSend();
+  EXPECT_EQ(rsp[0], NFC_CCID_MSG_RDR_TO_PC_DATABLOCK);
+  EXPECT_EQ(rsp[8], 0xFFu);
 }
 
 TEST_F(ReaderCcidDispatchTest, AbortArrivingDuringXfrFailsOriginalCommand) {
@@ -1538,12 +1535,12 @@ TEST_F(ReaderCcidDispatchTest, AbortArrivingDuringXfrFailsOriginalCommand) {
   reader_ccid_utest_handle_bulk(frame.data(),
                                 static_cast<uint16_t>(frame.size()));
 
-  const std::span<const uint8_t> kRsp = LastCcidSend();
-  EXPECT_EQ(kRsp[0], NFC_CCID_MSG_RDR_TO_PC_DATABLOCK);
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_SEQ_OFFSET], 0u);
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_LEVEL_PARAM_OFFSET] & 0x40u, 0x40u);
-  EXPECT_EQ(kRsp[NFC_CCID_BULK_LEVEL_PARAM2_OFFSET], 0xFFu);
-  EXPECT_EQ(nfc_ccid_u32_load_le(&kRsp[1]), 0u);
+  const std::span<const uint8_t> rsp = LastCcidSend();
+  EXPECT_EQ(rsp[0], NFC_CCID_MSG_RDR_TO_PC_DATABLOCK);
+  EXPECT_EQ(rsp[NFC_CCID_BULK_SEQ_OFFSET], 0u);
+  EXPECT_EQ(rsp[NFC_CCID_BULK_LEVEL_PARAM_OFFSET] & 0x40u, 0x40u);
+  EXPECT_EQ(rsp[NFC_CCID_BULK_LEVEL_PARAM2_OFFSET], 0xFFu);
+  EXPECT_EQ(nfc_ccid_u32_load_le(&rsp[1]), 0u);
 }
 
 TEST_F(ReaderCcidDispatchTest, AbortClearsPendingCommandChain) {

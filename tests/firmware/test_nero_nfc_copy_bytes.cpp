@@ -75,9 +75,9 @@ TEST(NeroNfcCopyBytes, LengthOverflowFails) {
 
 TEST(NeroNfcCopyBytes, AppendsAtOffset) {
   uint8_t buf[kTestLit8] = {1, 1, 1, 1, 1, 1, 1, 1};
-  const uint8_t kSrc[] = {0xA0u, 0xB0u};
+  const uint8_t src[] = {0xA0u, 0xB0u};
   ASSERT_TRUE(
-      nero_nfc_copy_bytes(&buf[0], sizeof(buf), 3, &kSrc[0], sizeof(kSrc)));
+      nero_nfc_copy_bytes(&buf[0], sizeof(buf), 3, &src[0], sizeof(src)));
   EXPECT_EQ(buf[0], 1u);
   EXPECT_EQ(buf[3], 0xA0u);
   EXPECT_EQ(buf[4], 0xB0u);
@@ -87,8 +87,8 @@ TEST(NeroNfcCopyBytes, AppendsAtOffset) {
 TEST(NeroNfcCopyBytes, FillsUpToEndInclusive) {
   uint8_t buf[kTestLit4] = {kTestLit0x10u, kTestLit0x20u, kTestLit0x30u,
                             kTestLit0x40u};
-  const uint8_t kSrc[] = {0xEEu};
-  ASSERT_TRUE(nero_nfc_copy_bytes(&buf[0], sizeof(buf), 3, &kSrc[0], 1));
+  const uint8_t src[] = {0xEEu};
+  ASSERT_TRUE(nero_nfc_copy_bytes(&buf[0], sizeof(buf), 3, &src[0], 1));
   EXPECT_EQ(buf[3], 0xEEu);
 }
 
@@ -109,19 +109,18 @@ TEST(NeroNfcCopyBytes, CheckedArithmeticHelpersRejectWrap) {
 
 TEST(NeroNfcCopyBytes, BoundedStrlenRejectsUnterminatedInput) {
   size_t len = 0u;
-  const char kText[] = "pcsc-fido";
-  const char kNoNul[3] = {'a', 'b', 'c'};
+  const char text[] = "pcsc-fido";
+  const char no_nul[3] = {'a', 'b', 'c'};
 
-  ASSERT_TRUE(nero_nfc_bounded_strlen(&kText[0], sizeof(kText), &len));
+  ASSERT_TRUE(nero_nfc_bounded_strlen(&text[0], sizeof(text), &len));
   EXPECT_EQ(len, 9u);
   len = kTestLit0xBeeFu;
-  EXPECT_FALSE(nero_nfc_bounded_strlen(&kNoNul[0], sizeof(kNoNul), &len));
+  EXPECT_FALSE(nero_nfc_bounded_strlen(&no_nul[0], sizeof(no_nul), &len));
   EXPECT_EQ(len, 0u);
   len = kTestLit0xBeeFu;
-  EXPECT_FALSE(nero_nfc_bounded_strlen(NERO_NFC_NULL, sizeof(kNoNul), &len));
+  EXPECT_FALSE(nero_nfc_bounded_strlen(NERO_NFC_NULL, sizeof(no_nul), &len));
   EXPECT_EQ(len, 0u);
-  EXPECT_FALSE(
-      nero_nfc_bounded_strlen(&kText[0], sizeof(kText), NERO_NFC_NULL));
+  EXPECT_FALSE(nero_nfc_bounded_strlen(&text[0], sizeof(text), NERO_NFC_NULL));
 }
 
 TEST(NeroNfcCopyBytes, CopyCstrFailClosed) {
@@ -137,13 +136,13 @@ TEST(NeroNfcCopyBytes, CopyCstrFailClosed) {
 }
 
 TEST(NeroNfcCopyBytes, LoadU8RejectsOutOfRange) {
-  const uint8_t kBuf[] = {0x11u, 0x22u};
+  const uint8_t buf[] = {0x11u, 0x22u};
   uint8_t value = kTestLit0xFFu;
-  ASSERT_TRUE(nero_nfc_load_u8(&kBuf[0], sizeof(kBuf), 1u, &value));
+  ASSERT_TRUE(nero_nfc_load_u8(&buf[0], sizeof(buf), 1u, &value));
   EXPECT_EQ(value, 0x22u);
   value = kTestLit0xFFu;
-  EXPECT_FALSE(nero_nfc_load_u8(&kBuf[0], sizeof(kBuf), 2u, &value));
-  EXPECT_EQ(nero_nfc_u8_at(&kBuf[0], sizeof(kBuf), 2u), 0u);
+  EXPECT_FALSE(nero_nfc_load_u8(&buf[0], sizeof(buf), 2u, &value));
+  EXPECT_EQ(nero_nfc_u8_at(&buf[0], sizeof(buf), 2u), 0u);
 }
 
 #include "nero_nfc_format.h"

@@ -42,9 +42,11 @@ usage() {
 Reproduce CodeQL locally (mirrors .github/workflows/codeql.yml).
 
 Same shape as make ci-local: fresh isolated work tree + debian:sid-slim.
-No host CodeQL CLI/pack caches are mounted — CLI and packs download inside
-the container each run (GHA-cold). Live checkout build/ and third-party/ are
-untouched. SARIF is copied to build/codeql/results.sarif on success.
+CLI downloads into the work tree at build/codeql-cli/ (sibling of the traced
+CMake dirs and of build/codeql DB/SARIF). Packs download into the container
+$HOME (ephemeral). Live checkout build/ and third-party/ are untouched until
+SARIF is copied to build/codeql/results.sarif on success. make clean removes
+all of it.
 
 Usage:
   bash .github/scripts/run-codeql-locally.sh [options]
@@ -62,8 +64,15 @@ Environment:
   CODEQL_IMAGE             Container image (default: digest-pinned debian:sid-slim)
   CI_PLATFORM              Container platform (default: linux/amd64)
   CODEQL_INCLUDE_FIRMWARE  Set to 0 to skip traced make nfc (default: 1)
-  NERO_CI_LOCAL_WORK_ROOT  Isolated work tree (default: ~/.cache/nero-nfc-ci-local/work-codeql)
+  NERO_CI_LOCAL_WORK_ROOT  Isolated work tree (default: build/codeql-local-work)
   NERO_CI_LOCAL_KEEP_WORK  Set to 1 to keep the work tree after exit
+  CODEQL_CLI_VERSION       CodeQL CLI version (default: v2.26.3)
+
+Layout under the work tree (cleared by make clean):
+  build/codeql-cli/       CodeQL CLI zip + extract
+  build/codeql/           Database + SARIF
+  tests/build-codeql/     Traced host-test CMake tree (codeql-build.sh)
+  build/userspace-codeql/ Traced userspace CMake tree (codeql-build.sh)
 
 EOF
 }
@@ -137,7 +146,7 @@ _codeql_local_cleanup_worktree() {
   rm -rf "${root}"
 }
 
-_default_work="${XDG_CACHE_HOME:-${HOME}/.cache}/nero-nfc-ci-local/work-codeql"
+_default_work="${SOURCE_ROOT}/build/codeql-local-work"
 WORK_ROOT="${NERO_CI_LOCAL_WORK_ROOT:-${_default_work}}"
 # Fresh tree every run (rsync --exclude leaves prior third-party/ in place otherwise).
 rm -rf "${WORK_ROOT}"
@@ -152,9 +161,9 @@ printf '── codeql-local: fresh isolated work tree %s (live repo %s untouched
 CODEQL_IMAGE="${CODEQL_IMAGE:-debian:sid-slim@sha256:54f7a23f03be1e9fe2849c61a7455588ea29b84c1659440f8ece2aea4c9871af}"
 mkdir -p "${SOURCE_ROOT}/build/codeql"
 
-printf '\n── CodeQL: container %s (cold; no host CodeQL caches) ──\n' "${CODEQL_IMAGE}"
-# Only the isolated work tree is bind-mounted. CodeQL CLI + packs download inside
-# the container (ephemeral), matching a clean GHA runner.
+printf '\n── CodeQL: container %s (cold; CLI under work-tree build/codeql-cli) ──\n' "${CODEQL_IMAGE}"
+# Only the isolated work tree is bind-mounted. CLI lands in /src/build/codeql-cli;
+# packs stay in container $HOME (ephemeral), matching a clean GHA runner.
 # shellcheck disable=SC2016
 nero_nfc_run_bind_mount_container \
   -- \
@@ -164,10 +173,9 @@ nero_nfc_run_bind_mount_container \
   -e "FIRMWARE_ROOT=/src" \
   -e "HOST_UID=$(id -u)" \
   -e "HOST_GID=$(id -g)" \
-  -e "CODEQL_CACHE=/tmp/nero-nfc-codeql-cli" \
   -e "CODEQL_INCLUDE_FIRMWARE=${CODEQL_INCLUDE_FIRMWARE:-1}" \
   -e "CODEQL_FIRMWARE_TARGETS=${CODEQL_FIRMWARE_TARGETS:-}" \
-  -e "CODEQL_CLI_VERSION=${CODEQL_CLI_VERSION:-}" \
+  -e "CODEQL_CLI_VERSION=${CODEQL_CLI_VERSION:-v2.26.3}" \
   -e "CODEQL_SUITE_FILE=${CODEQL_SUITE_FILE:-}" \
   -e "CODEQL_PACK_SCOPE=${CODEQL_PACK_SCOPE:-}" \
   -e "CODEQL_SUMMARIZE_SARIF=${SUMMARIZE_SARIF}" \
@@ -183,7 +191,7 @@ nero_nfc_run_bind_mount_container \
 if [[ -d ${FIRMWARE_ROOT}/build/codeql ]]; then
   mkdir -p "${SOURCE_ROOT}/build/codeql"
   cp -a "${FIRMWARE_ROOT}/build/codeql/." "${SOURCE_ROOT}/build/codeql/"
-  printf '── codeql-local: copied results → %s/build/codeql/ ──\n' "${SOURCE_ROOT}" >&2
+  printf '── codeql-local: copied results -> %s/build/codeql/ ──\n' "${SOURCE_ROOT}" >&2
 fi
 
 SARIF_PATH="${SOURCE_ROOT}/build/codeql/results.sarif"

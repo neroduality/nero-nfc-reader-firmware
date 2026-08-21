@@ -160,16 +160,16 @@ TEST(NfcCcidFrame, U32HelpersIgnoreNullBuffers) {
 }
 
 TEST(NfcCcidFrame, ValidatesBulkFrameLength) {
-  uint8_t frame[kTestLit20] = {NFC_CCID_MSG_PC_TO_RDR_XFR,
-                               kTestLit0x04u,
-                               0x00u,
-                               0x00u,
-                               0x00u,
-                               0x00u,
-                               kTestLit0x07u,
-                               0x00u,
-                               0x00u,
-                               0x00u};
+  uint8_t const frame[kTestLit20] = {NFC_CCID_MSG_PC_TO_RDR_XFR,
+                                     kTestLit0x04u,
+                                     0x00u,
+                                     0x00u,
+                                     0x00u,
+                                     0x00u,
+                                     kTestLit0x07u,
+                                     0x00u,
+                                     0x00u,
+                                     0x00u};
   uint32_t data_len = 0;
 
   ASSERT_TRUE(nfc_ccid_bulk_frame_validate(&frame[0], 14u, &data_len));
@@ -177,37 +177,37 @@ TEST(NfcCcidFrame, ValidatesBulkFrameLength) {
 }
 
 TEST(NfcCcidFrame, RejectsOversizedBulkPayload) {
-  uint8_t frame[kTestLit16] = {NFC_CCID_MSG_PC_TO_RDR_XFR,
-                               kTestLit0x03u,
-                               kTestLit0x08u,
-                               0x00u,
-                               0x00u,
-                               0x00u,
-                               0x01u,
-                               0x00u,
-                               0x00u,
-                               0x00u};
+  uint8_t const frame[kTestLit16] = {NFC_CCID_MSG_PC_TO_RDR_XFR,
+                                     kTestLit0x03u,
+                                     kTestLit0x08u,
+                                     0x00u,
+                                     0x00u,
+                                     0x00u,
+                                     0x01u,
+                                     0x00u,
+                                     0x00u,
+                                     0x00u};
   EXPECT_FALSE(
       nfc_ccid_bulk_frame_validate(&frame[0], sizeof(frame), NERO_NFC_NULL));
 }
 
 TEST(NfcCcidFrame, RejectsTruncatedBulkFrame) {
-  uint8_t frame[kTestLit12] = {NFC_CCID_MSG_PC_TO_RDR_XFR,
-                               kTestLit0x08u,
-                               0x00u,
-                               0x00u,
-                               0x00u,
-                               0x00u,
-                               kTestLit0x02u,
-                               0x00u,
-                               0x00u,
-                               0x00u};
+  uint8_t const frame[kTestLit12] = {NFC_CCID_MSG_PC_TO_RDR_XFR,
+                                     kTestLit0x08u,
+                                     0x00u,
+                                     0x00u,
+                                     0x00u,
+                                     0x00u,
+                                     kTestLit0x02u,
+                                     0x00u,
+                                     0x00u,
+                                     0x00u};
   EXPECT_FALSE(
       nfc_ccid_bulk_frame_validate(&frame[0], sizeof(frame), NERO_NFC_NULL));
 }
 
 TEST(NfcCcidFrame, ClearsDataLengthOnInvalidBulkFrame) {
-  uint8_t frame[NFC_CCID_BULK_HEADER_LEN - 1u]{};
+  uint8_t const frame[NFC_CCID_BULK_HEADER_LEN - 1u]{};
   uint32_t data_len = kTestLit0xA5A5A5A5u;
 
   EXPECT_FALSE(
@@ -216,22 +216,22 @@ TEST(NfcCcidFrame, ClearsDataLengthOnInvalidBulkFrame) {
 }
 
 TEST(NfcCcidFrame, RejectsTrailingBulkBytesBeyondDwLength) {
-  uint8_t frame[kTestLit12] = {NFC_CCID_MSG_PC_TO_RDR_XFR,
-                               0x00u,
-                               0x00u,
-                               0x00u,
-                               0x00u,
-                               0x00u,
-                               kTestLit0x02u,
-                               0x00u,
-                               0x00u,
-                               0x00u};
+  uint8_t const frame[kTestLit12] = {NFC_CCID_MSG_PC_TO_RDR_XFR,
+                                     0x00u,
+                                     0x00u,
+                                     0x00u,
+                                     0x00u,
+                                     0x00u,
+                                     kTestLit0x02u,
+                                     0x00u,
+                                     0x00u,
+                                     0x00u};
   EXPECT_FALSE(
       nfc_ccid_bulk_frame_validate(&frame[0], sizeof(frame), NERO_NFC_NULL));
 }
 
 TEST(NfcCcidFrame, RejectsShortBulkHeader) {
-  uint8_t frame[NFC_CCID_BULK_HEADER_LEN - 1u]{};
+  uint8_t const frame[NFC_CCID_BULK_HEADER_LEN - 1u]{};
   EXPECT_FALSE(
       nfc_ccid_bulk_frame_validate(&frame[0], sizeof(frame), NERO_NFC_NULL));
 }
@@ -319,7 +319,7 @@ TEST(NfcCcidFrame, EncodesSpecCcidTimeExtensionDataBlock) {
 }
 
 TEST(NfcCcidFrame, XfrTimeExtensionPolicyMatchesWebAuthnFidoFlow) {
-  const uint8_t kCbor[] = {0xA1u, 0x01u, 0x02u};
+  const uint8_t cbor[] = {0xA1u, 0x01u, 0x02u};
   uint8_t apdu[kCtapSelectApduScratchCap]{};
   uint16_t apdu_len = 0;
 
@@ -327,13 +327,13 @@ TEST(NfcCcidFrame, XfrTimeExtensionPolicyMatchesWebAuthnFidoFlow) {
       nfc_ctap_pack_select_fido_apdu(true, &apdu[0], sizeof(apdu), &apdu_len));
   EXPECT_TRUE(nfc_ccid_xfr_payload_needs_time_extension(&apdu[0], apdu_len));
 
-  ASSERT_TRUE(nfc_ctap_pack_cbor_apdu(NFC_CTAP_CMD_GET_INFO, &kCbor[0], 1u,
+  ASSERT_TRUE(nfc_ctap_pack_cbor_apdu(NFC_CTAP_CMD_GET_INFO, &cbor[0], 1u,
                                       false, &apdu[0], sizeof(apdu),
                                       &apdu_len));
   EXPECT_FALSE(nfc_ccid_xfr_payload_needs_time_extension(&apdu[0], apdu_len));
 
-  ASSERT_TRUE(nfc_ctap_pack_cbor_apdu(NFC_CTAP_CMD_CLIENT_PIN, &kCbor[0],
-                                      sizeof(kCbor), false, &apdu[0],
+  ASSERT_TRUE(nfc_ctap_pack_cbor_apdu(NFC_CTAP_CMD_CLIENT_PIN, &cbor[0],
+                                      sizeof(cbor), false, &apdu[0],
                                       sizeof(apdu), &apdu_len));
   EXPECT_TRUE(nfc_ccid_xfr_payload_needs_time_extension(&apdu[0], apdu_len));
 
@@ -346,13 +346,13 @@ TEST(NfcCcidFrame, XfrTimeExtensionPolicyMatchesWebAuthnFidoFlow) {
                                       sizeof(apdu), &apdu_len));
   EXPECT_TRUE(nfc_ccid_xfr_payload_needs_time_extension(&apdu[0], apdu_len));
 
-  ASSERT_TRUE(nfc_ctap_pack_cbor_apdu(NFC_CTAP_CMD_MAKE_CREDENTIAL, &kCbor[0],
-                                      sizeof(kCbor), false, &apdu[0],
+  ASSERT_TRUE(nfc_ctap_pack_cbor_apdu(NFC_CTAP_CMD_MAKE_CREDENTIAL, &cbor[0],
+                                      sizeof(cbor), false, &apdu[0],
                                       sizeof(apdu), &apdu_len));
   EXPECT_TRUE(nfc_ccid_xfr_payload_needs_time_extension(&apdu[0], apdu_len));
 
-  ASSERT_TRUE(nfc_ctap_pack_cbor_apdu(NFC_CTAP_CMD_GET_ASSERTION, &kCbor[0],
-                                      sizeof(kCbor), false, &apdu[0],
+  ASSERT_TRUE(nfc_ctap_pack_cbor_apdu(NFC_CTAP_CMD_GET_ASSERTION, &cbor[0],
+                                      sizeof(cbor), false, &apdu[0],
                                       sizeof(apdu), &apdu_len));
   EXPECT_TRUE(nfc_ccid_xfr_payload_needs_time_extension(&apdu[0], apdu_len));
 }

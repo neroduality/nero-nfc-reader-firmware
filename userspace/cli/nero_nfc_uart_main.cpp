@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// nero_nfc_uart — host-side UART bridge for Nero NFC firmware.
+// nero_nfc_uart -- host-side UART bridge for Nero NFC firmware.
 //
 // Auto-detect order matches make flash-cdc (see PORT env).
 //
@@ -71,7 +71,7 @@ enum class Mode : std::uint8_t {
 }  // namespace
 
 int main(int argc, char** argv) {
-  const auto kArgs = std::span(argv, static_cast<std::size_t>(argc));
+  const auto args = std::span(argv, static_cast<std::size_t>(argc));
   static constexpr std::array<struct option, kLongOptCount> kLongOpts{{
       {.name = "port",
        .has_arg = required_argument,
@@ -143,15 +143,15 @@ int main(int argc, char** argv) {
         command = optarg;
         break;
       case 'h':
-        Usage(kArgs[0]);
+        Usage(args[0]);
         return nero_nfc::kCliExitSuccess;
       default:
-        Usage(kArgs[0]);
+        Usage(args[0]);
         return nero_nfc::kCliExitUsageError;
     }
   }
-  for (auto i = static_cast<std::size_t>(optind); i < kArgs.size(); ++i) {
-    extra_args.emplace_back(kArgs[i]);
+  for (auto i = static_cast<std::size_t>(optind); i < args.size(); ++i) {
+    extra_args.emplace_back(args[i]);
   }
 
   switch (mode) {

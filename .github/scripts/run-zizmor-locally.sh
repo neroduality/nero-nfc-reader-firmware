@@ -38,7 +38,7 @@ Run zizmor locally against this repository's GitHub workflow and action files.
 Uses `zizmor` on PATH when available unless `--container` is set. Otherwise runs the official
 container image (Docker or Podman).
 
-Requires: zizmor — or docker/podman for `--container` / auto fallback.
+Requires: zizmor -- or docker/podman for `--container` / auto fallback.
 
 Usage:
   bash /path/to/repo/.github/scripts/run-zizmor-locally.sh [script-options] [zizmor-args...]

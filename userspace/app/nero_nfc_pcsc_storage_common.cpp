@@ -54,17 +54,17 @@ bool ExtractNdefFromTlvArea(const std::vector<std::uint8_t>& tlv_area,
                             std::uint16_t start_offset, PcscTagSnapshot& tag,
                             std::string& err) {
   nfc_ndef_tlv_t tlv{};
-  nfc_ndef_tlv_status_t const kStatus = nfc_ndef_find_message_tlv(
+  nfc_ndef_tlv_status_t const status = nfc_ndef_find_message_tlv(
       tlv_area.data(), static_cast<std::uint16_t>(tlv_area.size()),
       start_offset, &tlv);
-  if (kStatus == NFC_NDEF_TLV_NOT_FOUND) {
+  if (status == NFC_NDEF_TLV_NOT_FOUND) {
     tag.ndef_message_.clear();
     tag.records_.clear();
     err.clear();
     return true;
   }
-  if (kStatus != NFC_NDEF_TLV_OK) {
-    err = std::string("NDEF TLV ") + TlvStatusName(kStatus);
+  if (status != NFC_NDEF_TLV_OK) {
+    err = std::string("NDEF TLV ") + TlvStatusName(status);
     return false;
   }
   tag.ndef_message_.assign(
@@ -232,7 +232,9 @@ bool StorageReadBinary(PcscCard& card, std::uint16_t unit, std::uint8_t len,
       static_cast<std::uint8_t>(unit & NFC_BYTE_VALUE_MAX), len, data, err);
 }
 
-static bool Type5BlockByteOffset(std::uint16_t block, std::uint16_t& offset) {
+namespace {
+
+bool Type5BlockByteOffset(std::uint16_t block, std::uint16_t& offset) {
   if (block > (std::numeric_limits<std::uint16_t>::max() /
                NFC_STORAGE_TYPE5_BLOCK_SIZE)) {
     offset = 0u;
@@ -241,6 +243,8 @@ static bool Type5BlockByteOffset(std::uint16_t block, std::uint16_t& offset) {
   offset = static_cast<std::uint16_t>(block * NFC_STORAGE_TYPE5_BLOCK_SIZE);
   return true;
 }
+
+}  // namespace
 
 bool Type5StorageReadBinary(PcscCard& card, std::uint16_t block,
                             std::uint8_t len, std::vector<std::uint8_t>& data,
@@ -364,48 +368,47 @@ bool StorageWriteUnitsWithIo(PcscCard& card,
     err = "storage write image exceeds addressable unit range";
     return false;
   }
-  const auto kUnits = static_cast<std::uint16_t>(
+  const auto units = static_cast<std::uint16_t>(
       (bytes.size() + static_cast<std::size_t>(unit_size) - 1u) /
       static_cast<std::size_t>(unit_size));
-  if (kUnits != 0u &&
+  if (units != 0u &&
       (static_cast<std::uint32_t>(first_unit) +
-           static_cast<std::uint32_t>(kUnits) >
+           static_cast<std::uint32_t>(units) >
        (static_cast<std::uint32_t>(std::numeric_limits<std::uint16_t>::max()) +
         1u))) {
     err = "storage write crosses addressable unit range";
     return false;
   }
-  const std::uint16_t kMaxUnitsPerApdu = std::max<std::uint16_t>(
+  const std::uint16_t max_units_per_apdu = std::max<std::uint16_t>(
       1u, static_cast<std::uint16_t>(kStorageWriteApduDataMax / unit_size));
-  for (std::uint16_t unit_index = 0u; unit_index < kUnits;) {
-    const auto kOff = static_cast<std::size_t>(unit_index) *
-                      static_cast<std::size_t>(unit_size);
-    const auto kRemainingUnits =
-        static_cast<std::uint16_t>(kUnits - unit_index);
+  for (std::uint16_t unit_index = 0u; unit_index < units;) {
+    const auto off = static_cast<std::size_t>(unit_index) *
+                     static_cast<std::size_t>(unit_size);
+    const auto remaining_units = static_cast<std::uint16_t>(units - unit_index);
     std::uint16_t chunk_units =
-        std::min<std::uint16_t>(kRemainingUnits, kMaxUnitsPerApdu);
-    const auto kUnit = static_cast<std::uint16_t>(first_unit + unit_index);
+        std::min<std::uint16_t>(remaining_units, max_units_per_apdu);
+    const auto unit = static_cast<std::uint16_t>(first_unit + unit_index);
     auto make_chunk = [&](std::uint16_t chunk_unit_count) {
       std::vector<std::uint8_t> chunk(
           static_cast<std::size_t>(chunk_unit_count) * unit_size, 0u);
-      const auto kLeft = static_cast<std::uint16_t>(bytes.size() - kOff);
-      const auto kChunkLen = std::min<std::uint16_t>(
-          static_cast<std::uint16_t>(chunk.size()), kLeft);
-      std::ranges::copy_n(bytes.begin() + static_cast<std::ptrdiff_t>(kOff),
-                          kChunkLen, chunk.begin());
+      const auto left = static_cast<std::uint16_t>(bytes.size() - off);
+      const auto chunk_len = std::min<std::uint16_t>(
+          static_cast<std::uint16_t>(chunk.size()), left);
+      std::ranges::copy_n(bytes.begin() + static_cast<std::ptrdiff_t>(off),
+                          chunk_len, chunk.begin());
       return chunk;
     };
 
     if (chunk_units > 1u) {
-      std::vector<std::uint8_t> chunk = make_chunk(chunk_units);
-      if (write_unit(card, uid, kUnit, chunk, err)) {
+      std::vector<std::uint8_t> const chunk = make_chunk(chunk_units);
+      if (write_unit(card, uid, unit, chunk, err)) {
         unit_index = static_cast<std::uint16_t>(unit_index + chunk_units);
         continue;
       }
     }
     chunk_units = 1u;
-    std::vector<std::uint8_t> chunk = make_chunk(chunk_units);
-    if (!write_unit(card, uid, kUnit, chunk, err)) {
+    std::vector<std::uint8_t> const chunk = make_chunk(chunk_units);
+    if (!write_unit(card, uid, unit, chunk, err)) {
       return false;
     }
     unit_index = static_cast<std::uint16_t>(unit_index + chunk_units);

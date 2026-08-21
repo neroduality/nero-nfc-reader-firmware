@@ -34,9 +34,8 @@ class NeroNfcReaderAppFixture : public ::testing::Test {
   void BindReaderApp() {
     nero_nfc_platform_host_fake_reset();
     nero_nfc_board_config_defaults(&board_);
-    const nero_nfc_platform_ops_t kOps = nero_nfc_platform_host_fake_ops();
-    app_ =
-        nero_nfc_app_init(&storage_, &kOps, &board_, NERO_NFC_PRODUCT_READER);
+    const nero_nfc_platform_ops_t ops = nero_nfc_platform_host_fake_ops();
+    app_ = nero_nfc_app_init(&storage_, &ops, &board_, NERO_NFC_PRODUCT_READER);
     ASSERT_NE(app_, NERO_NFC_NULL);
     ASSERT_TRUE(nero_nfc_app_bind_active(app_));
     ASSERT_NE(reader_context_active(), NERO_NFC_NULL);

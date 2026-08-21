@@ -15,7 +15,7 @@
 # limitations under the License.
 
 # Fast local checks aligned with make lint (subset only).
-# Arduino .ino files are formatted in full lint — not duplicated here.
+# Arduino .ino files are formatted in full lint -- not duplicated here.
 #
 #   pip install pre-commit
 #   pre-commit install

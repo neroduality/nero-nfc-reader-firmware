@@ -15,7 +15,7 @@
 // limitations under the License.
 
 /*
- * reader_tags_type5.c — ISO15693 Type 5 tag read path.
+ * reader_tags_type5.c -- ISO15693 Type 5 tag read path.
  */
 
 #include "nero_nfc_null.h"
@@ -75,8 +75,8 @@ bool reader_tags_iso15693_inventory_step_impl(void) {
 
 /*
  * Reads a single user-memory block across Type 5 ICs we support.
- * [T5T-ISO15693-ST25TV] DS13304 section 6.4.3 — ReadSingleBlock (opcode 0x20,
- * 1-byte address). [T5T-ISO15693-ST25DV] DS13519 section 7.6.6 — Read Single
+ * [T5T-ISO15693-ST25TV] DS13304 section 6.4.3 -- ReadSingleBlock (opcode 0x20,
+ * 1-byte address). [T5T-ISO15693-ST25DV] DS13519 section 7.6.6 -- Read Single
  * Block accepts 0x20 for blocks 0..0xFF; extended 0x30 form is used above
  * NFC_TAG_T5T_ISO15693_BLOCK_ADDR_1BYTE_MAX.
  */
@@ -89,7 +89,7 @@ int reader_tags_iso15693_user_read(uint16_t block, uint8_t* buf,
     if (r >= 0) {
       return r;
     }
-    /* Fall through to extended form on tags that only honour 0x30 — rare,
+    /* Fall through to extended form on tags that only honour 0x30 -- rare,
      * but keeps us robust against future ST25DV* memory configurations. */
   }
   return nfc_frontend_iso15693_ext_read_block(

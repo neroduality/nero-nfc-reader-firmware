@@ -27,7 +27,7 @@ extern "C" {
 #include <stddef.h>
 #include <stdint.h>
 
-/* USB CCID Rev 1.10 — bulk command classification and failure response
+/* USB CCID Rev 1.10 -- bulk command classification and failure response
  * encoding. */
 
 static inline uint8_t reader_ccid_response_msg_for_bulk_command(

@@ -64,8 +64,8 @@ TEST(ParseHostBridge, AcceptsCanonicalNamesOnly) {
 }
 
 TEST_F(UserspaceBridgeTest, AutoPrefersPcscWhenBothBridgesArePresent) {
-  std::vector<std::string> serial_ports = {"/dev/ttyACM1"};
-  std::vector<std::string> pcsc_readers = {"Nero NFC PCSC Reader"};
+  std::vector<std::string> const serial_ports = {"/dev/ttyACM1"};
+  std::vector<std::string> const pcsc_readers = {"Nero NFC PCSC Reader"};
   nero_nfc::NeroNfcUtestSetFindSerialPortsOverride(&serial_ports);
   nero_nfc::NeroNfcUtestSetListPcscReadersOverride(&pcsc_readers);
 
@@ -77,8 +77,8 @@ TEST_F(UserspaceBridgeTest, AutoPrefersPcscWhenBothBridgesArePresent) {
 }
 
 TEST_F(UserspaceBridgeTest, AutoFallsBackToSerialWhenPcscMissing) {
-  std::vector<std::string> serial_ports = {"/dev/ttyACM1"};
-  std::vector<std::string> no_pcsc_readers;
+  std::vector<std::string> const serial_ports = {"/dev/ttyACM1"};
+  std::vector<std::string> const no_pcsc_readers;
   nero_nfc::NeroNfcUtestSetFindSerialPortsOverride(&serial_ports);
   nero_nfc::NeroNfcUtestSetListPcscReadersOverride(&no_pcsc_readers);
 
@@ -90,8 +90,8 @@ TEST_F(UserspaceBridgeTest, AutoFallsBackToSerialWhenPcscMissing) {
 }
 
 TEST_F(UserspaceBridgeTest, AutoFallsBackToPcsc) {
-  std::vector<std::string> no_serial_ports;
-  std::vector<std::string> pcsc_readers = {"Nero NFC PCSC Reader"};
+  std::vector<std::string> const no_serial_ports;
+  std::vector<std::string> const pcsc_readers = {"Nero NFC PCSC Reader"};
   nero_nfc::NeroNfcUtestSetFindSerialPortsOverride(&no_serial_ports);
   nero_nfc::NeroNfcUtestSetListPcscReadersOverride(&pcsc_readers);
 
@@ -103,8 +103,8 @@ TEST_F(UserspaceBridgeTest, AutoFallsBackToPcsc) {
 }
 
 TEST_F(UserspaceBridgeTest, AutoPcscAllowsMultipleReadersForPresenceSelection) {
-  std::vector<std::string> no_serial_ports;
-  std::vector<std::string> pcsc_readers = {
+  std::vector<std::string> const no_serial_ports;
+  std::vector<std::string> const pcsc_readers = {
       "HID Global OMNIKEY 5422 Smartcard Reader 00 00", "Nero NFC PCSC Reader"};
   nero_nfc::NeroNfcUtestSetFindSerialPortsOverride(&no_serial_ports);
   nero_nfc::NeroNfcUtestSetListPcscReadersOverride(&pcsc_readers);
@@ -117,8 +117,8 @@ TEST_F(UserspaceBridgeTest, AutoPcscAllowsMultipleReadersForPresenceSelection) {
 }
 
 TEST_F(UserspaceBridgeTest, ExplicitPcscReaderMakesPcscSelection) {
-  std::vector<std::string> serial_ports = {"/dev/ttyACM1"};
-  std::vector<std::string> pcsc_readers = {"Nero NFC PCSC Reader"};
+  std::vector<std::string> const serial_ports = {"/dev/ttyACM1"};
+  std::vector<std::string> const pcsc_readers = {"Nero NFC PCSC Reader"};
   nero_nfc::NeroNfcUtestSetFindSerialPortsOverride(&serial_ports);
   nero_nfc::NeroNfcUtestSetListPcscReadersOverride(&pcsc_readers);
 
@@ -131,8 +131,8 @@ TEST_F(UserspaceBridgeTest, ExplicitPcscReaderMakesPcscSelection) {
 }
 
 TEST_F(UserspaceBridgeTest, EnvPcscReaderMakesPcscSelection) {
-  std::vector<std::string> serial_ports = {"/dev/ttyACM1"};
-  std::vector<std::string> pcsc_readers = {"Nero NFC PCSC Reader"};
+  std::vector<std::string> const serial_ports = {"/dev/ttyACM1"};
+  std::vector<std::string> const pcsc_readers = {"Nero NFC PCSC Reader"};
   nero_nfc::NeroNfcUtestSetFindSerialPortsOverride(&serial_ports);
   nero_nfc::NeroNfcUtestSetListPcscReadersOverride(&pcsc_readers);
   SetPcscReaderEnv("pcsc");
@@ -161,8 +161,8 @@ TEST_F(UserspaceBridgeTest, RejectsConflictingTransportSpecificOptions) {
 }
 
 TEST_F(UserspaceBridgeTest, ExplicitPcscGetsCompatibilityHintWithoutReader) {
-  std::vector<std::string> no_serial_ports;
-  std::vector<std::string> no_pcsc_readers;
+  std::vector<std::string> const no_serial_ports;
+  std::vector<std::string> const no_pcsc_readers;
   nero_nfc::NeroNfcUtestSetFindSerialPortsOverride(&no_serial_ports);
   nero_nfc::NeroNfcUtestSetListPcscReadersOverride(&no_pcsc_readers);
 

@@ -17,7 +17,7 @@
 #pragma once
 
 /*
- * nfc_byte_tutorial.h — byte-level annotated dumps for the serial (CDC)
+ * nfc_byte_tutorial.h -- byte-level annotated dumps for the serial (CDC)
  * console.
  *
  * These helpers print each protocol byte next to its meaning so an operator can
@@ -103,7 +103,7 @@ static inline void nfc_tutorial_print_area_bytes(nero_nfc_emit_fn_t emit,
 /* --- NFC Forum Type 2 (T2T) --- */
 
 /* CC at page NFC_TAG_T2T_CC_PAGE_INDEX. [T2T-ISO14443-A] Type 2 Tag Op Spec
- * 1.1 §6.1 — E1h magic, MLEN, RWA. */
+ * 1.1 §6.1 -- E1h magic, MLEN, RWA. */
 static inline void nfc_tutorial_t2t_cc(nero_nfc_emit_fn_t emit,
                                        const uint8_t* cc) {
   if ((emit == NERO_NFC_NULL) || (cc == NERO_NFC_NULL)) {
@@ -168,7 +168,7 @@ static inline void nfc_tutorial_t2t_cc(nero_nfc_emit_fn_t emit,
   nero_nfc_emit_write(emit, "  (T2T Op Spec 1.1 §6.1 RWA)\r\n");
 }
 
-/* [T2T-ISO14443-A-NTAG21x] section 10.2 / [T2T-ISO14443-A] section 5.1 — READ
+/* [T2T-ISO14443-A-NTAG21x] section 10.2 / [T2T-ISO14443-A] section 5.1 -- READ
  * (30h) returns NFC_TAG_T2T_READ_RESP_BYTES.
  */
 static inline void nfc_tutorial_t2t_read_cmd(nero_nfc_emit_fn_t emit,
@@ -201,7 +201,7 @@ static inline void nfc_tutorial_t2t_fast_read_cmd(nero_nfc_emit_fn_t emit,
                          "last page address");
 }
 
-/* [T2T-ISO14443-A-NTAG21x] section 10.4 / [T2T-ISO14443-A] section 5.2 — WRITE
+/* [T2T-ISO14443-A-NTAG21x] section 10.4 / [T2T-ISO14443-A] section 5.2 -- WRITE
  * (A2h) one NFC_TAG_T2T_PAGE_SIZE_BYTES page. */
 static inline void nfc_tutorial_t2t_write_cmd(nero_nfc_emit_fn_t emit,
                                               uint8_t page,
@@ -227,7 +227,7 @@ static inline void nfc_tutorial_t2t_write_cmd(nero_nfc_emit_fn_t emit,
 
 /* --- NFC Forum Type 5 (T5T) / ISO 15693 --- */
 
-/* CC at block 0. [T5T-ISO15693] section 4.3.1 — magic E1h/E2h, version+access,
+/* CC at block 0. [T5T-ISO15693] section 4.3.1 -- magic E1h/E2h, version+access,
  * MLEN. */
 static inline void nfc_tutorial_t5t_cc(nero_nfc_emit_fn_t emit,
                                        const uint8_t* cc_block,
@@ -321,7 +321,7 @@ static inline void nfc_tutorial_t5t_cc(nero_nfc_emit_fn_t emit,
   }
 }
 
-/* [T5T-ISO15693] section 10.3 — ReadSingleBlock (20h), addressed mode. */
+/* [T5T-ISO15693] section 10.3 -- ReadSingleBlock (20h), addressed mode. */
 static inline void nfc_tutorial_t5t_read_cmd(nero_nfc_emit_fn_t emit,
                                              const uint8_t* uid_lsb,
                                              uint8_t block) {
@@ -369,7 +369,7 @@ static inline void nfc_tutorial_t5t_read_multiple_cmd(nero_nfc_emit_fn_t emit,
   nero_nfc_emit_write(emit, " (command carries count minus one)\r\n");
 }
 
-/* [T5T-ISO15693] section 10.3.2 — WriteSingleBlock (21h), addressed mode. */
+/* [T5T-ISO15693] section 10.3.2 -- WriteSingleBlock (21h), addressed mode. */
 static inline void nfc_tutorial_t5t_write_cmd(nero_nfc_emit_fn_t emit,
                                               const uint8_t* uid_lsb,
                                               uint8_t block,
@@ -439,7 +439,7 @@ static inline void nfc_tutorial_t4t_select_file(nero_nfc_emit_fn_t emit,
                        NFC_TUTORIAL_U16_FIELD_LEN);
 }
 
-/* [T4T-ISO14443-4] section 7.5.1 — NFC_TAG_T4T_CC_MIN_LEN-byte Capability
+/* [T4T-ISO14443-4] section 7.5.1 -- NFC_TAG_T4T_CC_MIN_LEN-byte Capability
  * Container file. */
 static inline void nfc_tutorial_t4t_cc(nero_nfc_emit_fn_t emit,
                                        const uint8_t* cc, uint8_t cc_len) {
@@ -576,7 +576,7 @@ static inline void nfc_tutorial_t4t_update_binary(nero_nfc_emit_fn_t emit,
   }
 }
 
-/* [T4T-ISO14443-4] section 7.5.2 — NDEF file NLEN prefix (2 bytes). */
+/* [T4T-ISO14443-4] section 7.5.2 -- NDEF file NLEN prefix (2 bytes). */
 static inline void nfc_tutorial_t4t_nlen(nero_nfc_emit_fn_t emit,
                                          uint16_t nlen) {
   const uint8_t bytes[NFC_TUTORIAL_U16_FIELD_LEN] = {

@@ -79,8 +79,8 @@ static inline void reader_iso_dep_ats_profile_reset(
 }
 
 static inline uint16_t reader_iso_dep_fsc_from_fsci(uint8_t fsci) {
-  /* [ISO14443-4] Table 6 — FSCI 0..8 map to FSC 16..256; FSCI 9..15 are RFU and
-   * are treated as the maximum frame size. */
+  /* [ISO14443-4] Table 6 -- FSCI 0..8 map to FSC 16..256; FSCI 9..15 are RFU
+   * and are treated as the maximum frame size. */
   static const uint16_t FSC_TABLE[] = {16u, 24u, 32u,  40u, 48u,
                                        64u, 96u, 128u, 256u};
 
@@ -104,7 +104,7 @@ NERO_NFC_NODISCARD static inline bool reader_iso_dep_parse_ats_profile(
   }
 
   t0 = nero_nfc_u8_at(ats, ats_len, READER_ISO_DEP_ATS_T0_OFFSET);
-  /* [ISO14443-4] section 5.2.5 — ATS T0 low nibble (b4..b1) carries FSCI; the
+  /* [ISO14443-4] section 5.2.5 -- ATS T0 low nibble (b4..b1) carries FSCI; the
    * high bits b7/b6/b5 are the TC1/TB1/TA1 presence flags handled below. */
   profile->fsci = (uint8_t)(t0 & READER_ISO_DEP_ATS_T0_FSCI_MASK);
   profile->pic_frame_max = reader_iso_dep_fsc_from_fsci(profile->fsci);
@@ -120,8 +120,10 @@ NERO_NFC_NODISCARD static inline bool reader_iso_dep_parse_ats_profile(
     profile->fwi = (uint8_t)((profile->tb >> READER_ISO_DEP_ATS_TB_FWI_SHIFT) &
                              READER_ISO_DEP_ATS_TB_FWI_MASK);
     if (profile->fwi > ISO_DEP_FWI_MAX) {
-      reader_iso_dep_ats_profile_reset(profile);
-      return false;
+      /* [ISO14443-4] §5.3.5 -- FWI 15 is RFU. NFC Forum Digital Protocol
+       * requires substituting the default FWI (4) for RFU values instead of
+       * rejecting the ATS, so the token's FSC/CID capabilities stay usable. */
+      profile->fwi = (uint8_t)(ISO_DEP_FWI_DEFAULT);
     }
     profile->fwt_us = reader_iso_dep_fwt_us_from_fwi(profile->fwi);
   }

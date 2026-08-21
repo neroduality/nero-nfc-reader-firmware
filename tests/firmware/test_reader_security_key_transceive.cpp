@@ -110,19 +110,19 @@ bool CopyScriptResponse(std::uint8_t* rx, std::uint16_t rx_max,
 }
 
 void AppendObservedFrame(const std::uint8_t* tx, std::uint16_t tx_len) {
-  const std::span<const std::uint8_t> kTx(tx, tx_len);
-  g_observed_frames.emplace_back(kTx.begin(), kTx.end());
+  const std::span<const std::uint8_t> tx_span(tx, tx_len);
+  g_observed_frames.emplace_back(tx_span.begin(), tx_span.end());
 }
 
 void StoreCrcASuffix(std::uint8_t* buf, std::size_t buf_cap,
                      std::uint16_t payload_len) {
-  const auto kCrc = reader_iso_dep_crc_a(buf, payload_len);
+  const auto crc = reader_iso_dep_crc_a(buf, payload_len);
   (void)nero_nfc_store_u8(
       buf, buf_cap, payload_len,
-      static_cast<std::uint8_t>(kCrc & ISO_DEP_BYTE_MASK_LOW));
+      static_cast<std::uint8_t>(crc & ISO_DEP_BYTE_MASK_LOW));
   (void)nero_nfc_store_u8(
       buf, buf_cap, static_cast<std::size_t>(payload_len + 1u),
-      static_cast<std::uint8_t>(kCrc >> ISO_DEP_BYTE_SHIFT_8));
+      static_cast<std::uint8_t>(crc >> ISO_DEP_BYTE_SHIFT_8));
 }
 
 std::array<std::uint8_t, kWebAuthnResponseFirstInfLen + kChainedFrameOverhead>
@@ -160,65 +160,66 @@ int WebAuthnTwoAssertionScript(const std::uint8_t* tx, std::uint16_t tx_len,
   if ((tx == NERO_NFC_NULL) || (rx == NERO_NFC_NULL) || (tx_len < 1u)) {
     return -1;
   }
-  const std::span<const std::uint8_t> kTx(tx, tx_len);
-  const auto kCommand =
+  const std::span<const std::uint8_t> tx_span(tx, tx_len);
+  const auto command =
       static_cast<std::uint8_t>(g_webauthn_step / kWebAuthnStepsPerCommand);
-  const auto kExchangeStep =
+  const auto exchange_step =
       static_cast<std::uint8_t>(g_webauthn_step % kWebAuthnStepsPerCommand);
-  std::vector<std::uint8_t>& observed =
-      (kCommand == 0u) ? g_first_relayed_apdu : g_second_relayed_apdu;
-  const auto kStartBlock = kCommand;
+  const auto start_block = command;
 
-  if (kExchangeStep < kWebAuthnTxFragmentSteps) {
-    const auto kExpectedBlock = static_cast<std::uint8_t>(
-        (kStartBlock + kExchangeStep) & ISO_DEP_BLOCK_NUM_MASK);
-    const bool kFinalFragment =
-        kExchangeStep ==
+  if (exchange_step < kWebAuthnTxFragmentSteps) {
+    const auto expected_block = static_cast<std::uint8_t>(
+        (start_block + exchange_step) & ISO_DEP_BLOCK_NUM_MASK);
+    const bool final_fragment =
+        exchange_step ==
         static_cast<std::uint8_t>(kWebAuthnTxFragmentSteps - 1u);
-    const auto kExpectedInfLen =
-        kFinalFragment ? kWebAuthnLastFragmentLen : kWebAuthnFragmentLen;
-    EXPECT_EQ(kTx[0] & ISO_DEP_BLOCK_NUM_MASK, kExpectedBlock);
-    EXPECT_EQ((kTx[0] & ISO_DEP_PCB_CHAIN_BIT) != 0u, !kFinalFragment);
-    EXPECT_EQ(tx_len, static_cast<std::uint16_t>(kExpectedInfLen + 1u));
-    if (kTx.size() > 1u) {
-      observed.insert(observed.end(), std::next(kTx.begin()), kTx.end());
+    const auto expected_inf_len =
+        final_fragment ? kWebAuthnLastFragmentLen : kWebAuthnFragmentLen;
+    EXPECT_EQ(tx_span[0] & ISO_DEP_BLOCK_NUM_MASK, expected_block);
+    EXPECT_EQ((tx_span[0] & ISO_DEP_PCB_CHAIN_BIT) != 0u, !final_fragment);
+    EXPECT_EQ(tx_len, static_cast<std::uint16_t>(expected_inf_len + 1u));
+    if (tx_span.size() > 1u) {
+      std::vector<std::uint8_t>& observed =
+          (command == 0u) ? g_first_relayed_apdu : g_second_relayed_apdu;
+      observed.insert(observed.end(), std::next(tx_span.begin()),
+                      tx_span.end());
     }
     g_webauthn_step++;
-    if (!kFinalFragment) {
+    if (!final_fragment) {
       if (!nero_nfc_store_u8(rx, rx_max, 0u,
                              static_cast<std::uint8_t>(
-                                 ISO_DEP_PCB_R_BLOCK_BASE | kExpectedBlock))) {
+                                 ISO_DEP_PCB_R_BLOCK_BASE | expected_block))) {
         return -1;
       }
       return 1;
     }
-    const auto kFrame = ChainedResponseFrame(kExpectedBlock, kCommand);
-    if (!CopyScriptResponse(rx, rx_max, kFrame)) {
+    const auto frame = ChainedResponseFrame(expected_block, command);
+    if (!CopyScriptResponse(rx, rx_max, frame)) {
       return -1;
     }
-    return static_cast<int>(kFrame.size());
+    return static_cast<int>(frame.size());
   }
 
-  const auto kResponseFinalBlock = kStartBlock;
+  const auto response_final_block = start_block;
   EXPECT_EQ(tx_len, 1u);
-  EXPECT_EQ(kTx[0], static_cast<std::uint8_t>(ISO_DEP_PCB_R_BLOCK_BASE |
-                                              kResponseFinalBlock));
-  if (kCommand == 0u) {
-    const auto kFrame = FinalResponseFrame<kFirstAssertionInfLen>(
-        kResponseFinalBlock, kCommand);
-    if (!CopyScriptResponse(rx, rx_max, kFrame)) {
+  EXPECT_EQ(tx_span[0], static_cast<std::uint8_t>(ISO_DEP_PCB_R_BLOCK_BASE |
+                                                  response_final_block));
+  if (command == 0u) {
+    const auto frame = FinalResponseFrame<kFirstAssertionInfLen>(
+        response_final_block, command);
+    if (!CopyScriptResponse(rx, rx_max, frame)) {
       return -1;
     }
     g_webauthn_step++;
-    return static_cast<int>(kFrame.size());
+    return static_cast<int>(frame.size());
   }
-  const auto kFrame =
-      FinalResponseFrame<kSecondAssertionInfLen>(kResponseFinalBlock, kCommand);
-  if (!CopyScriptResponse(rx, rx_max, kFrame)) {
+  const auto frame =
+      FinalResponseFrame<kSecondAssertionInfLen>(response_final_block, command);
+  if (!CopyScriptResponse(rx, rx_max, frame)) {
     return -1;
   }
   g_webauthn_step++;
-  return static_cast<int>(kFrame.size());
+  return static_cast<int>(frame.size());
 }
 
 int WrongBlockResponseScript(const std::uint8_t* /*unused_tx*/,
@@ -226,14 +227,14 @@ int WrongBlockResponseScript(const std::uint8_t* /*unused_tx*/,
                              std::uint16_t rx_max, bool /*unused_cid*/,
                              std::uint16_t /*unused_timeout*/) {
   g_simple_script_calls++;
-  const std::array<std::uint8_t, kTestLit3> kWrongBlock = {
+  const std::array<std::uint8_t, kTestLit3> wrong_block = {
       kTestLit0x03u, static_cast<std::uint8_t>(NFC_ISO7816_SW1_SUCCESS),
       static_cast<std::uint8_t>(NFC_ISO7816_SW2_SUCCESS)};
-  if (!nero_nfc_copy_bytes(rx, rx_max, 0u, kWrongBlock.data(),
-                           kWrongBlock.size())) {
+  if (!nero_nfc_copy_bytes(rx, rx_max, 0u, wrong_block.data(),
+                           wrong_block.size())) {
     return -1;
   }
-  return static_cast<int>(kWrongBlock.size());
+  return static_cast<int>(wrong_block.size());
 }
 
 int TruncatedResponseScript(const std::uint8_t* /*unused_tx*/,
@@ -241,13 +242,13 @@ int TruncatedResponseScript(const std::uint8_t* /*unused_tx*/,
                             std::uint16_t rx_max, bool /*unused_cid*/,
                             std::uint16_t /*unused_timeout*/) {
   g_simple_script_calls++;
-  const std::array<std::uint8_t, kTestLit2> kTruncated = {kTestLit0x02u,
-                                                          kTestLit0xAAu};
-  if (!nero_nfc_copy_bytes(rx, rx_max, 0u, kTruncated.data(),
-                           kTruncated.size())) {
+  const std::array<std::uint8_t, kTestLit2> truncated = {kTestLit0x02u,
+                                                         kTestLit0xAAu};
+  if (!nero_nfc_copy_bytes(rx, rx_max, 0u, truncated.data(),
+                           truncated.size())) {
     return -1;
   }
-  return static_cast<int>(kTruncated.size());
+  return static_cast<int>(truncated.size());
 }
 
 int WtxThenSuccessScript(const std::uint8_t* tx, std::uint16_t tx_len,
@@ -257,28 +258,28 @@ int WtxThenSuccessScript(const std::uint8_t* tx, std::uint16_t tx_len,
   if ((tx == NERO_NFC_NULL) || (rx == NERO_NFC_NULL) || (tx_len < 1u)) {
     return -1;
   }
-  const std::span<const std::uint8_t> kTx(tx, tx_len);
+  const std::span<const std::uint8_t> tx_span(tx, tx_len);
   if (g_simple_script_calls == 0u) {
-    EXPECT_EQ(kTx[0] & ISO_DEP_BLOCK_NUM_MASK, 0u);
-    const std::array<std::uint8_t, kTestLit2> kWtx = {kTestLit0xF2u,
-                                                      kTestLit0x01u};
-    if (!nero_nfc_copy_bytes(rx, rx_max, 0u, kWtx.data(), kWtx.size())) {
+    EXPECT_EQ(tx_span[0] & ISO_DEP_BLOCK_NUM_MASK, 0u);
+    const std::array<std::uint8_t, kTestLit2> wtx = {kTestLit0xF2u,
+                                                     kTestLit0x01u};
+    if (!nero_nfc_copy_bytes(rx, rx_max, 0u, wtx.data(), wtx.size())) {
       return -1;
     }
     g_simple_script_calls++;
-    return static_cast<int>(kWtx.size());
+    return static_cast<int>(wtx.size());
   }
   EXPECT_EQ(tx_len, kTestLit2u);
-  EXPECT_EQ(kTx[0], kTestLit0xF2u);
-  EXPECT_EQ(kTx[1], kTestLit0x01u);
-  const std::array<std::uint8_t, kTestLit3> kSuccess = {
+  EXPECT_EQ(tx_span[0], kTestLit0xF2u);
+  EXPECT_EQ(tx_span[1], kTestLit0x01u);
+  const std::array<std::uint8_t, kTestLit3> success = {
       kTestLit0x02u, static_cast<std::uint8_t>(NFC_ISO7816_SW1_SUCCESS),
       static_cast<std::uint8_t>(NFC_ISO7816_SW2_SUCCESS)};
-  if (!nero_nfc_copy_bytes(rx, rx_max, 0u, kSuccess.data(), kSuccess.size())) {
+  if (!nero_nfc_copy_bytes(rx, rx_max, 0u, success.data(), success.size())) {
     return -1;
   }
   g_simple_script_calls++;
-  return static_cast<int>(kSuccess.size());
+  return static_cast<int>(success.size());
 }
 
 int RecoveryRetransmitScript(const std::uint8_t* tx, std::uint16_t tx_len,
@@ -289,24 +290,24 @@ int RecoveryRetransmitScript(const std::uint8_t* tx, std::uint16_t tx_len,
     return -1;
   }
   AppendObservedFrame(tx, tx_len);
-  const auto kCall = g_simple_script_calls++;
-  if (kCall == 0u) {
-    const std::array<std::uint8_t, 1> kNak = {kTestLit0xB2u};
-    return CopyScriptResponse(rx, rx_max, kNak) ? 1 : -1;
+  const auto call = g_simple_script_calls++;
+  if (call == 0u) {
+    const std::array<std::uint8_t, 1> nak = {kTestLit0xB2u};
+    return CopyScriptResponse(rx, rx_max, nak) ? 1 : -1;
   }
-  if (kCall == 1u) {
-    const std::array<std::uint8_t, 1> kMismatchedAck = {kTestLit0xA3u};
-    return CopyScriptResponse(rx, rx_max, kMismatchedAck) ? 1 : -1;
+  if (call == 1u) {
+    const std::array<std::uint8_t, 1> mismatched_ack = {kTestLit0xA3u};
+    return CopyScriptResponse(rx, rx_max, mismatched_ack) ? 1 : -1;
   }
-  if (kCall == kTestLit2u) {
-    const std::array<std::uint8_t, 1> kAck = {kTestLit0xA2u};
-    return CopyScriptResponse(rx, rx_max, kAck) ? 1 : -1;
+  if (call == kTestLit2u) {
+    const std::array<std::uint8_t, 1> ack = {kTestLit0xA2u};
+    return CopyScriptResponse(rx, rx_max, ack) ? 1 : -1;
   }
-  const std::array<std::uint8_t, kTestLit3> kSuccess = {
+  const std::array<std::uint8_t, kTestLit3> success = {
       kTestLit0x03u, static_cast<std::uint8_t>(NFC_ISO7816_SW1_SUCCESS),
       static_cast<std::uint8_t>(NFC_ISO7816_SW2_SUCCESS)};
-  return CopyScriptResponse(rx, rx_max, kSuccess)
-             ? static_cast<int>(kSuccess.size())
+  return CopyScriptResponse(rx, rx_max, success)
+             ? static_cast<int>(success.size())
              : -1;
 }
 
@@ -326,11 +327,11 @@ int NadChainedResponseScript(const std::uint8_t* tx, std::uint16_t tx_len,
                ? static_cast<int>(frame.size())
                : -1;
   }
-  const std::array<std::uint8_t, kTestLit3> kSuccess = {
+  const std::array<std::uint8_t, kTestLit3> success = {
       kTestLit0x03u, static_cast<std::uint8_t>(NFC_ISO7816_SW1_SUCCESS),
       static_cast<std::uint8_t>(NFC_ISO7816_SW2_SUCCESS)};
-  return CopyScriptResponse(rx, rx_max, kSuccess)
-             ? static_cast<int>(kSuccess.size())
+  return CopyScriptResponse(rx, rx_max, success)
+             ? static_cast<int>(success.size())
              : -1;
 }
 
@@ -342,22 +343,22 @@ int SmallFscFragmentScript(const std::uint8_t* tx, std::uint16_t tx_len,
     return -1;
   }
   AppendObservedFrame(tx, tx_len);
-  const std::span<const std::uint8_t> kTx(tx, tx_len);
-  const bool kChained = (kTx[0] & ISO_DEP_PCB_CHAIN_BIT) != 0u;
-  const auto kBlock =
-      static_cast<std::uint8_t>(kTx[0] & ISO_DEP_BLOCK_NUM_MASK);
+  const std::span<const std::uint8_t> tx_span(tx, tx_len);
+  const bool chained = (tx_span[0] & ISO_DEP_PCB_CHAIN_BIT) != 0u;
+  const auto block =
+      static_cast<std::uint8_t>(tx_span[0] & ISO_DEP_BLOCK_NUM_MASK);
   g_simple_script_calls++;
-  if (kChained) {
-    const std::array<std::uint8_t, 1> kAck = {
-        static_cast<std::uint8_t>(ISO_DEP_PCB_R_BLOCK_BASE | kBlock)};
-    return CopyScriptResponse(rx, rx_max, kAck) ? 1 : -1;
+  if (chained) {
+    const std::array<std::uint8_t, 1> ack = {
+        static_cast<std::uint8_t>(ISO_DEP_PCB_R_BLOCK_BASE | block)};
+    return CopyScriptResponse(rx, rx_max, ack) ? 1 : -1;
   }
-  const std::array<std::uint8_t, kTestLit3> kSuccess = {
-      static_cast<std::uint8_t>(ISO_DEP_PCB_I_BLOCK_BASE | kBlock),
+  const std::array<std::uint8_t, kTestLit3> success = {
+      static_cast<std::uint8_t>(ISO_DEP_PCB_I_BLOCK_BASE | block),
       static_cast<std::uint8_t>(NFC_ISO7816_SW1_SUCCESS),
       static_cast<std::uint8_t>(NFC_ISO7816_SW2_SUCCESS)};
-  return CopyScriptResponse(rx, rx_max, kSuccess)
-             ? static_cast<int>(kSuccess.size())
+  return CopyScriptResponse(rx, rx_max, success)
+             ? static_cast<int>(success.size())
              : -1;
 }
 
@@ -368,10 +369,10 @@ int ChainedResponseScript(const std::uint8_t* tx, std::uint16_t tx_len,
   if ((tx == NERO_NFC_NULL) || (rx == NERO_NFC_NULL)) {
     return -1;
   }
-  const std::span<const std::uint8_t> kTx(tx, tx_len);
+  const std::span<const std::uint8_t> tx_span(tx, tx_len);
   if (g_chained_response_step == 0u) {
     EXPECT_GE(tx_len, 1u);
-    EXPECT_EQ(kTx[0] & ISO_DEP_BLOCK_NUM_MASK, 0u);
+    EXPECT_EQ(tx_span[0] & ISO_DEP_BLOCK_NUM_MASK, 0u);
     if (rx_max < kTestLit4u) {
       return -1;
     }
@@ -385,7 +386,7 @@ int ChainedResponseScript(const std::uint8_t* tx, std::uint16_t tx_len,
   }
   if (g_chained_response_step == 1u) {
     EXPECT_GE(tx_len, 1u);
-    EXPECT_EQ(kTx[0], kTestLit0xA3u);
+    EXPECT_EQ(tx_span[0], kTestLit0xA3u);
     if (rx_max < kTestLit3u) {
       return -1;
     }
@@ -403,7 +404,7 @@ int ChainedResponseScript(const std::uint8_t* tx, std::uint16_t tx_len,
   }
   if (g_chained_response_step == kTestLit2u) {
     EXPECT_GE(tx_len, 1u);
-    EXPECT_EQ(kTx[0] & ISO_DEP_BLOCK_NUM_MASK, 0u);
+    EXPECT_EQ(tx_span[0] & ISO_DEP_BLOCK_NUM_MASK, 0u);
     if (rx_max < kTestLit3u) {
       return -1;
     }
@@ -473,14 +474,14 @@ TEST_F(ReaderSecurityKeyTransceiveTest, SendApduDoesNotWritePastResponseCap) {
           std::uint8_t* rx, std::uint16_t rx_max, bool /*unused_cid*/,
           std::uint16_t /*unused_timeout*/) -> int {
         /* Minimal ISO-DEP I-block PCB + INF(90 00) + CRC placeholder. */
-        const std::uint8_t kFrame[kTestLit6] = {
+        const std::uint8_t frame[kTestLit6] = {
             kTestLit0x02u,
             static_cast<std::uint8_t>(NFC_ISO7816_SW1_SUCCESS),
             static_cast<std::uint8_t>(NFC_ISO7816_SW2_SUCCESS),
             0x00u,
             0x00u,
             0x00u};
-        if (!nero_nfc_copy_bytes(rx, rx_max, 0u, &kFrame[0], sizeof(kFrame))) {
+        if (!nero_nfc_copy_bytes(rx, rx_max, 0u, &frame[0], sizeof(frame))) {
           return -1;
         }
         (void)tx_len;
@@ -492,10 +493,10 @@ TEST_F(ReaderSecurityKeyTransceiveTest, SendApduDoesNotWritePastResponseCap) {
   std::array<std::uint8_t, kTestLit4> rsp{};
   rsp.fill(kTestLit0xAAu);
 
-  const int kTotal = reader_security_key_send_apdu_timeout_ex(
+  const int total = reader_security_key_send_apdu_timeout_ex(
       apdu.data(), static_cast<uint16_t>(apdu.size()), rsp.data(),
       static_cast<uint16_t>(rsp.size()), kTestLit100u, false);
-  EXPECT_LT(kTotal, kTestLit2);
+  EXPECT_LT(total, kTestLit2);
   EXPECT_EQ(rsp[kTestLit3], kTestLit0xAAu);
 }
 
@@ -504,24 +505,24 @@ TEST_F(ReaderSecurityKeyTransceiveTest,
   reader_security_key_utest_set_iso_dep_transceive(&ChainedResponseScript);
   G_BLOCK_NUM = 0u;
 
-  const std::array<std::uint8_t, 1> kFirstApdu = {kTestLit0x01u};
+  const std::array<std::uint8_t, 1> first_apdu = {kTestLit0x01u};
   std::array<std::uint8_t, kTestLit8> rsp{};
-  const int kFirstTotal = reader_security_key_send_apdu_timeout_ex(
-      kFirstApdu.data(), static_cast<std::uint16_t>(kFirstApdu.size()),
+  const int first_total = reader_security_key_send_apdu_timeout_ex(
+      first_apdu.data(), static_cast<std::uint16_t>(first_apdu.size()),
       rsp.data(), static_cast<std::uint16_t>(rsp.size()), kTestLit100u, false);
 
-  ASSERT_EQ(kFirstTotal, kTestLit3);
+  ASSERT_EQ(first_total, kTestLit3);
   EXPECT_EQ(rsp[0], kTestLit0xA5u);
   EXPECT_EQ(rsp[1], static_cast<std::uint8_t>(NFC_ISO7816_SW1_SUCCESS));
   EXPECT_EQ(rsp[kTestLit2], static_cast<std::uint8_t>(NFC_ISO7816_SW2_SUCCESS));
   EXPECT_EQ(G_BLOCK_NUM, 0u);
 
-  const std::array<std::uint8_t, 1> kSecondApdu = {kTestLit0x02u};
-  const int kSecondTotal = reader_security_key_send_apdu_timeout_ex(
-      kSecondApdu.data(), static_cast<std::uint16_t>(kSecondApdu.size()),
+  const std::array<std::uint8_t, 1> second_apdu = {kTestLit0x02u};
+  const int second_total = reader_security_key_send_apdu_timeout_ex(
+      second_apdu.data(), static_cast<std::uint16_t>(second_apdu.size()),
       rsp.data(), static_cast<std::uint16_t>(rsp.size()), kTestLit100u, false);
 
-  EXPECT_EQ(kSecondTotal, kTestLit2);
+  EXPECT_EQ(second_total, kTestLit2);
   EXPECT_EQ(G_BLOCK_NUM, 1u);
   EXPECT_EQ(g_chained_response_step, kTestLit3u);
 }
@@ -541,18 +542,18 @@ TEST_F(ReaderSecurityKeyTransceiveTest,
   }
   std::array<std::uint8_t, kRspScratchCap> rsp{};
 
-  const int kFirstTotal = reader_security_key_send_apdu_timeout_ex(
+  const int first_total = reader_security_key_send_apdu_timeout_ex(
       first.data(), static_cast<std::uint16_t>(first.size()), rsp.data(),
       static_cast<std::uint16_t>(rsp.size()), kTestLit1000u, false);
-  ASSERT_EQ(kFirstTotal, kTestLit205);
+  ASSERT_EQ(first_total, kTestLit205);
   EXPECT_EQ(g_first_relayed_apdu,
             std::vector<std::uint8_t>(first.begin(), first.end()));
   EXPECT_EQ(G_BLOCK_NUM, 1u);
 
-  const int kSecondTotal = reader_security_key_send_apdu_timeout_ex(
+  const int second_total = reader_security_key_send_apdu_timeout_ex(
       second.data(), static_cast<std::uint16_t>(second.size()), rsp.data(),
       static_cast<std::uint16_t>(rsp.size()), kTestLit1000u, false);
-  ASSERT_EQ(kSecondTotal, kTestLit206);
+  ASSERT_EQ(second_total, kTestLit206);
   EXPECT_EQ(g_second_relayed_apdu,
             std::vector<std::uint8_t>(second.begin(), second.end()));
   EXPECT_EQ(G_BLOCK_NUM, 0u);
@@ -563,15 +564,15 @@ TEST_F(ReaderSecurityKeyTransceiveTest,
        WrongResponseBlockIsRejectedWithoutAdvancingState) {
   reader_security_key_utest_set_iso_dep_transceive(&WrongBlockResponseScript);
   G_BLOCK_NUM = 0u;
-  const std::array<std::uint8_t, 1> kApdu = {kTestLit0x80u};
+  const std::array<std::uint8_t, 1> apdu = {kTestLit0x80u};
   std::array<std::uint8_t, kTestLit8> rsp{};
   rsp.fill(kTestLit0xCCu);
 
-  const int kTotal = reader_security_key_send_apdu_timeout_ex(
-      kApdu.data(), static_cast<std::uint16_t>(kApdu.size()), rsp.data(),
+  const int total = reader_security_key_send_apdu_timeout_ex(
+      apdu.data(), static_cast<std::uint16_t>(apdu.size()), rsp.data(),
       static_cast<std::uint16_t>(rsp.size()), kTestLit100u, false);
 
-  EXPECT_LT(kTotal, 0);
+  EXPECT_LT(total, 0);
   EXPECT_EQ(G_BLOCK_NUM, 0u);
   EXPECT_EQ(g_simple_script_calls, 1u);
   EXPECT_EQ(rsp[0], kTestLit0xCCu);
@@ -581,15 +582,15 @@ TEST_F(ReaderSecurityKeyTransceiveTest,
        TruncatedResponseNeverReplaysStatefulCommand) {
   reader_security_key_utest_set_iso_dep_transceive(&TruncatedResponseScript);
   G_BLOCK_NUM = 0u;
-  const std::array<std::uint8_t, kTestLit4> kApdu = {
+  const std::array<std::uint8_t, kTestLit4> apdu = {
       kTestLit0x80u, kTestLit0x10u, 0x00u, 0x00u};
   std::array<std::uint8_t, kTestLit8> rsp{};
 
-  const int kTotal = reader_security_key_send_apdu_timeout_ex(
-      kApdu.data(), static_cast<std::uint16_t>(kApdu.size()), rsp.data(),
+  const int total = reader_security_key_send_apdu_timeout_ex(
+      apdu.data(), static_cast<std::uint16_t>(apdu.size()), rsp.data(),
       static_cast<std::uint16_t>(rsp.size()), kTestLit100u, false);
 
-  EXPECT_LT(kTotal, 0);
+  EXPECT_LT(total, 0);
   EXPECT_EQ(g_simple_script_calls, 1u);
   EXPECT_EQ(G_BLOCK_NUM, 0u);
 }
@@ -597,14 +598,14 @@ TEST_F(ReaderSecurityKeyTransceiveTest,
 TEST_F(ReaderSecurityKeyTransceiveTest, WtxExchangeDoesNotAdvanceIBlockNumber) {
   reader_security_key_utest_set_iso_dep_transceive(&WtxThenSuccessScript);
   G_BLOCK_NUM = 0u;
-  const std::array<std::uint8_t, 1> kApdu = {kTestLit0x04u};
+  const std::array<std::uint8_t, 1> apdu = {kTestLit0x04u};
   std::array<std::uint8_t, kTestLit8> rsp{};
 
-  const int kTotal = reader_security_key_send_apdu_timeout_ex(
-      kApdu.data(), static_cast<std::uint16_t>(kApdu.size()), rsp.data(),
+  const int total = reader_security_key_send_apdu_timeout_ex(
+      apdu.data(), static_cast<std::uint16_t>(apdu.size()), rsp.data(),
       static_cast<std::uint16_t>(rsp.size()), kTestLit100u, false);
 
-  ASSERT_EQ(kTotal, kTestLit2);
+  ASSERT_EQ(total, kTestLit2);
   EXPECT_EQ(rsp[0], static_cast<std::uint8_t>(NFC_ISO7816_SW1_SUCCESS));
   EXPECT_EQ(rsp[1], static_cast<std::uint8_t>(NFC_ISO7816_SW2_SUCCESS));
   EXPECT_EQ(g_simple_script_calls, kTestLit2u);
@@ -622,11 +623,11 @@ TEST_F(ReaderSecurityKeyTransceiveTest,
   }
   std::array<std::uint8_t, kTestLit8> rsp{};
 
-  const int kTotal = reader_security_key_send_apdu_timeout_ex(
+  const int total = reader_security_key_send_apdu_timeout_ex(
       apdu.data(), static_cast<std::uint16_t>(apdu.size()), rsp.data(),
       static_cast<std::uint16_t>(rsp.size()), kTestLit100u, false);
 
-  ASSERT_EQ(kTotal, kTestLit2);
+  ASSERT_EQ(total, kTestLit2);
   ASSERT_EQ(g_observed_frames.size(), kTestLit4u);
   EXPECT_EQ(g_observed_frames[0], g_observed_frames[1]);
   EXPECT_EQ(g_observed_frames[1], g_observed_frames[kTestLit2]);
@@ -644,14 +645,14 @@ TEST_F(ReaderSecurityKeyTransceiveTest,
   G_ISO_DEP_HAVE_TC = true;
   G_ISO_DEP_TC_BYTE = kTestLit0x01u;
   G_ISO_DEP_PCB_HAS_CID = false;
-  const std::array<std::uint8_t, 1> kApdu = {kTestLit0x80u};
+  const std::array<std::uint8_t, 1> apdu = {kTestLit0x80u};
   std::array<std::uint8_t, kTestLit8> rsp{};
 
-  const int kTotal = reader_security_key_send_apdu_timeout_ex(
-      kApdu.data(), static_cast<std::uint16_t>(kApdu.size()), rsp.data(),
+  const int total = reader_security_key_send_apdu_timeout_ex(
+      apdu.data(), static_cast<std::uint16_t>(apdu.size()), rsp.data(),
       static_cast<std::uint16_t>(rsp.size()), kTestLit100u, false);
 
-  ASSERT_EQ(kTotal, kTestLit3);
+  ASSERT_EQ(total, kTestLit3);
   EXPECT_EQ(rsp[0], kTestLit0xA5u);
   ASSERT_EQ(g_observed_frames.size(), kTestLit2u);
   ASSERT_EQ(g_observed_frames[1].size(), 1u);
@@ -670,11 +671,11 @@ TEST_F(ReaderSecurityKeyTransceiveTest,
   }
   std::array<std::uint8_t, kTestLit8> rsp{};
 
-  const int kTotal = reader_security_key_send_apdu_timeout_ex(
+  const int total = reader_security_key_send_apdu_timeout_ex(
       apdu.data(), static_cast<std::uint16_t>(apdu.size()), rsp.data(),
       static_cast<std::uint16_t>(rsp.size()), kTestLit100u, false);
 
-  ASSERT_EQ(kTotal, kTestLit2);
+  ASSERT_EQ(total, kTestLit2);
   ASSERT_EQ(g_observed_frames.size(), kTestLit3u);
   std::vector<std::uint8_t> relayed;
   for (const auto& frame : g_observed_frames) {

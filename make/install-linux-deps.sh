@@ -15,27 +15,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Linux system dependency installer — distro packages for build, test, and lint.
-# Pinned third-party trees (arduino-cli, Arduino cores, NFC-RFAL, ST25R3916, …)
+# Linux system dependency installer -- distro packages for build, test, and lint.
+# Pinned third-party trees (arduino-cli, Arduino cores, NFC-RFAL, ST25R3916, ...)
 # are fetched by Make targets under third-party/ as needed.
 #
 # Usage: INSTALL_DEPS=1 bash make/install-linux-deps.sh
 #        make deps   (sets INSTALL_DEPS=1)
 #
 # Installed tools:
-#   Build:    cmake ≥ 3.20, g++ ≥ 15 (userspace/host; firmware uses arduino-cli toolchain), ninja, make, git, pkg-config, curl/wget, ca-certificates
+#   Build:    cmake >= 3.20, g++ >= 15 (userspace/host; firmware uses arduino-cli toolchain), ninja, make, git, pkg-config, curl/wget, ca-certificates
 #   WBA65:    autoconf, automake, libtool, libusb-1.0 (compile project-local OpenOCD on WBA65 build)
 #   Runtime:  util-linux, psmisc (fuser), procps (timeout/pgrep), bash
 #   PC/SC:    libpcsclite-dev (userspace lint/build with NERO_USERSPACE_HAVE_PCSC)
 #   Fetch:    tar, unzip, coreutils (sha256sum)
-#   Test:     lcov ≥ 2.0 / genhtml, valgrind, libgtest-dev, libasan, libubsan
-#   Analysis: clang-tools (scan-build), clang-tidy (≥21.0.0), clang-format (≥20.0.0), cppcheck (≥2.19.1), perf
-#   Lint:    shellcheck, shfmt, codespell (≥2.4.0), markdownlint-cli (≥0.48.0; Node.js ≥20), uv (ruff/mypy via uvx)
+#   Test:     lcov >= 2.0 / genhtml, valgrind, libgtest-dev, libasan, libubsan
+#   Analysis: clang-tools (scan-build), clang-tidy (>=21.0.0), clang-format (>=20.0.0), cppcheck (>=2.19.1), perf
+#   Lint:    shellcheck, shfmt, codespell (>=2.4.0), markdownlint-cli (>=0.48.0; Node.js >=20), uv (ruff/mypy via uvx)
 #
 # Environment (all optional):
 #   AUTO_INSTALL_LINUX_DEPS=0   skip this script entirely (Makefile default via INSTALL_DEPS=0)
 #   INSTALL_DEPS=0              alias for AUTO_INSTALL_LINUX_DEPS
-#   INSTALL_LINT_DEPS=0         test/CI containers: build + unit-test tools only (no clang-tidy/cppcheck/…)
+#   INSTALL_LINT_DEPS=0         test/CI containers: build + unit-test tools only (no clang-tidy/cppcheck/...)
 #   FIRMWARE_ROOT               repo root (default: parent of make/)
 # Legacy skip aliases (any one =0 also disables install):
 #   AUTO_INSTALL_LINUX_HOST_DEPS, AUTO_INSTALL_LINUX_UNIT_TEST_DEPS
@@ -70,7 +70,7 @@ fi
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 : "${FIRMWARE_ROOT:=$(cd "${SCRIPT_DIR}/.." && pwd)}"
 
-# Resolve the org lint kit (neroduality/.github → lint-c-cpp); its toolchain
+# Resolve the org lint kit (neroduality/.github -> lint-c-cpp); its toolchain
 # helpers replace the retired .github/linters/helper-*.sh install helpers.
 resolve_lint_kit_root() {
   local candidate="${LINT_KIT:-${FIRMWARE_ROOT}/.lint-kit-org/lint-c-cpp}"
@@ -108,7 +108,7 @@ priv() {
   fi
 }
 
-# fuser: Debian psmisc → /usr/bin/fuser; Fedora psmisc → /usr/sbin/fuser (not always on PATH).
+# fuser: Debian psmisc -> /usr/bin/fuser; Fedora psmisc -> /usr/sbin/fuser (not always on PATH).
 have_fuser() {
   command -v fuser >/dev/null 2>&1 && return 0
   [[ -x /usr/sbin/fuser ]] && return 0
@@ -412,7 +412,7 @@ install_uv() {
   else
     install_dir="${HOME}/.local/bin"
   fi
-  echo "── install uv (astral-sh) — provides uvx for ruff/mypy → ${install_dir} ──" >&2
+  echo "── install uv (astral-sh) -- provides uvx for ruff/mypy -> ${install_dir} ──" >&2
   if have curl; then
     curl -LsSf https://astral.sh/uv/install.sh |
       env UV_INSTALL_DIR="${install_dir}" UV_NO_MODIFY_PATH=1 sh
@@ -871,11 +871,11 @@ install_packages
 # Post-install checks
 # ---------------------------------------------------------------------------
 cmake_ok || {
-  echo "ERROR: cmake ≥ 3.20 required after install." >&2
+  echo "ERROR: cmake >= 3.20 required after install." >&2
   exit 1
 }
 install_gxx || {
-  echo "ERROR: g++ ≥ ${NERO_NFC_GXX_MIN_VERSION} required after install." >&2
+  echo "ERROR: g++ >= ${NERO_NFC_GXX_MIN_VERSION} required after install." >&2
   exit 1
 }
 nero_nfc_toolchain_verify
@@ -916,7 +916,7 @@ have lcov || {
   exit 1
 }
 lcov_ok || {
-  echo "ERROR: lcov ≥ ${NERO_NFC_LCOV_MIN_VERSION} required after install (found $(lcov_version_raw 2>/dev/null || echo unknown))." >&2
+  echo "ERROR: lcov >= ${NERO_NFC_LCOV_MIN_VERSION} required after install (found $(lcov_version_raw 2>/dev/null || echo unknown))." >&2
   exit 1
 }
 have genhtml || {

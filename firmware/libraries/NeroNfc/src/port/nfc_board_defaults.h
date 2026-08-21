@@ -22,7 +22,7 @@
  * Default GPIO map: Arduino UNO R4 WiFi + X-NUCLEO-NFC08A1 (ARDUINO header).
  *
  * Override per board by defining these macros before including this header, or
- * pass -DNFC_BOARD_CS_PIN=… on the compiler command line.
+ * pass -DNFC_BOARD_CS_PIN=... on the compiler command line.
  */
 
 #ifndef NFC_BOARD_CS_PIN
@@ -37,13 +37,13 @@
 #define NFC_BOARD_LED_PIN 7u
 #endif
 
-/* Serial banner; override per board via -DNFC_HOST_BOARD_NAME=\"…\" in board
+/* Serial banner; override per board via -DNFC_HOST_BOARD_NAME=\"...\" in board
  * mk. */
 #ifndef NFC_HOST_BOARD_NAME
 #define NFC_HOST_BOARD_NAME "Arduino UNO R4 WiFi"
 #endif
 /* Host UART/CDC console baud rate; override per board via
- * -DNFC_HOST_SERIAL_BAUD=… */
+ * -DNFC_HOST_SERIAL_BAUD=... */
 #ifndef NFC_HOST_SERIAL_BAUD
 #define NFC_HOST_SERIAL_BAUD 115200u
 #endif

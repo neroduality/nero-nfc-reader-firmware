@@ -62,7 +62,7 @@ class EmitGuard {
 
 TEST(NfcPrintUtils, WriteCstrNullEmitOrStringNoop) {
   std::string captured;
-  EmitGuard guard(&captured);
+  EmitGuard const guard(&captured);
   nero_nfc_emit_write(reinterpret_cast<nero_nfc_emit_fn_t>(0), "hi");
   EXPECT_TRUE(captured.empty());
 
@@ -72,21 +72,21 @@ TEST(NfcPrintUtils, WriteCstrNullEmitOrStringNoop) {
 
 TEST(NfcPrintUtils, WriteCstrCopiesChars) {
   std::string captured;
-  EmitGuard guard(&captured);
+  EmitGuard const guard(&captured);
   nero_nfc_emit_write(TestNfcEmitChar, "NFC");
   EXPECT_EQ(captured, "NFC");
 }
 
 TEST(NfcPrintUtils, PrintHexU8NullEmit) {
   std::string captured;
-  EmitGuard guard(&captured);
+  EmitGuard const guard(&captured);
   nero_nfc_emit_hex_u8(reinterpret_cast<nero_nfc_emit_fn_t>(0), kTestLit0xAbu);
   EXPECT_TRUE(captured.empty());
 }
 
 TEST(NfcPrintUtils, PrintHexU8Formats) {
   std::string captured;
-  EmitGuard guard(&captured);
+  EmitGuard const guard(&captured);
   nero_nfc_emit_hex_u8(TestNfcEmitChar, 0x00U);
   EXPECT_EQ(captured, "00");
   captured.clear();
@@ -101,14 +101,14 @@ TEST(NfcPrintUtils, PrintHexU8Formats) {
 
 TEST(NfcPrintUtils, PrintDecU32NullEmit) {
   std::string captured;
-  EmitGuard guard(&captured);
+  EmitGuard const guard(&captured);
   nero_nfc_emit_dec_u32(reinterpret_cast<nero_nfc_emit_fn_t>(0), kTestLit42U);
   EXPECT_TRUE(captured.empty());
 }
 
 TEST(NfcPrintUtils, PrintDecU32ZeroAndMultiDigit) {
   std::string captured;
-  EmitGuard guard(&captured);
+  EmitGuard const guard(&captured);
   nero_nfc_emit_dec_u32(TestNfcEmitChar, 0U);
   EXPECT_EQ(captured, "0");
 
@@ -131,7 +131,7 @@ TEST(NfcPrintUtils, PrintDecU32ZeroAndMultiDigit) {
 
 TEST(NfcPrintUtils, PrintDecI32SignAndZero) {
   std::string captured;
-  EmitGuard guard(&captured);
+  EmitGuard const guard(&captured);
   nero_nfc_emit_dec_i32(reinterpret_cast<nero_nfc_emit_fn_t>(0), -1);
   EXPECT_TRUE(captured.empty());
 

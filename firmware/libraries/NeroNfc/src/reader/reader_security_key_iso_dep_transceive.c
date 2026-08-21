@@ -91,10 +91,9 @@ static void iso_dep_note_wtx_wait(uint16_t wtx_count, uint32_t total_start_ms) {
   nero_nfc_log_write(" (~");
   {
     char ndc[NERO_NFC_FORMAT_SNPRINTF_DEC_CAP];
-    (void)nero_nfc_snprintf(
-        ndc, sizeof ndc, "%u",
-        (unsigned)(reader_iso_dep_ms_to_seconds(reader_hal_millis()) -
-                   total_start_ms));
+    (void)nero_nfc_snprintf(ndc, sizeof ndc, "%u",
+                            (unsigned)(reader_iso_dep_ms_to_seconds(
+                                reader_hal_millis() - total_start_ms)));
     nero_nfc_log_write(ndc);
   }
   nero_nfc_log_write(
@@ -113,7 +112,7 @@ bool reader_security_key_ccid_abort_pending(void) {
 #endif
 }
 
-/* Safe room in `resp` after `used` bytes — avoids uint16_t underflow in GET
+/* Safe room in `resp` after `used` bytes -- avoids uint16_t underflow in GET
  * RESPONSE tail math. */
 static uint16_t reader_security_key_resp_tail_cap(uint16_t resp_buf_len,
                                                   uint16_t used) {
@@ -138,7 +137,6 @@ static int reader_security_key_send_i_block(const uint8_t* apdu,
   const uint8_t tx_hdr_len = reader_security_key_iso_dep_tx_hdr_len(add_nad);
   bool completed_iblock = false;
   uint16_t apdu_off = 0u;
-  uint8_t blk_sent = 0u;
   const uint16_t frag_cap =
       reader_security_key_iso_dep_apdu_chunk_budget(tx_hdr_len);
   const uint16_t link_timeout_ms =
@@ -195,7 +193,7 @@ static int reader_security_key_send_i_block(const uint8_t* apdu,
   }
 
   while (apdu_off < apdu_len) {
-    blk_sent = (uint8_t)(G_BLOCK_NUM & ISO_DEP_BLOCK_NUM_MASK);
+    const uint8_t blk_sent = (uint8_t)(G_BLOCK_NUM & ISO_DEP_BLOCK_NUM_MASK);
     reader_iso_dep_i_block_tx_t tx_info;
 
     if (!reader_iso_dep_build_i_block_tx(
@@ -317,6 +315,7 @@ static int reader_security_key_send_i_block(const uint8_t* apdu,
             nero_nfc_secure_clear(rx, sizeof(rx));
             return -1;
           }
+#if defined(NERO_CCID_USB_BUILD)
           if (reader_security_key_ccid_abort_pending()) {
             if (G_ISO_DEP_TRACE != 0u) {
               nero_nfc_log_line("[ISO-DEP] TX-chain aborted by CCID host");
@@ -326,6 +325,7 @@ static int reader_security_key_send_i_block(const uint8_t* apdu,
             nero_nfc_secure_clear(rx, sizeof(rx));
             return -1;
           }
+#endif
 
           if (!reader_iso_dep_build_wtx_echo(wtx_tx, sizeof(wtx_tx), rx, rlen,
                                              hdr_skip, &wtx_len)) {
@@ -449,7 +449,7 @@ static int reader_security_key_send_i_block(const uint8_t* apdu,
         if (reader_iso_dep_rx_rblock_block(rx, rlen, false,
                                            G_ISO_DEP_PCB_HAS_CID, G_ISO_DEP_CID,
                                            &ack_block)) {
-          /* [ISO14443-4] §7.5.4 Rule 6 — a valid R(ACK) whose block number
+          /* [ISO14443-4] §7.5.4 Rule 6 -- a valid R(ACK) whose block number
            * differs from the current PCD number requests retransmission of the
            * last chained I-block. It is not an unrecoverable protocol error. */
           if (rnak_retries >= READER_ISO_DEP_CHAIN_RNAK_MAX) {
@@ -517,7 +517,7 @@ static int reader_security_key_send_i_block(const uint8_t* apdu,
     uint8_t hdr_skip = reader_iso_dep_rx_hdr_skip(pcb);
 
     if ((pcb & ISO_DEP_PCB_SWTX_MASK) == ISO_DEP_PCB_S_WTX) {
-      /* Wait-time extension — echo PICC S(WTX) prefix including optional
+      /* Wait-time extension -- echo PICC S(WTX) prefix including optional
        * CID/NAD */
       uint8_t wtx_tx[READER_ISO_DEP_WTX_ECHO_TX_CAP];
       uint8_t wtx_len;
@@ -532,6 +532,7 @@ static int reader_security_key_send_i_block(const uint8_t* apdu,
         nero_nfc_secure_clear(rx, sizeof(rx));
         return -1;
       }
+#if defined(NERO_CCID_USB_BUILD)
       if (reader_security_key_ccid_abort_pending()) {
         if (G_ISO_DEP_TRACE != 0u) {
           nero_nfc_log_line("[ISO-DEP] recv aborted by CCID host");
@@ -541,6 +542,7 @@ static int reader_security_key_send_i_block(const uint8_t* apdu,
         nero_nfc_secure_clear(rx, sizeof(rx));
         return -1;
       }
+#endif
 
       if (!reader_iso_dep_build_wtx_echo(wtx_tx, sizeof(wtx_tx), rx, rlen,
                                          hdr_skip, &wtx_len)) {
@@ -642,7 +644,7 @@ static int reader_security_key_send_i_block(const uint8_t* apdu,
         nero_nfc_secure_clear(rx, sizeof(rx));
         return -1;
       }
-      /* [ISO14443-4] block-numbering rule B — every accepted I-block with
+      /* [ISO14443-4] block-numbering rule B -- every accepted I-block with
        * the current number toggles the PCD number, including each chained
        * response fragment. */
       expected_block ^= ISO_DEP_BLOCK_NUM_MASK;
@@ -872,7 +874,7 @@ int reader_security_key_send_apdu_timeout_ex(const uint8_t* apdu,
     }
     while (follow_get_response && nfc_ctap_response_more_data(resp, total)) {
       uint16_t tail_cap;
-      /* [CTAP2.3] §11.3.7.2 — NFCCTAP_GETRESPONSE: CLA=0x80 INS=0x11, P1/P2
+      /* [CTAP2.3] §11.3.7.2 -- NFCCTAP_GETRESPONSE: CLA=0x80 INS=0x11, P1/P2
        * RFU=0x00. The spec defines no Le for this command, so it is sent as an
        * ISO7816-4 case-1 APDU (no Lc/Le); the response data is returned over
        * ISO-DEP framing. This is the legacy continuation path; the CCID relay

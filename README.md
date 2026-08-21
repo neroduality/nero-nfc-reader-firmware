@@ -44,25 +44,25 @@ keeps the credentials and private keys.
 
 - Reads NFC Forum Type 2, Type 4, and Type 5 tags (Type 5 when RF hardware supports ISO15693).
 - Writes NDEF records.
-- Plain NDEF storage tags only—no Secure Messaging or password-protected writes.
+- Plain NDEF storage tags only--no Secure Messaging or password-protected writes.
 - Two USB firmware modes: CDC serial shell or USB CCID; PC/SC uses USB CCID.
 - Optionally lets PC/SC hosts use a tapped NFC FIDO security key/card for
   WebAuthn passwordless sign-in by relaying CTAP APDUs over Type 4 ISO-DEP.
 
 ## Quick start
 
-You need a supported board, [X-NUCLEO-NFC08A1](https://www.st.com/en/evaluation-tools/x-nucleo-nfc08a1.html) shield, USB data cable, and NFC tags — see [Supported hardware](#supported-hardware).
+You need a supported board, [X-NUCLEO-NFC08A1](https://www.st.com/en/evaluation-tools/x-nucleo-nfc08a1.html) shield, USB data cable, and NFC tags -- see [Supported hardware](#supported-hardware).
 
-**1. Build and flash firmware** ([firmware](INSTALLATION.md#firmware)) — serial shell (simplest quick start):
+**1. Build and flash firmware** ([firmware](INSTALLATION.md#firmware)) -- serial shell (simplest quick start):
 
-Default `TARGET=arduino_uno_r4wifi`. Alternate: `# TARGET=nucleo_wba65ri …`.
+Default `TARGET=arduino_uno_r4wifi`. Alternate: `# TARGET=nucleo_wba65ri ...`.
 
 ```sh
 make deps
 make flash-cdc
 ```
 
-USB CCID reader (PC/SC): `make flash` instead — [CCID host setup](docs/CCID.md#linux-setup).
+USB CCID reader (PC/SC): `make flash` instead -- [CCID host setup](docs/CCID.md#linux-setup).
 
 **2. Install host userspace CLIs** ([host](INSTALLATION.md#host)):
 
@@ -72,7 +72,7 @@ make install-userspace
 export PATH="${HOME}/.local/bin:${PATH}"
 ```
 
-**3. One-time Linux setup** ([host](INSTALLATION.md#host)) — after serial flash:
+**3. One-time Linux setup** ([host](INSTALLATION.md#host)) -- after serial flash:
 
 ```sh
 sudo make install-udev
@@ -80,14 +80,14 @@ sudo make install-udev
 
 Replug the board. After `make flash` (PC/SC), use [CCID.md § Linux setup](docs/CCID.md#linux-setup) instead.
 
-**4. Read or write tags** — tap a tag when prompted ([TUTORIAL_TAGS.md](docs/TUTORIAL_TAGS.md)):
+**4. Read or write tags** -- tap a tag when prompted ([TUTORIAL_TAGS.md](docs/TUTORIAL_TAGS.md)):
 
 ```sh
 reader --no-open-url
 writer --uri=https://example.test/ --uri=https://example2.test/
 ```
 
-**Optional — WebAuthn** with an NFC FIDO security key: follow [TUTORIAL_WEBAUTHN_CCID.md](docs/TUTORIAL_WEBAUTHN_CCID.md). Not required for tag read/write.
+**Optional -- WebAuthn** with an NFC FIDO security key: follow [TUTORIAL_WEBAUTHN_CCID.md](docs/TUTORIAL_WEBAUTHN_CCID.md). Not required for tag read/write.
 
 Developers: `make help`.
 

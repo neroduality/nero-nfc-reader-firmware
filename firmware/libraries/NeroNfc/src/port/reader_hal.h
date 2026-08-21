@@ -34,7 +34,7 @@ void reader_hal_serial_begin(unsigned long baud);
 NERO_NFC_NODISCARD bool reader_hal_serial_ready(void);
 void reader_hal_serial_write_char(char c);
 int reader_hal_serial_available(void);
-/* Returns byte 0–255 from USB serial, or -1 if none. */
+/* Returns byte 0-255 from USB serial, or -1 if none. */
 int reader_hal_serial_read_byte(void);
 void reader_hal_delay_us(uint32_t us);
 void reader_hal_delay_ms(uint32_t ms);

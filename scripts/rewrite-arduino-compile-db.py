@@ -53,14 +53,14 @@ def main() -> int:
         cwd = entry.get("directory", repo_root)
         abs_file = raw if os.path.isabs(raw) else os.path.normpath(os.path.join(cwd, raw))
         if not abs_file.startswith(sketch_prefix):
-            out.append(entry)  # core/library template — leave untouched
+            out.append(entry)  # core/library template -- leave untouched
             continue
         rel = abs_file[len(sketch_prefix):]
         real = os.path.join(sketch_abs, rel)
         if not os.path.exists(real) and rel.endswith(".ino.cpp"):
             real = os.path.join(sketch_abs, rel[: -len(".cpp")])  # foo.ino.cpp -> foo.ino
         if not os.path.exists(real):
-            continue  # generated wrapper with no real source — drop
+            continue  # generated wrapper with no real source -- drop
         # Prefer the canonical target when the sketch path is a symlink (§7).
         real = os.path.realpath(real)
         for key in ("command",):

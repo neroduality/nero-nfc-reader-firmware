@@ -26,15 +26,14 @@
  *   [T4T-ISO14443-4]   NFC Forum Type 4 Tag Technical Specification 1.0
  *   [T5T-ISO15693] ISO/IEC 15693-3 (vicinity RF / Type 5 command set)
  *   [T5T-NFCFORUM] NFC Forum Type 5 Tag Technical Specification (Capability
- * Container / NDEF mapping) [ISO14443-3] ISO/IEC 14443-3 (RFID — identification
- * cards — contactless) [ISO14443-4] ISO/IEC 14443-4 (RFID — transmission
- * protocol)
- *   [SC17-ICM] ISO/IEC JTC 1/SC 17 Standing Document 5 (IC manufacturer IDs;
- * ISO/IEC 7816-6 defines the identifier data element, not the assignments)
- *   [T2T-ISO14443-A-NTAG21x]    NXP NTAG213/215/216 data sheet Rev. 3.2
- * (265332) [T2T-ISO14443-A-ST25TN]  STMicroelectronics ST25TN512/01K data sheet
- * DS13433 [T5T-ISO15693-ST25TV]  STMicroelectronics ST25TV02KC data sheet
- * DS13304 [T5T-ISO15693-ST25DV]  STMicroelectronics ST25DVxxKC data sheet
+ * Container / NDEF mapping) [ISO14443-3] ISO/IEC 14443-3 (RFID --
+ * identification cards -- contactless) [ISO14443-4] ISO/IEC 14443-4 (RFID --
+ * transmission protocol) [SC17-ICM] ISO/IEC JTC 1/SC 17 Standing Document 5 (IC
+ * manufacturer IDs; ISO/IEC 7816-6 defines the identifier data element, not the
+ * assignments) [T2T-ISO14443-A-NTAG21x]    NXP NTAG213/215/216 data sheet
+ * Rev. 3.2 (265332) [T2T-ISO14443-A-ST25TN]  STMicroelectronics ST25TN512/01K
+ * data sheet DS13433 [T5T-ISO15693-ST25TV]  STMicroelectronics ST25TV02KC data
+ * sheet DS13304 [T5T-ISO15693-ST25DV]  STMicroelectronics ST25DVxxKC data sheet
  * DS13519 [CTAP2.3] FIDO Client to Authenticator Protocol 2.3 PS 20260226 (NFC
  * transport §11.3; includes GETRESPONSE cancel P1=0x11 and 100 ms/500 ms poll
  * timing in §11.3.7.2) [WebAuthn] W3C Web Authentication Level 3
@@ -43,7 +42,7 @@
  *   [PCSC-P1] PC/SC Part 1 Release 2.01 (host API)
  *   [PCSC-P3] PC/SC Part 3 Release 2.01 (contactless storage)
  *   [ISO7816-3]  ISO/IEC 7816-3 (ATR / historical bytes)
- *   [ISO7816-4]  ISO/IEC 7816-4:2005 (APDU command set; Tables 5–6 SW1/SW2)
+ *   [ISO7816-4]  ISO/IEC 7816-4:2005 (APDU command set; Tables 5-6 SW1/SW2)
  *   [RFC8949-CBOR-CTAP2] IETF RFC 8949 CBOR encoding for CTAP2 canonical form
  *   [RFC6350] IETF RFC 6350 (vCard Format Specification)
  *   [WSC]     Wi-Fi Alliance Wi-Fi Simple Configuration (WPS)
@@ -73,14 +72,14 @@
 /* [T5T-ISO15693] addressed command: flags + opcode (+ optional param) + 8-byte
  * UID. */
 #define NFC_TAG_T5T_ISO15693_CMD_BUF_MAX 12u
-/* [T5T-ISO15693] section 10.2 / ST25 Table 97–98 — addressed request flags
+/* [T5T-ISO15693] section 10.2 / ST25 Table 97-98 -- addressed request flags
  * (high data rate + UID).
  */
 #define NFC_TAG_T5T_ISO15693_FLAGS_ADDRESSED 0x22u
-/* [T5T-ISO15693] section 10.2 — Protocol_extension_flag bit (OR with 0x22 →
+/* [T5T-ISO15693] section 10.2 -- Protocol_extension_flag bit (OR with 0x22 ->
  * 0x2A on wire). */
 #define NFC_TAG_T5T_ISO15693_FLAG_PROTOCOL_EXTENSION 0x08u
-/* [T5T-ISO15693] section 10.3 — block read/write opcodes (short vs extended
+/* [T5T-ISO15693] section 10.3 -- block read/write opcodes (short vs extended
  * block addr). */
 #define NFC_TAG_T5T_ISO15693_CMD_READ_SINGLE 0x20u
 #define NFC_TAG_T5T_ISO15693_CMD_WRITE_SINGLE 0x21u
@@ -91,7 +90,7 @@
 /* Implementation cap: ST25R3916 ISO15693 stream buffer fits flags + 31
  * four-byte blocks + CRC. */
 #define NFC_TAG_T5T_ISO15693_READ_MULTIPLE_BLOCKS_MAX 31u
-/* [T5T-ISO15693] section 10.3.4 — Get System Info (0x2B) / Extended Get System
+/* [T5T-ISO15693] section 10.3.4 -- Get System Info (0x2B) / Extended Get System
  * Info (0x3B). */
 #define NFC_TAG_T5T_ISO15693_CMD_GET_SYS_INFO 0x2Bu
 #define NFC_TAG_T5T_ISO15693_CMD_EXT_GET_SYS_INFO 0x3Bu
@@ -109,40 +108,40 @@
 #define NFC_TAG_ATQA_LEN 2u
 
 /* ---- NFC Forum Type 2 Tag ([T2T-ISO14443-A] structural geometry) ---- */
-/* [T2T-ISO14443-A] section 5.1 — Type 2 page (block) size. */
+/* [T2T-ISO14443-A] section 5.1 -- Type 2 page (block) size. */
 #define NFC_TAG_T2T_PAGE_SIZE_BYTES 4u
-/* [T2T-ISO14443-A] section 5.1 — READ returns four consecutive pages (16
+/* [T2T-ISO14443-A] section 5.1 -- READ returns four consecutive pages (16
  * bytes). */
 #define NFC_TAG_T2T_READ_RESP_BYTES 16u
 #define NFC_TAG_T2T_READ_RESP_PAGES 4u
-/* [T2T-ISO14443-A] Type 2 Tag Op Spec 1.1 §6.1 — CC byte 2 (MLEN) counts the
+/* [T2T-ISO14443-A] Type 2 Tag Op Spec 1.1 §6.1 -- CC byte 2 (MLEN) counts the
  * data area in 8-byte units. */
 #define NFC_TAG_T2T_AREA_SIZE_UNIT_BYTES 8u
-/* [T2T-ISO14443-A] Type 2 Tag Op Spec 1.1 §2.1.3 / §6.1 — Capability Container
+/* [T2T-ISO14443-A] Type 2 Tag Op Spec 1.1 §2.1.3 / §6.1 -- Capability Container
  * is block/page 3 (not page 0). */
 #define NFC_TAG_T2T_CC_PAGE_INDEX 3u
-/* [T2T-ISO14443-A] section 5.1/5.2 — READ frame: opcode + page address. */
+/* [T2T-ISO14443-A] section 5.1/5.2 -- READ frame: opcode + page address. */
 #define NFC_TAG_T2T_READ_CMD_LEN 2u
 /* [T2T-ISO14443-A-NTAG21x] FAST_READ frame: opcode + start page + end page. */
 #define NFC_TAG_T2T_FAST_READ_CMD_LEN 3u
-/* [T2T-ISO14443-A] section 5.2 — WRITE frame: opcode + page + four data bytes.
+/* [T2T-ISO14443-A] section 5.2 -- WRITE frame: opcode + page + four data bytes.
  */
 #define NFC_TAG_T2T_WRITE_CMD_LEN 6u
 /* [T2T-ISO14443-A-NTAG21x] GET_VERSION (0x60) command is a single-byte opcode
  * on the RF wire. */
 #define NFC_TAG_T2T_GET_VERSION_CMD_LEN 1u
-/* [T2T-ISO14443-A] Type 2 Tag Op Spec 1.1 §2.1.3 / §6.1 — CC page (4 B) plus
- * ≥1 user page (4 B each) before NDEF TLV scan.
+/* [T2T-ISO14443-A] Type 2 Tag Op Spec 1.1 §2.1.3 / §6.1 -- CC page (4 B) plus
+ * >=1 user page (4 B each) before NDEF TLV scan.
  */
 #define NFC_TAG_T2T_MIN_NDEF_USER_PAGES 1u
 #define NFC_TAG_T2T_MIN_NDEF_DUMP_BYTES \
   (NFC_TAG_T2T_PAGE_SIZE_BYTES +        \
    (NFC_TAG_T2T_MIN_NDEF_USER_PAGES * NFC_TAG_T2T_PAGE_SIZE_BYTES))
-/* [T2T-ISO14443-A] section 5.2 — WRITE 4-bit ACK nibble is 1010b (0Ah). */
+/* [T2T-ISO14443-A] section 5.2 -- WRITE 4-bit ACK nibble is 1010b (0Ah). */
 #define NFC_TAG_T2T_ACK_NIBBLE 0x0Au
 #define NFC_TAG_T2T_ACK_NIBBLE_MASK 0x0Fu
 /*
- * [T2T-ISO14443-A] section 4.5 — static-memory fallback when CC/IC fingerprint
+ * [T2T-ISO14443-A] section 4.5 -- static-memory fallback when CC/IC fingerprint
  * is unknown (baseline Type 2 tags expose pages 0..44).
  */
 #define NFC_TAG_T2T_FALLBACK_LAST_PAGE 44u
@@ -154,8 +153,8 @@
 #define NFC_TAG_NTAG215_LAST_PAGE 129u
 #define NFC_TAG_NTAG216_LAST_PAGE 225u
 
-/* [T2T-ISO14443-A-NTAG21x] Table 28 byte 6 — storage-size ID (213=0Fh, 215=11h,
- * 216=13h). */
+/* [T2T-ISO14443-A-NTAG21x] Table 28 byte 6 -- storage-size ID (213=0Fh,
+ * 215=11h, 216=13h). */
 #define NFC_TAG_NTAG213_SIZE_ID 0x0Fu
 #define NFC_TAG_NTAG215_SIZE_ID 0x11u
 #define NFC_TAG_NTAG216_SIZE_ID 0x13u
@@ -195,29 +194,29 @@
 #define NFC_TAG_ST25TN01K_DATA_BYTES 160u
 #define NFC_TAG_ST25TN_MAX_USER_PAGE 43u
 #define NFC_TAG_ST25TN_FALLBACK_LAST_PAGE 19u
-/* [T2T-ISO14443-A-ST25TN] Table 28 — factory CC byte 2 (MLEN) at delivery. */
+/* [T2T-ISO14443-A-ST25TN] Table 28 -- factory CC byte 2 (MLEN) at delivery. */
 #define NFC_TAG_ST25TN512_CC_MLEN 0x08u
 #define NFC_TAG_ST25TN01K_CC_MLEN 0x14u
 #define NFC_TAG_ST25TN_CC_MLEN_DEFAULT NFC_TAG_ST25TN512_CC_MLEN
 
 /* ---- NFC Forum Type 4 Tag ([T4T-ISO14443-4] + [ISO14443-4]) ---- */
-/* [ISO14443-3] section 6.5.3.4 — SAK bit 6 (0x20) set means the PICC supports
+/* [ISO14443-3] section 6.5.3.4 -- SAK bit 6 (0x20) set means the PICC supports
  * ISO-DEP ([ISO14443-4]); bit numbering is ISO 14443-3's 1-indexed convention.
  */
 #define NFC_TAG_T4T_SAK_ISO14443_4_BIT 0x20u
-/* [T4T-ISO14443-4] section 7.2.1.7 — minimum CC file length (15 bytes). */
+/* [T4T-ISO14443-4] section 7.2.1.7 -- minimum CC file length (15 bytes). */
 #define NFC_TAG_T4T_CC_MIN_LEN 15u
-/* [T4T-ISO14443-4] section 7.2.1.7 — NDEF file-control TLV: T=04h, L=06h. */
+/* [T4T-ISO14443-4] section 7.2.1.7 -- NDEF file-control TLV: T=04h, L=06h. */
 #define NFC_TAG_T4T_NDEF_TLV_TYPE 0x04u
 #define NFC_TAG_T4T_NDEF_TLV_LEN 0x06u
-/* [T4T-ISO14443-4] Mapping 2.0 §5.1 Table 5 — valid MLe/MLc lower bounds. */
+/* [T4T-ISO14443-4] Mapping 2.0 §5.1 Table 5 -- valid MLe/MLc lower bounds. */
 #define NFC_TAG_T4T_MLE_MIN 0x000Fu
 #define NFC_TAG_T4T_MLC_MIN 0x0001u
-/* [ISO14443-4] section 5.1 — RATS PDU start byte (E0h). */
+/* [ISO14443-4] section 5.1 -- RATS PDU start byte (E0h). */
 #define NFC_TAG_T4T_RATS_START_BYTE 0xE0u
-/* [ISO14443-4] section 5.1 — RATS PARAM byte: FSDI=7, CID=0 → 70h. */
+/* [ISO14443-4] section 5.1 -- RATS PARAM byte: FSDI=7, CID=0 -> 70h. */
 #define NFC_TAG_T4T_RATS_PARAM_FSDI7 0x70u
-/* [ISO14443-4] section 5.1 — RATS command frame length (start byte + PARAM, 2
+/* [ISO14443-4] section 5.1 -- RATS command frame length (start byte + PARAM, 2
  * bytes). */
 #define NFC_TAG_T4T_RATS_CMD_LEN 2u
 /*
@@ -227,19 +226,19 @@
 #define NFC_TAG_T4T_ISO_DEP_TRANSCEIVE_TIMEOUT_MS 300u
 #define NFC_TAG_T4T_DESELECT_TRANSCEIVE_TIMEOUT_MS 50u
 #define NFC_TAG_T4T_DESELECT_SETTLE_MS 52u
-/* [T4T-ISO14443-4] section 7.2 — CC file identifier (E103h; same on
+/* [T4T-ISO14443-4] section 7.2 -- CC file identifier (E103h; same on
  * [T4T-ISO14443-4-NT4H424]). */
 #define NFC_TAG_T4T_CC_FILE_ID 0xE103u
-/* [T4T-ISO14443-4] section 5.3 / [T4T-ISO14443-4-NT4H424] section 8.2.3 — NDEF
+/* [T4T-ISO14443-4] section 5.3 / [T4T-ISO14443-4-NT4H424] section 8.2.3 -- NDEF
  * Tag Application AID length. */
 #define NFC_TAG_T4T_NDEF_APP_AID_LEN 7u
 
 /* ---- NXP NTAG 424 DNA ([T4T-ISO14443-4-NT4H424] Rev 3.0) ---- */
-/* [T4T-ISO14443-4-NT4H424] section 1 — 416-byte user-visible file system (T4T
+/* [T4T-ISO14443-4-NT4H424] section 1 -- 416-byte user-visible file system (T4T
  * certified). */
 #define NFC_TAG_NT4H424_USER_MEMORY_BYTES 416u
-/* [T4T-ISO14443-4-NT4H424] section 8.2.3 — CC / NDEF / proprietary StandardData
- * file IDs. */
+/* [T4T-ISO14443-4-NT4H424] section 8.2.3 -- CC / NDEF / proprietary
+ * StandardData file IDs. */
 #define NFC_TAG_NT4H424_CC_FILE_ID NFC_TAG_T4T_CC_FILE_ID
 #define NFC_TAG_NT4H424_CC_FILE_STORAGE_BYTES 32u
 /* CCLEN 0017h at delivery (includes proprietary TLV). */
@@ -248,13 +247,13 @@
 /* 0100h NDEF file size at delivery. */
 #define NFC_TAG_NT4H424_NDEF_FILE_SIZE 256u
 #define NFC_TAG_NT4H424_PROP_FILE_ID 0xE105u
-/* [T4T-ISO14443-4-NT4H424] section 8.2.3.2 — E105h proprietary file size 0080h
+/* [T4T-ISO14443-4-NT4H424] section 8.2.3.2 -- E105h proprietary file size 0080h
  * at delivery. */
 #define NFC_TAG_NT4H424_PROP_FILE_SIZE 128u
-/* [T4T-ISO14443-4-NT4H424] section 8.2.4 — five application AES-128 keys (key
+/* [T4T-ISO14443-4-NT4H424] section 8.2.4 -- five application AES-128 keys (key
  * numbers 0..4). */
 #define NFC_TAG_NT4H424_AES_KEY_COUNT 5u
-/* [T4T-ISO14443-4-NT4H424] section 8.2.3.2 — factory CC MLe/MLc (mapping
+/* [T4T-ISO14443-4-NT4H424] section 8.2.3.2 -- factory CC MLe/MLc (mapping
  * version 2.0); CC bytes 3..6 big-endian.
  */
 #define NFC_TAG_NT4H424_DEFAULT_MLE_MSB 0x01u
@@ -270,13 +269,13 @@
                << NFC_BYTE_SHIFT_8) |                    \
               NFC_TAG_NT4H424_DEFAULT_MLC_LSB))
 /*
- * SUN/SDM/AES secure messaging ([T4T-ISO14443-4-NT4H424] sections 9–10) is
+ * SUN/SDM/AES secure messaging ([T4T-ISO14443-4-NT4H424] sections 9-10) is
  * intentionally out of scope for the plain-NDEF reader/writer paths; only file
  * IDs and CC geometry above are referenced here.
  */
 
 /* ---- FIDO CTAP 2.3 NFC transport ([CTAP2.3] section 11.3) ---- */
-/* [CTAP2.3] section 11.3.3 — FIDO2 application identifier (RID + PIX). */
+/* [CTAP2.3] section 11.3.3 -- FIDO2 application identifier (RID + PIX). */
 #define NFC_CTAP_FIDO_AID_LEN 8u
 #define NFC_CTAP_INS_MSG 0x10u /* [CTAP2.3] section 11.3.7.1 NFCCTAP_MSG */
 /* [CTAP2.3] section 11.3.7.2 NFCCTAP_GETRESPONSE */
@@ -304,21 +303,21 @@
 #define NFC_ISO_DEP_IBLOCK_TX_OVERHEAD 12u
 #define NFC_ISO_DEP_IBLOCK_TX_BUF_LEN \
   (NFC_CTAP_APDU_BUF_RECOMMENDED + NFC_ISO_DEP_IBLOCK_TX_OVERHEAD)
-/* [ISO14443-4] section 7.2 — RATS/ATS exchange timeout (FWT headroom). */
+/* [ISO14443-4] section 7.2 -- RATS/ATS exchange timeout (FWT headroom). */
 #define NFC_ISO_DEP_RATS_TIMEOUT_MS 400u
-/* [CTAP2.3] section 11.3.5.1 — NFCCTAP command class byte (proprietary short
+/* [CTAP2.3] section 11.3.5.1 -- NFCCTAP command class byte (proprietary short
  * CLA). */
 #define NFC_CTAP_CLA 0x80u
-/* [CTAP2.3] section 6.1 / [WebAuthn] — clientDataHash is a 32-byte SHA-256
+/* [CTAP2.3] section 6.1 / [WebAuthn] -- clientDataHash is a 32-byte SHA-256
  * digest. */
 #define NFC_CTAP_CLIENT_HASH_LEN 32u
-/* [CTAP2.3] section 6.4 — authenticatorGetInfo AAGUID field width (16 bytes).
+/* [CTAP2.3] section 6.4 -- authenticatorGetInfo AAGUID field width (16 bytes).
  */
 #define NFC_CTAP_AAGUID_LEN 16u
-/* [CTAP2.3] section 8.1 — CTAP2 status byte 0 means success in response
+/* [CTAP2.3] section 8.1 -- CTAP2 status byte 0 means success in response
  * payload. */
 #define NFC_CTAP_STATUS_SUCCESS 0x00u
-/* [CTAP2.3] §8.2 — CTAP2 error codes surfaced in NFC response bodies. */
+/* [CTAP2.3] §8.2 -- CTAP2 error codes surfaced in NFC response bodies. */
 #define NFC_CTAP_ERR_INVALID_COMMAND 0x01u
 #define NFC_CTAP_ERR_INVALID_PARAMETER 0x02u
 #define NFC_CTAP_ERR_CBOR_UNEXPECTED_TYPE 0x11u
@@ -341,7 +340,7 @@
 #define NFC_CTAP_ERR_INVALID_CHANNEL 0x0Bu
 #define NFC_CTAP_ERR_UNAUTHORIZED_PERMISSION 0x40u /* [CTAP2.3] §8.2 */
 #define NFC_CTAP_ERR_OTHER 0x7Fu
-/* [CTAP2.3] section 6.2 — authenticatorGetAssertion CBOR map keys (unsigned
+/* [CTAP2.3] section 6.2 -- authenticatorGetAssertion CBOR map keys (unsigned
  * integer keys): rpId 0x01, clientDataHash 0x02, allowList 0x03, extensions
  * 0x04, options 0x05. The serial demo request carries the "up"/"uv" options
  * map, so it uses the options key (0x05), not the extensions key (0x04). */
@@ -353,8 +352,8 @@
 #define NFC_CTAP_GET_INFO_KEY_VERSIONS 0x01u
 #define NFC_CTAP_GET_INFO_KEY_AAGUID 0x03u
 #define NFC_CTAP_GET_INFO_KEY_OPTIONS 0x04u
-/* [RFC8949-CBOR-CTAP2] RFC 8949 — major types and inline-length limits for CTAP
- * CBOR builders. */
+/* [RFC8949-CBOR-CTAP2] RFC 8949 -- major types and inline-length limits for
+ * CTAP CBOR builders. */
 #define NFC_CBOR_MAJOR_UNSIGNED 0u
 #define NFC_CBOR_MAJOR_NEGATIVE 1u
 #define NFC_CBOR_MAJOR_BYTES 2u
@@ -377,7 +376,8 @@
 #define NFC_CBOR_HDR_UINT16 3u
 /* [CTAP2.3] getAssertion CBOR container headers (map/array arity). */
 #define NFC_CTAP_CBOR_MAP_PK_CRED 0xA2u
-/* [CTAP2.3] section 6.2 — options is a 2-entry map ({"up", "uv"}); CBOR map(2).
+/* [CTAP2.3] section 6.2 -- options is a 2-entry map ({"up", "uv"}); CBOR
+ * map(2).
  */
 #define NFC_CTAP_CBOR_MAP_OPTIONS 0xA2u
 #define NFC_CTAP_CBOR_MAP_GET_ASSERTION_NO_ALLOW 0xA3u
@@ -393,7 +393,7 @@
 #define NFC_CTAP_GET_ASSERTION_MAP_HDR_LEN 1u
 #define NFC_CTAP_PK_CRED_DESCRIPTOR_HDR_LEN 20u
 #define NFC_CTAP_PK_CRED_DESCRIPTOR_EXTRA 50u
-/* [CTAP2.3] section 11.3.7 / [ISO7816-4] §7 — short vs extended C-APDU layout
+/* [CTAP2.3] section 11.3.7 / [ISO7816-4] §7 -- short vs extended C-APDU layout
  * (bytes). */
 #define NFC_CTAP_APDU_SHORT_HDR_LEN 6u
 #define NFC_CTAP_APDU_EXTENDED_HDR_LEN 8u
@@ -407,8 +407,8 @@
 #define NFC_CTAP_APDU_PAYLOAD_HDR_SHORT 6u
 #define NFC_CTAP_APDU_PAYLOAD_HDR_EXTENDED 9u
 #define NFC_CTAP_RESPONSE_STATUS_PREFIX_LEN 3u
-/* [CTAP2.3] §11.3.5.2 — CTAP status byte + CBOR body + trailing ISO7816 SW1/SW2
- * (3-byte tail). */
+/* [CTAP2.3] §11.3.5.2 -- CTAP status byte + CBOR body + trailing ISO7816
+ * SW1/SW2 (3-byte tail). */
 /* first CBOR byte offset after CTAP status byte */
 #define NFC_CTAP_CBOR_HDR_INLINE 1u
 #define NFC_CTAP_MIN_RESPONSE_BODY_LEN NFC_CTAP_RESPONSE_STATUS_PREFIX_LEN
@@ -425,43 +425,43 @@
  * (20h), including HTAB, in contact property values.
  */
 #define NFC_RFC6350_ASCII_FIRST_PRINTABLE 0x20u
-/* [RFC6350] ASCII DEL (0x7F) — reject in printable property values. */
+/* [RFC6350] ASCII DEL (0x7F) -- reject in printable property values. */
 #define NFC_RFC6350_ASCII_DELETE 0x7Fu
-/* [RFC6350] section 3.3 — vCard 4.0 VERSION property value. */
+/* [RFC6350] section 3.3 -- vCard 4.0 VERSION property value. */
 #define NFC_RFC6350_VCARD_VERSION_MAJOR 4u
 
 /* ---- PC/SC / CCID / ISO7816 reader-emulation geometry ---- */
-/* [ISO7816-3] section 8.2 — historical bytes field width cap in PC/SC ATR. */
+/* [ISO7816-3] section 8.2 -- historical bytes field width cap in PC/SC ATR. */
 #define NFC_ISO7816_HISTORICAL_BYTES_MAX 15u
 
 /* ---- NFC Forum Type 5 Tag ([T5T-ISO15693] + ST25 datasheets) ---- */
-/* [T5T-ISO15693-ST25DV] Table 169 — IC ref: 50h (ST25DV04KC), 51h (ST25DV16KC /
- * ST25DV64KC). */
+/* [T5T-ISO15693-ST25DV] Table 169 -- IC ref: 50h (ST25DV04KC), 51h (ST25DV16KC
+ * / ST25DV64KC). */
 #define NFC_TAG_ST25DV_IC_REF 0x51u
 #define NFC_TAG_ST25DV04KC_IC_REF 0x50u
-/* [T5T-ISO15693] Get System Info — max block count with one-byte block-count
+/* [T5T-ISO15693] Get System Info -- max block count with one-byte block-count
  * field (256). */
 #define NFC_TAG_T5T_ISO15693_BLOCK_COUNT_1BYTE_MAX 256u
-/* [T5T-ISO15693-ST25TV] DS13304 §4.2 — ST25TV02KC silicon: 80 blocks (0..4Fh),
+/* [T5T-ISO15693-ST25TV] DS13304 §4.2 -- ST25TV02KC silicon: 80 blocks (0..4Fh),
  * not 256. */
 #define NFC_TAG_ST25TV02KC_BLOCK_COUNT 80u
-/* [T5T-NFCFORUM] §4.3 — CC MLEN counts the T5T_Area in 8-byte units.
+/* [T5T-NFCFORUM] §4.3 -- CC MLEN counts the T5T_Area in 8-byte units.
  */
 #define NFC_TAG_T5T_AREA_SIZE_UNIT_BYTES 8u
-/* [T5T-NFCFORUM] §4.3 — CC lengths and MLEN-overflow markers. */
+/* [T5T-NFCFORUM] §4.3 -- CC lengths and MLEN-overflow markers. */
 #define NFC_TAG_T5T_CC_LEN_SHORT 4u
 #define NFC_TAG_T5T_CC_LEN_EXTENDED 8u
 #define NFC_TAG_T5T_CC_MLEN_OVERFLOW 0xFFu
-/* [IMPL-POLICY] ST AN5608 §3.3.1 — Android Oreo MLEN workaround (CC byte 3
+/* [IMPL-POLICY] ST AN5608 §3.3.1 -- Android Oreo MLEN workaround (CC byte 3
  * bit 2); not NFC Forum T5T compliant. */
 #define NFC_TAG_T5T_CC_MLEN_OVERFLOW_CC3_FLAG 0x04u
 
 /* [T5T-ISO15693] Get System Info command header before UID. */
 #define NFC_TAG_T5T_ISO15693_SYS_INFO_CMD_HEADER_LEN 2u
-/* [T5T-ISO15693-ST25DV] section 7.6.23 — Extended Get System Info adds
+/* [T5T-ISO15693-ST25DV] section 7.6.23 -- Extended Get System Info adds
  * request-fields byte. */
 #define NFC_TAG_ST25DV_EXT_SYS_INFO_CMD_HEADER_LEN 3u
-/* [T5T-ISO15693-ST25DV] section 7.6.23 Table 164 — request DSFID+AFI+memory+IC
+/* [T5T-ISO15693-ST25DV] section 7.6.23 Table 164 -- request DSFID+AFI+memory+IC
  * ref (0Fh). */
 #define NFC_TAG_ST25DV_EXT_SYS_INFO_REQUEST_FIELDS 0x0Fu
 
@@ -469,7 +469,7 @@
  * information flags + UID (1+1+8 = 10). */
 #define NFC_TAG_T5T_ISO15693_SYS_INFO_MIN_REPLY_LEN 10u
 /*
- * [T5T-ISO15693-ST25DV] section 7.6.23 — Extended Get System Info
+ * [T5T-ISO15693-ST25DV] section 7.6.23 -- Extended Get System Info
  * minimum-accept guard: 10-byte preamble (response flags + info flags + 8-byte
  * UID) plus the 2 low bytes of the block-count field needed to resolve a
  * short-CC MLEN overflow. The extended parser bounds-checks each optional field
@@ -477,10 +477,11 @@
  * (DSFID+AFI+memory+IC ref) is 16 B before CRC.
  */
 #define NFC_TAG_ST25DV_EXT_SYS_INFO_MIN_REPLY_LEN 12u
-/* [T5T-ISO15693] Extended Get System Info — preamble before optional fields (10
- * B). */
+/* [T5T-ISO15693] Extended Get System Info -- preamble before optional fields
+ * (10 B). */
 #define NFC_TAG_T5T_ISO15693_SYS_INFO_EXT_MIN_REPLY_LEN 10u
-/* [T5T-ISO15693] section 10.3.4 — UID field length in System Info responses. */
+/* [T5T-ISO15693] section 10.3.4 -- UID field length in System Info responses.
+ */
 #define NFC_TAG_T5T_ISO15693_SYS_INFO_UID_FIELD_LEN 8u
 /* [DERIVED] Zero-based last-byte index from the 8-byte UID length; not a
  * standalone SPEC entry. */
@@ -488,9 +489,9 @@
 /* [T5T-ISO15693] raw Get System Info field storage in
  * nfc_tag_type5_info_t::raw. */
 #define NFC_TAG_T5T_SYS_INFO_RAW_FIELD_MAX 16u
-/* [T5T-ISO15693] section 10.3.4 — response flags bit 0 (error flag). */
+/* [T5T-ISO15693] section 10.3.4 -- response flags bit 0 (error flag). */
 #define NFC_TAG_T5T_ISO15693_RESP_FLAG_ERROR 0x01u
-/* [T5T-ISO15693] section 10.3.4 — info flags: DSFID / AFI / memory / IC
+/* [T5T-ISO15693] section 10.3.4 -- info flags: DSFID / AFI / memory / IC
  * reference. */
 #define NFC_TAG_T5T_ISO15693_INFO_FLAG_DSFID 0x01u
 #define NFC_TAG_T5T_ISO15693_INFO_FLAG_AFI 0x02u
@@ -501,7 +502,7 @@
 /* [T5T-ISO15693] memory-size field width in standard Get System Info (2 bytes).
  */
 #define NFC_TAG_T5T_ISO15693_MEMORY_SIZE_FIELD_LEN 2u
-/* [T5T-ISO15693-ST25DV] section 7.6.23 — extended memory-size field width (3
+/* [T5T-ISO15693-ST25DV] section 7.6.23 -- extended memory-size field width (3
  * bytes). */
 #define NFC_TAG_ST25DV_EXT_MEMORY_SIZE_FIELD_LEN 3u
 /* [T5T-ISO15693] scratch buffer for Extended Get System Info replies. */
@@ -531,9 +532,9 @@
 /* [T2T-ISO14443-A-NTAG21x] READ / GET_VERSION transceive window on ISO14443-A
  * link. */
 #define NFC_TAG_T2T_READ_TIMEOUT_MS 20u
-/* [T2T-ISO14443-A-NTAG21x] READ_SIG — longer reply than GET_VERSION. */
+/* [T2T-ISO14443-A-NTAG21x] READ_SIG -- longer reply than GET_VERSION. */
 #define NFC_TAG_T2T_READ_SIG_TIMEOUT_MS 30u
-/* [T2T-ISO14443-A-NTAG21x] section 10.4 Table 34 — WRITE TTimeOut for 4-bit
+/* [T2T-ISO14443-A-NTAG21x] section 10.4 Table 34 -- WRITE TTimeOut for 4-bit
  * ACK/NAK. */
 #define NFC_TAG_T2T_WRITE_ACK_TIMEOUT_MS 10u
 /* [T5T-ISO15693] single-block read/write transceive window. */

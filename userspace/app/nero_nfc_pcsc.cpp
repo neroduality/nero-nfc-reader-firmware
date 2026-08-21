@@ -57,17 +57,17 @@ void ProbeAndApplyContactlessFields(PcscCard& card, PcscTagSnapshot& out,
   if (storage_type5) {
     uid = NormalizeType5Uid(std::move(uid));
   }
-  const std::vector<std::uint8_t> kAts = TryGetDataBytes(
+  const std::vector<std::uint8_t> ats = TryGetDataBytes(
       card, NFC_PCSC_GET_DATA_ATS, NFC_ISO7816_GET_DATA_P2_DEFAULT);
-  const std::vector<std::uint8_t> kSak = TryGetDataBytes(
+  const std::vector<std::uint8_t> sak = TryGetDataBytes(
       card, NFC_PCSC_GET_DATA_SAK, NFC_ISO7816_GET_DATA_P2_DEFAULT);
-  const std::vector<std::uint8_t> kAtqa = TryGetDataBytes(
+  const std::vector<std::uint8_t> atqa = TryGetDataBytes(
       card, NFC_PCSC_GET_DATA_ATQA, NFC_ISO7816_GET_DATA_P2_DEFAULT);
 
   out.uid_hex_ = HexBytes(uid);
-  out.ats_hex_ = HexBytes(kAts);
-  out.sak_hex_ = HexBytes(kSak, '\0');
-  out.atqa_hex_ = HexBytes(kAtqa);
+  out.ats_hex_ = HexBytes(ats);
+  out.sak_hex_ = HexBytes(sak, '\0');
+  out.atqa_hex_ = HexBytes(atqa);
   ApplyType4ContactlessHint(out);
 }
 
@@ -76,12 +76,12 @@ void ProbeAndApplyContactlessFields(PcscCard& card, PcscTagSnapshot& out,
 void ReadAndApplyStorageDetails(PcscCard& card, PcscTagSnapshot& out,
                                 const std::vector<std::uint8_t>& uid,
                                 std::vector<std::uint8_t>& type2_cc,
-                                std::vector<std::uint8_t>& type4_cc,
+                                const std::vector<std::uint8_t>& type4_cc,
                                 std::vector<std::uint8_t>& type5_cc,
                                 std::vector<std::uint8_t>& type5_system_info) {
   std::vector<std::uint8_t> type2_version;
-  std::vector<std::uint8_t> type2_signature;
-  std::optional<std::uint8_t> type2_auth0;
+  std::vector<std::uint8_t> const type2_signature;
+  std::optional<std::uint8_t> const type2_auth0;
 
   if (IsPcscStorageType2(out)) {
     type2_version = TryGetDataBytes(card, NFC_PCSC_GET_DATA_TYPE2_VERSION,
@@ -141,23 +141,23 @@ bool PcscReadConnectedTag(PcscCard& card, const std::string& reader,
     out.atr_hex_ = HexBytes(atr);
     ApplyStorageAtrHint(out);
   }
-  const bool kStorageType2 = IsPcscStorageType2(out);
-  const bool kStorageType5 = IsPcscStorageType5(out);
+  const bool storage_type2 = IsPcscStorageType2(out);
+  const bool storage_type5 = IsPcscStorageType5(out);
 
-  if (kStorageType5) {
+  if (storage_type5) {
     uid = NormalizeType5Uid(TryGetDataBytes(card, NFC_PCSC_GET_DATA_UID,
                                             NFC_ISO7816_GET_DATA_P2_DEFAULT));
   }
 
   /* NDEF read before contactless enrichment GET DATA so storage tags avoid
    * extra RF traffic before the TLV read. */
-  if (kStorageType2) {
+  if (storage_type2) {
     std::string storage_err;
     if (!ReadType2StorageNdef(card, out, type2_cc, storage_err) &&
         !storage_err.empty()) {
       AppendDetailLine(out, "PC/SC storage NDEF read failed: " + storage_err);
     }
-  } else if (kStorageType5) {
+  } else if (storage_type5) {
     std::string storage_err;
     if (!ReadType5StorageNdef(card, uid, out, type5_cc, type5_system_info,
                               storage_err) &&
@@ -166,9 +166,9 @@ bool PcscReadConnectedTag(PcscCard& card, const std::string& reader,
     }
   }
 
-  ProbeAndApplyContactlessFields(card, out, uid, kStorageType5);
+  ProbeAndApplyContactlessFields(card, out, uid, storage_type5);
 
-  if (!kStorageType2 && !kStorageType5) {
+  if (!storage_type2 && !storage_type5) {
     if (ShouldAttemptType4NdefIo(out, type4_cc)) {
       std::string type4_err;
       if (!ReadNdefFile(card, out, &type4_cc, type4_err) &&
@@ -206,13 +206,13 @@ bool PcscReadTagWithCard(PcscCard& card, const std::string& reader,
     card.Disconnect(SCARD_LEAVE_CARD);
     return false;
   }
-  bool const kOk = PcscReadConnectedTag(card, reader, out, err);
+  bool const ok = PcscReadConnectedTag(card, reader, out, err);
   std::string end_err;
   if (!card.EndTransaction(end_err)) {
     err = end_err;
     return false;
   }
-  return kOk;
+  return ok;
 }
 
 bool PcscWriteTagWithCard(PcscCard& card, const std::string& reader,
@@ -301,7 +301,7 @@ class WriterProgressSpinner {
 };
 
 std::optional<PcscShareMode> ParsePcscShareMode(std::string_view text) {
-  std::string mode = pcsc_internal::LowerCopy(text);
+  std::string const mode = pcsc_internal::LowerCopy(text);
   if (mode == "shared" || mode == "share" || mode == "scard_share_shared") {
     return PcscShareMode::kShared;
   }
@@ -458,11 +458,11 @@ bool ChoosePcscReaderFromList(const std::vector<std::string>& readers,
   }
 
   std::vector<std::string> matches;
-  const std::string kWant = pcsc_internal::LowerCopy(reader_substring);
-  if (!kWant.empty()) {
+  const std::string want = pcsc_internal::LowerCopy(reader_substring);
+  if (!want.empty()) {
     auto exact =
         std::ranges::find_if(readers, [&](const std::string& candidate) {
-          return pcsc_internal::LowerCopy(candidate) == kWant;
+          return pcsc_internal::LowerCopy(candidate) == want;
         });
     if (exact != readers.end()) {
       reader = *exact;
@@ -472,7 +472,7 @@ bool ChoosePcscReaderFromList(const std::vector<std::string>& readers,
     std::ranges::copy_if(readers, std::back_inserter(matches),
                          [&](const std::string& candidate) {
                            return pcsc_internal::LowerCopy(candidate).find(
-                                      kWant) != std::string::npos;
+                                      want) != std::string::npos;
                          });
     if (matches.size() == 1u) {
       reader = matches.front();
@@ -519,12 +519,12 @@ bool ResolvePcscReader(std::string_view reader_substring, std::string& reader,
   if (!ListPcscReaders(readers, err)) {
     return false;
   }
-  const std::string kEnvReader =
+  const std::string env_reader =
       reader_substring.empty() ? PcscReaderSubstringFromEnv() : std::string{};
-  const std::string_view kRequested = reader_substring.empty()
-                                          ? std::string_view(kEnvReader)
-                                          : reader_substring;
-  return ChoosePcscReaderFromList(readers, kRequested, reader, err);
+  const std::string_view requested = reader_substring.empty()
+                                         ? std::string_view(env_reader)
+                                         : reader_substring;
+  return ChoosePcscReaderFromList(readers, requested, reader, err);
 }
 
 bool PcscReadTag(std::string_view reader_substring,
@@ -601,13 +601,13 @@ int RunPcscReader(std::string_view reader_substring,
 #else
   std::string reader;
   std::string err;
-  bool const kAutoReader = reader_substring.empty();
+  bool const auto_reader = reader_substring.empty();
   pcsc_internal::PcscCard card;
   if (!card.EnsureContext(err)) {
     NeroNfcStderrLine("error: {}", err);
     return 1;
   }
-  if (!kAutoReader) {
+  if (!auto_reader) {
     if (!ResolvePcscReader(reader_substring, reader, err)) {
       NeroNfcStderrLine("error: {}", err);
       return 1;
@@ -633,7 +633,7 @@ int RunPcscReader(std::string_view reader_substring,
     WriterProgressSpinner wait_spinner("reader: ready for next NFC tag");
     bool wait_ok = false;
     std::size_t present_count = 0u;
-    if (kAutoReader) {
+    if (auto_reader) {
       wait_ok = pcsc_internal::ResolvePcscReaderForOperation(
           card, reader_substring, reader, err, false, &present_count);
     } else {
@@ -645,7 +645,7 @@ int RunPcscReader(std::string_view reader_substring,
       NeroNfcStderrLine("error: {}", err);
       return 1;
     }
-    if (kAutoReader) {
+    if (auto_reader) {
       pcsc_internal::AnnouncePcscReaderSelection(present_count, reader);
     }
     PcscTagSnapshot tag;
@@ -664,15 +664,15 @@ int RunPcscReader(std::string_view reader_substring,
       first_cycle = false;
       continue;
     }
-    const std::string kFingerprint = pcsc_internal::TagFingerprint(tag);
-    if (saw_confirmed_absence || kFingerprint != last_fingerprint) {
+    const std::string fingerprint = pcsc_internal::TagFingerprint(tag);
+    if (saw_confirmed_absence || fingerprint != last_fingerprint) {
       NeroNfcStdoutLine(FormatPcscTagSnapshotHeader(tag).c_str());
-      const std::string kBody = FormatPcscTagSnapshotBody(tag);
-      if (!kBody.empty()) {
-        NeroNfcStdoutLine(kBody.c_str());
+      const std::string body = FormatPcscTagSnapshotBody(tag);
+      if (!body.empty()) {
+        NeroNfcStdoutLine(body.c_str());
       }
       first = false;
-      last_fingerprint = kFingerprint;
+      last_fingerprint = fingerprint;
     }
     card.Disconnect();
     if (!pcsc_internal::WaitForCardAbsentStable(card.Context(), reader, err)) {
@@ -705,13 +705,13 @@ int RunPcscWriter(std::string_view reader_substring,
   }
   std::string err;
   std::string reader;
-  bool const kAutoReader = reader_substring.empty();
+  bool const auto_reader = reader_substring.empty();
   pcsc_internal::PcscCard card;
   if (!card.EnsureContext(err)) {
     NeroNfcStderrLine("error: {}", err);
     return 1;
   }
-  if (!kAutoReader) {
+  if (!auto_reader) {
     if (!ResolvePcscReader(reader_substring, reader, err)) {
       NeroNfcStderrLine("error: {}", err);
       return 1;
@@ -734,7 +734,7 @@ int RunPcscWriter(std::string_view reader_substring,
         "writer: ready for next writable NFC tag");
     bool wait_ok = false;
     std::size_t present_count = 0u;
-    if (kAutoReader) {
+    if (auto_reader) {
       wait_ok = pcsc_internal::ResolvePcscReaderForOperation(
           card, reader_substring, reader, err, false, &present_count);
     } else {
@@ -746,15 +746,15 @@ int RunPcscWriter(std::string_view reader_substring,
       NeroNfcStderrLine("error: {}", err);
       return 1;
     }
-    if (kAutoReader) {
+    if (auto_reader) {
       pcsc_internal::AnnouncePcscReaderSelection(present_count, reader);
     }
     NeroNfcStderrLine("writer: writing NDEF to tag...");
     WriterProgressSpinner write_spinner("writer: writing NDEF");
-    const bool kWriteOk =
+    const bool write_ok =
         pcsc_internal::PcscWriteTagWithCard(card, reader, request, err);
     write_spinner.Stop();
-    if (!kWriteOk) {
+    if (!write_ok) {
       NeroNfcStderrLine("error: {}", err);
       card.Disconnect();
       if (!pcsc_internal::WaitForCardAbsentStable(card.Context(), reader,

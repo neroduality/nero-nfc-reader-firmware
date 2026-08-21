@@ -179,13 +179,13 @@ bool ReadNdefFile(PcscCard& card, PcscTagSnapshot& tag,
     return false;
   }
   tag.ndef_message_.clear();
-  const std::uint16_t kMleCap = type4_info.mle;
-  const std::uint16_t kChunkMax = std::min<std::uint16_t>(
-      kMleCap, static_cast<std::uint16_t>(NFC_PCSC_T4_READ_BINARY_DATA_MAX));
+  const std::uint16_t mle_cap = type4_info.mle;
+  const std::uint16_t chunk_max = std::min<std::uint16_t>(
+      mle_cap, static_cast<std::uint16_t>(NFC_PCSC_T4_READ_BINARY_DATA_MAX));
   for (std::uint16_t done = 0; done < ndef_len;) {
     auto remaining = static_cast<std::uint16_t>(ndef_len - done);
     auto chunk = static_cast<std::uint8_t>(
-        std::min<std::uint16_t>(remaining, kChunkMax));
+        std::min<std::uint16_t>(remaining, chunk_max));
     std::vector<std::uint8_t> data;
     if (!ReadBinaryExact(
             card, static_cast<std::uint16_t>(NFC_PCSC_T4_NLEN_LEN + done),
@@ -357,9 +357,9 @@ static bool WriteType4NdefFile(PcscCard& card,
   }
   for (std::uint16_t done = 0; done < ndef.size();) {
     auto remaining = static_cast<std::uint16_t>(ndef.size() - done);
-    std::uint16_t chunk_len = std::min<std::uint16_t>(remaining, mlc);
-    std::vector<std::uint8_t> chunk(ndef.begin() + done,
-                                    ndef.begin() + done + chunk_len);
+    std::uint16_t const chunk_len = std::min<std::uint16_t>(remaining, mlc);
+    std::vector<std::uint8_t> const chunk(ndef.begin() + done,
+                                          ndef.begin() + done + chunk_len);
     if (!UpdateBinary(card,
                       static_cast<std::uint16_t>(NFC_PCSC_T4_NLEN_LEN + done),
                       chunk, err)) {
@@ -410,17 +410,17 @@ static bool WriteType4FilePlan(PcscCard& card, const PcscWriteContext& ctx,
 bool WriteNdefFile(PcscCard& card, const std::vector<std::uint8_t>& ndef,
                    std::string& err) {
   PcscWriteContext ctx;
-  const PcscWritePlan kPlans[] = {
+  const PcscWritePlan plans[] = {
       {.matches_ = MatchesType2Storage, .write_ = WriteType2StoragePlan},
       {.matches_ = MatchesType5Storage, .write_ = WriteType5StoragePlan},
       {.matches_ = MatchesType4File, .write_ = WriteType4FilePlan},
   };
 
   CollectPcscWriteContext(card, ctx, err);
-  const auto* const kSelected = std::ranges::find_if(
-      kPlans, [&](const PcscWritePlan& plan) { return plan.matches_(ctx); });
-  if (kSelected != std::end(kPlans)) {
-    return kSelected->write_(card, ctx, ndef, err);
+  const auto* const selected = std::ranges::find_if(
+      plans, [&](const PcscWritePlan& plan) { return plan.matches_(ctx); });
+  if (selected != std::end(plans)) {
+    return selected->write_(card, ctx, ndef, err);
   }
   err = "unsupported PC/SC tag type for NDEF write";
   return false;

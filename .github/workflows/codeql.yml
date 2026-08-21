@@ -14,11 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Code scanning — C/C++ via CMake tests + userspace + traced Arduino \`make nfc\`
+# Code scanning -- C/C++ via CMake tests + userspace + traced Arduino \`make nfc\`
 # for both boards (Debian sid container, same family as Main CI).
 # Runs on manual dispatch only.
 # Local reproduction: make codeql-local
-# Download SARIF: workflow run → Artifacts → codeql-cpp-sarif
+# Download SARIF: workflow run -> Artifacts -> codeql-cpp-sarif
 name: CodeQL
 
 on:
@@ -91,8 +91,8 @@ jobs:
           languages: cpp
           build-mode: manual
           config-file: .github/codeql/codeql-config.yml
-          # Bundle URL required (bare "2.26.0" is treated as a local path). Matches local CLI v2.26.0.
-          tools: https://github.com/github/codeql-action/releases/download/codeql-bundle-v2.26.0/codeql-bundle-linux64.tar.zst
+          # Bundle URL required (bare "2.26.3" is treated as a local path). Matches local CLI v2.26.3.
+          tools: https://github.com/github/codeql-action/releases/download/codeql-bundle-v2.26.3/codeql-bundle-linux64.tar.zst
 
       - name: CodeQL traced build (CMake + firmware)
         env:

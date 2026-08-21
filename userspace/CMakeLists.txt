@@ -63,7 +63,7 @@ else()
   set(NERO_STRIP_HOST_SYMBOLS OFF CACHE BOOL "Strip debug symbols from Release host binaries" FORCE)
 endif()
 
-# Org OpenSSF hardening (kit-owned cmake/Hardening.cmake; define_hardening → INTERFACE lib).
+# Org OpenSSF hardening (kit-owned cmake/Hardening.cmake; define_hardening -> INTERFACE lib).
 include("${CMAKE_CURRENT_SOURCE_DIR}/../cmake/Hardening.cmake")
 define_hardening(
   TARGET hardening

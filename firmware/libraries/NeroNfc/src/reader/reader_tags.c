@@ -103,7 +103,7 @@ static int reader_tags_type2_read_signature(uint8_t* out, uint8_t out_cap) {
   return sig_len;
 }
 /*
- * [T5T-ISO15693] section 10.3.4 — addressed Get System Info (command 0x2B).
+ * [T5T-ISO15693] section 10.3.4 -- addressed Get System Info (command 0x2B).
  * Response is parsed by nfc_tag_type5_apply_system_info() in nfc_tag_info.h.
  */
 static int reader_tags_iso15693_get_system_info_raw(uint8_t* buf,
@@ -129,7 +129,7 @@ static int reader_tags_iso15693_get_system_info_raw(uint8_t* buf,
 }
 
 /*
- * [T5T-ISO15693] section 10.3.4 / [T5T-ISO15693-ST25DV] section 7.6.23 —
+ * [T5T-ISO15693] section 10.3.4 / [T5T-ISO15693-ST25DV] section 7.6.23 --
  * Extended Get System Info (command 0x3B). Used when [T5T-ISO15693]
  * section 4.3.1.17 MLEN-overflow is signaled in the CC, because standard Get
  * System Info cannot report more than 256 blocks.

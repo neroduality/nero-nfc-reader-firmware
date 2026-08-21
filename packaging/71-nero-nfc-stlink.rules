@@ -4,7 +4,7 @@
 #
 # ST-Link USB access for Nucleo-WBA65RI OpenOCD upload (arduino-cli bootstrap).
 # Fedora stlink package installs /etc rules with GROUP="plugdev" (Debian-only);
-# udev ignores those lines entirely, leaving USB at root:root 664 → LIBUSB_ERROR_ACCESS.
+# udev ignores those lines entirely, leaving USB at root:root 664 -> LIBUSB_ERROR_ACCESS.
 
 ACTION=="remove", GOTO="nero_nfc_stlink_end"
 

@@ -46,6 +46,6 @@ Verify downloads: `sha256sum -c SHA256SUMS`.
 | Repository | `nero-nfc-reader-firmware` |
 | Firmware targets | Arduino UNO R4 WiFi, NUCLEO-WBA65RI (+ X-NUCLEO-NFC08A1) |
 | Host tools | `userspace/` CLIs (PC/SC reader/writer, CDC bridge) |
-| WebAuthn posture | USB CCID reader + CTAP APDU relay — not a FIDO authenticator |
+| WebAuthn posture | USB CCID reader + CTAP APDU relay -- not a FIDO authenticator |
 | Security reports | [SECURITY.md](https://github.com/neroduality/.github/blob/main/SECURITY.md) |
 | License | Apache-2.0 |

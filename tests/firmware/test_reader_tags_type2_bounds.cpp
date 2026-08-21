@@ -126,7 +126,7 @@ TEST(ReaderTagsType2Bounds, ShortNdefMessageComputesCeilPages) {
   data.insert(data.end(), {kTestLit0xAAu, kTestLit0xBBu, kTestLit0xCCu,
                            kTestLit0xDDu, kTestLit0xEEu});
 
-  /* Value starts at offset 6; need_bytes = 6 + 5 = 11 → ceil(11/4) = 3 pages.
+  /* Value starts at offset 6; need_bytes = 6 + 5 = 11 -> ceil(11/4) = 3 pages.
    */
   EXPECT_EQ(reader_tags_type2_needed_pages(
                 data.data(), static_cast<uint16_t>(data.size()), kMaxPage),
@@ -142,7 +142,7 @@ TEST(ReaderTagsType2Bounds, SkipsNonMessageTlvBeforeNdefMessage) {
   data.push_back(kTestLit0x02u);
   data.insert(data.end(), {kTestLit0xD1u, 0x00u});
 
-  /* Message value starts at offset 11; need_bytes = 11 + 2 = 13 → 4 pages. */
+  /* Message value starts at offset 11; need_bytes = 11 + 2 = 13 -> 4 pages. */
   EXPECT_EQ(reader_tags_type2_needed_pages(
                 data.data(), static_cast<uint16_t>(data.size()), kMaxPage),
             kTestLit4u);
@@ -153,10 +153,10 @@ TEST(ReaderTagsType2Bounds, ExtendedLengthNdefMessage) {
   data.push_back(NFC_NDEF_TLV_MESSAGE);
   data.push_back(NFC_NDEF_TLV_EXTENDED_LEN);
   data.push_back(0x00u);         /* MSB */
-  data.push_back(kTestLit0x10u); /* LSB → 16-byte value */
+  data.push_back(kTestLit0x10u); /* LSB -> 16-byte value */
   data.insert(data.end(), kTestLit16u, kTestLit0x5Au);
 
-  /* Value starts at offset 8; need_bytes = 8 + 16 = 24 → 6 pages. */
+  /* Value starts at offset 8; need_bytes = 8 + 16 = 24 -> 6 pages. */
   EXPECT_EQ(reader_tags_type2_needed_pages(
                 data.data(), static_cast<uint16_t>(data.size()), kMaxPage),
             kTestLit6u);

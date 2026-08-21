@@ -46,7 +46,7 @@ TEST(ReaderTagsNdefDecode, UriRejectsUnsafeCharacter) {
 }
 
 TEST(ReaderTagsNdefDecode, UriRejectsBarePercentEscape) {
-  /* [RFC3986] §2.1 — '%' must be followed by two hex digits. */
+  /* [RFC3986] §2.1 -- '%' must be followed by two hex digits. */
   static const uint8_t kBadTail[] = {0x00u, 'a', '%', '1'};
   static const uint8_t kBadNonhex[] = {0x00u, 'a', '%', 'g', '0'};
   static const uint8_t kOkTriplet[] = {0x00u, 'a', '%', '2', '0', 'b'};

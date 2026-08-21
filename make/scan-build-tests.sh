@@ -16,7 +16,7 @@
 # limitations under the License.
 
 # Clang static analyzer on the host unit-test tree (project sources + tests only when
-# NERO_USE_SYSTEM_GTEST=ON — avoids analyzing a FetchContent googletest build).
+# NERO_USE_SYSTEM_GTEST=ON -- avoids analyzing a FetchContent googletest build).
 set -euo pipefail
 
 repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -53,7 +53,7 @@ analyzer does not compile vendored googletest sources. Install on Debian/Ubuntu:
 Environment:
   INSTALL_DEPS=1            Run make/install-linux-deps.sh before scan-build (default: 0)
   AUTO_INSTALL_LINUX_DEPS=1 Alias for INSTALL_DEPS when invoking this script directly
-  NERO_SCAN_BUILD_CMD   Override analyzer driver (default: first of scan-build, scan-build-18, …)
+  NERO_SCAN_BUILD_CMD   Override analyzer driver (default: first of scan-build, scan-build-18, ...)
 EOF
 }
 
@@ -82,7 +82,7 @@ make -C "${repo_root}" third-party-nfc-libs
 scan_build="${NERO_SCAN_BUILD_CMD:-}"
 if [[ -z $scan_build ]]; then
   if ! scan_build="$(resolve_scan_build)"; then
-    printf 'error: scan-build not found (install clang-tools / llvm — e.g. apt install clang-tools)\n' >&2
+    printf 'error: scan-build not found (install clang-tools / llvm -- e.g. apt install clang-tools)\n' >&2
     exit 1
   fi
 fi

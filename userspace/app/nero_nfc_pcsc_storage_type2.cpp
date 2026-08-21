@@ -43,16 +43,16 @@ constexpr std::uint8_t kType2StorageBulkReadBytes = static_cast<std::uint8_t>(
 }  // namespace
 
 std::uint8_t Type2StorageBulkReadLen(std::uint16_t data_area_size) {
-  const auto kCapped = static_cast<std::uint16_t>(
+  const auto capped = static_cast<std::uint16_t>(
       std::min<std::uint16_t>(data_area_size, kType2StorageBulkReadBytes));
-  return static_cast<std::uint8_t>((kCapped / NFC_STORAGE_TYPE2_UNIT_SIZE) *
+  return static_cast<std::uint8_t>((capped / NFC_STORAGE_TYPE2_UNIT_SIZE) *
                                    NFC_STORAGE_TYPE2_UNIT_SIZE);
 }
 
 #ifdef NERO_USERSPACE_HAVE_PCSC
 
-bool ParseType2Cc(const std::vector<std::uint8_t>& cc,
-                  nfc_tag_type2_info_t& info, std::string& err) {
+static bool ParseType2Cc(const std::vector<std::uint8_t>& cc,
+                         nfc_tag_type2_info_t& info, std::string& err) {
   info = {};
   if (cc.size() < static_cast<std::size_t>(NFC_TAG_T2T_PAGE_SIZE_BYTES)) {
     err = "Type 2 CC read returned fewer than 4 bytes";
@@ -68,8 +68,8 @@ bool ParseType2Cc(const std::vector<std::uint8_t>& cc,
   return true;
 }
 
-bool ReadType2CcStorage(PcscCard& card, std::vector<std::uint8_t>& cc,
-                        std::string& err) {
+static bool ReadType2CcStorage(PcscCard& card, std::vector<std::uint8_t>& cc,
+                               std::string& err) {
   if (cc.size() >= static_cast<std::size_t>(NFC_TAG_T2T_PAGE_SIZE_BYTES)) {
     cc.resize(static_cast<std::size_t>(NFC_TAG_T2T_PAGE_SIZE_BYTES));
     err.clear();
@@ -89,8 +89,8 @@ bool ReadType2CcStorage(PcscCard& card, std::vector<std::uint8_t>& cc,
   return true;
 }
 
-bool ReadType2Cc(PcscCard& card, std::vector<std::uint8_t>& cc,
-                 std::string& err) {
+static bool ReadType2Cc(PcscCard& card, std::vector<std::uint8_t>& cc,
+                        std::string& err) {
   if (cc.size() < static_cast<std::size_t>(NFC_TAG_T2T_PAGE_SIZE_BYTES)) {
     std::vector<std::uint8_t> cached = TryGetDataBytes(
         card, NFC_PCSC_GET_DATA_TYPE2_CC, NFC_ISO7816_GET_DATA_P2_DEFAULT);
@@ -113,31 +113,31 @@ static bool ReadStorageNdefTlv(PcscCard& card, std::uint16_t first_unit,
     err = "storage TLV area exceeds host address range";
     return false;
   }
-  const auto kTotalLen =
+  const auto total_len =
       static_cast<std::uint16_t>(tlv_start_offset + data_area_size);
   auto units =
-      static_cast<std::uint16_t>((static_cast<unsigned>(kTotalLen) +
+      static_cast<std::uint16_t>((static_cast<unsigned>(total_len) +
                                   static_cast<unsigned>(unit_size) - 1u) /
                                  unit_size);
   if (first_unit == static_cast<std::uint16_t>(NFC_STORAGE_TYPE2_CC_PAGE) &&
       unit_size == static_cast<std::uint8_t>(NFC_STORAGE_TYPE2_UNIT_SIZE)) {
-    const auto kCappedUnits = StorageType2ReadUnitLimit(
+    const auto capped_units = StorageType2ReadUnitLimit(
         first_unit, unit_size, tlv_start_offset, data_area_size);
-    if (kCappedUnits != 0u && kCappedUnits < units) {
-      units = kCappedUnits;
+    if (capped_units != 0u && capped_units < units) {
+      units = capped_units;
     }
   }
-  const bool kType2StorageUnits =
+  const bool type2_storage_units =
       (first_unit == static_cast<std::uint16_t>(NFC_STORAGE_TYPE2_CC_PAGE)) &&
       (unit_size == static_cast<std::uint8_t>(NFC_STORAGE_TYPE2_UNIT_SIZE));
   std::vector<std::uint8_t> raw;
   raw.reserve(
-      std::min<std::uint16_t>(kTotalLen, NFC_PCSC_ISO_DEP_APDU_RESP_MAX));
+      std::min<std::uint16_t>(total_len, NFC_PCSC_ISO_DEP_APDU_RESP_MAX));
   if (!initial_raw.empty()) {
-    const auto kSeedLen = static_cast<std::uint16_t>(
-        std::min<std::size_t>(initial_raw.size(), kTotalLen));
+    const auto seed_len = static_cast<std::uint16_t>(
+        std::min<std::size_t>(initial_raw.size(), total_len));
     raw.insert(raw.end(), initial_raw.begin(),
-               initial_raw.begin() + static_cast<std::ptrdiff_t>(kSeedLen));
+               initial_raw.begin() + static_cast<std::ptrdiff_t>(seed_len));
   }
 
   uint16_t unit_index = 0u;
@@ -152,10 +152,10 @@ static bool ReadStorageNdefTlv(PcscCard& card, std::uint16_t first_unit,
       return std::nullopt;
     }
     nfc_ndef_tlv_t tlv{};
-    nfc_ndef_tlv_status_t const kStatus = nfc_ndef_find_message_tlv(
+    nfc_ndef_tlv_status_t const status = nfc_ndef_find_message_tlv(
         raw.data(), static_cast<std::uint16_t>(raw.size()), tlv_start_offset,
         &tlv);
-    if (kStatus == NFC_NDEF_TLV_OK) {
+    if (status == NFC_NDEF_TLV_OK) {
       tag.ndef_message_.assign(
           raw.begin() + static_cast<std::ptrdiff_t>(tlv.value_offset),
           raw.begin() +
@@ -164,9 +164,9 @@ static bool ReadStorageNdefTlv(PcscCard& card, std::uint16_t first_unit,
       err.clear();
       return true;
     }
-    if (kStatus == NFC_NDEF_TLV_NOT_FOUND) {
+    if (status == NFC_NDEF_TLV_NOT_FOUND) {
       if (TlvAreaHasTerminator(raw, tlv_start_offset) ||
-          raw.size() >= kTotalLen) {
+          raw.size() >= total_len) {
         tag.ndef_message_.clear();
         tag.records_.clear();
         err.clear();
@@ -174,39 +174,39 @@ static bool ReadStorageNdefTlv(PcscCard& card, std::uint16_t first_unit,
       }
       return std::nullopt;
     }
-    if (kStatus == NFC_NDEF_TLV_TRUNCATED) {
+    if (status == NFC_NDEF_TLV_TRUNCATED) {
       return std::nullopt;
     }
-    err = std::string("NDEF TLV ") + TlvStatusName(kStatus);
+    err = std::string("NDEF TLV ") + TlvStatusName(status);
     return false;
   };
   if (auto seeded = scan_raw(); seeded.has_value()) {
     return *seeded;
   }
   for (; unit_index < units;) {
-    const auto kCopied = static_cast<std::uint16_t>(raw.size());
-    const auto kRemaining = static_cast<std::uint16_t>(kTotalLen - kCopied);
-    const std::uint8_t kWant =
-        static_cast<std::uint8_t>(std::min<std::uint16_t>(
-            kType2StorageUnits ? NFC_TAG_T2T_READ_RESP_BYTES : unit_size,
-            kRemaining));
+    const auto copied = static_cast<std::uint16_t>(raw.size());
+    const auto remaining = static_cast<std::uint16_t>(total_len - copied);
+    const std::uint8_t want = static_cast<std::uint8_t>(std::min<std::uint16_t>(
+        type2_storage_units ? NFC_TAG_T2T_READ_RESP_BYTES : unit_size,
+        remaining));
     std::vector<std::uint8_t> chunk;
     std::uint16_t units_read = 0u;
     if (!StorageReadBinary(card,
                            static_cast<std::uint16_t>(first_unit + unit_index),
-                           kWant, chunk, err)) {
+                           want, chunk, err)) {
       return false;
     }
-    const auto kCopiedFromChunk =
-        static_cast<std::uint16_t>(std::min<std::size_t>(chunk.size(), kWant));
-    if ((kCopiedFromChunk == 0u) ||
-        (!kType2StorageUnits && kCopiedFromChunk < kWant)) {
+    const auto copied_from_chunk =
+        static_cast<std::uint16_t>(std::min<std::size_t>(chunk.size(), want));
+    if ((copied_from_chunk == 0u) ||
+        (!type2_storage_units && copied_from_chunk < want)) {
       err = "short storage READ BINARY response";
       return false;
     }
     raw.insert(raw.end(), chunk.begin(),
-               chunk.begin() + static_cast<std::ptrdiff_t>(kCopiedFromChunk));
-    if (!nfc_storage_ceil_units_u16(kCopiedFromChunk, unit_size, &units_read) ||
+               chunk.begin() + static_cast<std::ptrdiff_t>(copied_from_chunk));
+    if (!nfc_storage_ceil_units_u16(copied_from_chunk, unit_size,
+                                    &units_read) ||
         (units_read == 0u)) {
       err = "invalid storage READ BINARY response geometry";
       return false;
@@ -241,7 +241,7 @@ bool ReadType2StorageNdef(PcscCard& card, PcscTagSnapshot& tag,
     err = "tag reports read access restricted";
     return false;
   }
-  std::vector<std::uint8_t> initial_raw = type2_cc;
+  std::vector<std::uint8_t> const& initial_raw = type2_cc;
   return ReadStorageNdefTlv(
       card, static_cast<std::uint16_t>(NFC_STORAGE_TYPE2_CC_PAGE),
       static_cast<std::uint8_t>(NFC_STORAGE_TYPE2_UNIT_SIZE),

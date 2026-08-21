@@ -19,8 +19,8 @@
 #
 # Source from bash:
 #   source make/cli-spinner.sh
-#   cli_spinner_start "Processing — wait"   # blank line, spinner row, reserved blank line below
-#   cli_spinner_set_message "Processing — updated detail"
+#   cli_spinner_start "Processing -- wait"   # blank line, spinner row, reserved blank line below
+#   cli_spinner_set_message "Processing -- updated detail"
 #   cli_spinner_finish                      # clear spinner row; blank line before next output
 if [[ ${BASH_SOURCE[0]} == "${0}" ]]; then
   echo "Source this file; do not execute directly." >&2
@@ -32,7 +32,7 @@ CLI_SPINNER_MSG_FILE=""
 CLI_SPINNER_FRAMES=(⠋ ⠙ ⠹ ⠸ ⠼ ⠴ ⠦ ⠧ ⠇ ⠏)
 
 cli_spinner_start() {
-  local message="${1:-Processing — wait}"
+  local message="${1:-Processing -- wait}"
   cli_spinner_stop
   # Blank line, then spinner row (avoid \r drawing on the same line as a single leading \n).
   printf '\n\n' >&2

@@ -101,7 +101,7 @@ void nero_nfc_app_begin(nero_nfc_app_t* app);
 void nero_nfc_app_step(nero_nfc_app_t* app);
 
 NERO_NFC_NODISCARD bool nero_nfc_app_bind_active(nero_nfc_app_t* app);
-NERO_NFC_NODISCARD bool nero_nfc_app_unbind_active(nero_nfc_app_t* app);
+NERO_NFC_NODISCARD bool nero_nfc_app_unbind_active(const nero_nfc_app_t* app);
 NERO_NFC_NODISCARD nero_nfc_app_t* nero_nfc_app_active(void);
 
 NERO_NFC_NODISCARD nero_nfc_product_t

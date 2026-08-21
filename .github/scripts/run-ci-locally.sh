@@ -18,7 +18,7 @@
 # Reproduce GitHub Actions Main CI locally (container lint + container test matrix).
 #
 # Same order as .github/workflows/main-ci.yml:
-#   1. Debian slim lint container + make lint (spec-traceability gate, cppcheck/clang-tidy mins, …)
+#   1. Debian slim lint container + make lint (spec-traceability gate, cppcheck/clang-tidy mins, ...)
 #   2. Debian trixie + Fedora 43 via ci-run-tests.sh (linux/amd64, fresh CMake)
 #
 # Requirements: docker or podman, bash
@@ -258,7 +258,7 @@ run_lint_container() {
     container_lint_kit="/opt/lint-kit"
   fi
   printf '\n── Main CI: lint container (%s) ──\n' "${lint_image}"
-  printf '── lint kit: %s → %s ──\n' "${lint_kit}" "${container_lint_kit}"
+  printf '── lint kit: %s -> %s ──\n' "${lint_kit}" "${container_lint_kit}"
   # Bind-mount isolated FIRMWARE_ROOT at /src (never the live make lint workspace).
   # shellcheck disable=SC2016
   nero_nfc_run_bind_mount_container \

@@ -18,7 +18,7 @@
 # Run Main CI inside a Lima Ubuntu 24.04 VM (1:1 with GitHub Actions ubuntu-24.04).
 # Invoked by run-ci-locally.sh when --lima is passed on the host.
 #
-# Flow: destroy old VM → create → start (Docker + smoke test) → full CI in guest → destroy.
+# Flow: destroy old VM -> create -> start (Docker + smoke test) -> full CI in guest -> destroy.
 #
 # Usage (normally via make ci-local CI_LOCAL_FLAGS=--lima):
 #   bash .github/scripts/run-ci-locally-lima.sh [--main] [--skip-lint] ...
@@ -36,7 +36,7 @@ LIMA_YES=(-y)
 _LIMA_PHASE=init
 
 if ! command -v limactl >/dev/null 2>&1; then
-  printf 'error: limactl not found — Lima is required for --lima CI.\n' >&2
+  printf 'error: limactl not found -- Lima is required for --lima CI.\n' >&2
   printf '  GitHub: https://github.com/lima-vm/lima\n' >&2
   printf '  Install: https://lima-vm.io/docs/installation/\n' >&2
   exit 1
@@ -218,7 +218,7 @@ _lima_start_instance() {
     limactl "${LIMA_YES[@]}" start --progress --timeout "${START_TIMEOUT}" "${INSTANCE}"
     return $?
   fi
-  printf '── Lima: booting VM (Docker install + probe; usually 2–5 min) ──\n' >&2
+  printf '── Lima: booting VM (Docker install + probe; usually 2-5 min) ──\n' >&2
   printf '── tip: NERO_LIMA_VERBOSE=1 shows cloud-init tail ──\n' >&2
   limactl "${LIMA_YES[@]}" start --timeout "${START_TIMEOUT}" "${INSTANCE}" 2>"${start_log}" &
   local start_pid=$!
@@ -271,9 +271,9 @@ _lima_teardown() {
 }
 
 printf '── Lima Main CI: fresh ubuntu-24.04 VM %s ──\n' "${INSTANCE}"
-printf '   repo (read-only source): %s → /src\n' "${FIRMWARE_ROOT}"
+printf '   repo (read-only source): %s -> /src\n' "${FIRMWARE_ROOT}"
 printf '   CI work tree (guest disk): ~/nero-nfc-ci-work (no host build/third-party)\n'
-printf '   lint kit: %s → %s\n' "${HOST_LINT_KIT}" "${LIMA_GUEST_LINT_KIT}"
+printf '   lint kit: %s -> %s\n' "${HOST_LINT_KIT}" "${LIMA_GUEST_LINT_KIT}"
 printf '   start timeout: %s (override: NERO_LIMA_START_TIMEOUT)\n' "${START_TIMEOUT}"
 
 _LIMA_PHASE=boot

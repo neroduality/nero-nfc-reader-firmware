@@ -1,4 +1,4 @@
-# Repo patch — NUCLEO-WBA65RI (upstream stm32duino boards.txt gap, Jun 2026).
+# Repo patch -- NUCLEO-WBA65RI (upstream stm32duino boards.txt gap, Jun 2026).
 # Appended by scripts/stm32-sync-wba65-board.sh when pnum is missing.
 
 Nucleo_64.menu.pnum.NUCLEO_WBA65RI=Nucleo WBA65RI

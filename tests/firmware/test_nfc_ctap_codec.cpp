@@ -63,11 +63,11 @@ void FillTestBytes(uint8_t* dst, uint8_t value, uint16_t len) {
 }  // namespace
 
 TEST(NfcCtapCodec, FidoAidMatchesExpectedValue) {
-  const uint8_t kExpected[NFC_CTAP_FIDO_AID_LEN] = {
+  const uint8_t expected[NFC_CTAP_FIDO_AID_LEN] = {
       0xA0u, 0x00u, 0x00u, 0x06u, 0x47u, 0x2Fu, 0x00u, 0x01u,
   };
-  EXPECT_EQ(
-      std::memcmp(&NFC_CTAP_FIDO_AID[0], &kExpected[0], sizeof(kExpected)), 0);
+  EXPECT_EQ(std::memcmp(&NFC_CTAP_FIDO_AID[0], &expected[0], sizeof(expected)),
+            0);
 }
 
 TEST(NfcCtapCodec, IsoDepIblockTxBufferTracksApduRecommendedSize) {
@@ -97,13 +97,13 @@ TEST(NfcCtapCodec, EncodesDiscoveryGetAssertionCbor) {
 }
 
 TEST(NfcCtapCodec, EncodesGetAssertionWithAllowCredential) {
-  uint8_t hash[kTestLit32]{};
-  const uint8_t kCred[] = {0x01u, 0x02u, 0x03u, 0x04u};
+  uint8_t const hash[kTestLit32]{};
+  const uint8_t cred[] = {0x01u, 0x02u, 0x03u, 0x04u};
   uint8_t cbor[kCborScratchMediumCap];
   uint16_t len = 0;
 
-  ASSERT_TRUE(nfc_ctap_encode_get_assertion(&hash[0], "webauthn.io", &kCred[0],
-                                            sizeof(kCred), &cbor[0],
+  ASSERT_TRUE(nfc_ctap_encode_get_assertion(&hash[0], "webauthn.io", &cred[0],
+                                            sizeof(cred), &cbor[0],
                                             sizeof(cbor), &len));
 
   EXPECT_EQ(cbor[0], 0xA4u);
@@ -111,7 +111,7 @@ TEST(NfcCtapCodec, EncodesGetAssertionWithAllowCredential) {
 }
 
 TEST(NfcCtapCodec, RejectsInvalidGetAssertionInputs) {
-  uint8_t hash[kTestLit32]{};
+  uint8_t const hash[kTestLit32]{};
   uint8_t cbor[kTestLit64];
   uint16_t len = 0;
 
@@ -125,10 +125,10 @@ TEST(NfcCtapCodec, RejectsInvalidGetAssertionInputs) {
 }
 
 TEST(NfcCtapCodec, ClearsOutputsOnRejectedPublicHelpers) {
-  uint8_t hash[kTestLit32]{};
+  uint8_t const hash[kTestLit32]{};
   uint8_t apdu[kTestLit16]{};
   uint8_t cbor[kTestLit8]{};
-  const uint8_t kBadResponse[] = {0x00u, 0x01u, 0x63u, 0x00u};
+  const uint8_t bad_response[] = {0x00u, 0x01u, 0x63u, 0x00u};
   uint16_t len = kTestLit0xBeeFu;
   bool add_le = true;
   uint8_t cmd = kTestLit0xA5u;
@@ -161,12 +161,12 @@ TEST(NfcCtapCodec, ClearsOutputsOnRejectedPublicHelpers) {
   EXPECT_EQ(cmd, 0u);
 
   len = kTestLit0xBeeFu;
-  EXPECT_FALSE(nfc_ctap_dissect_response(&kBadResponse[0], sizeof(kBadResponse),
+  EXPECT_FALSE(nfc_ctap_dissect_response(&bad_response[0], sizeof(bad_response),
                                          NERO_NFC_NULL, 0u, &len));
   EXPECT_EQ(len, 0u);
 
   EXPECT_FALSE(
-      nfc_ctap_response_more_data(&kBadResponse[0], sizeof(kBadResponse)));
+      nfc_ctap_response_more_data(&bad_response[0], sizeof(bad_response)));
 
   EXPECT_FALSE(nfc_ctap_fido_app_select_variant(
       NFC_CTAP_FIDO_APP_SELECT_VARIANT_COUNT, &variant));
@@ -189,7 +189,7 @@ TEST(NfcCtapCodec, ClearsOutputsOnRejectedPublicHelpers) {
 }
 
 TEST(NfcCtapCodec, RejectsUnterminatedOrOversizedRpIds) {
-  uint8_t hash[kTestLit32]{};
+  uint8_t const hash[kTestLit32]{};
   uint8_t cbor[kCborScratchLargeCap];
   uint16_t len = 0;
   char rp_id[NFC_CTAP_RP_ID_MAX + 1u];
@@ -211,7 +211,7 @@ TEST(NfcCtapCodec, RejectsUnterminatedOrOversizedRpIds) {
 }
 
 TEST(NfcCtapCodec, RejectsTinyGetAssertionOutputBufferBeforeWriting) {
-  uint8_t hash[kTestLit32]{};
+  uint8_t const hash[kTestLit32]{};
   uint8_t cbor[kTestLit8]{kTestLit0xEEu, kTestLit0xEEu, kTestLit0xEEu,
                           kTestLit0xEEu, kTestLit0xEEu, kTestLit0xEEu,
                           kTestLit0xEEu, kTestLit0xEEu};
@@ -224,12 +224,12 @@ TEST(NfcCtapCodec, RejectsTinyGetAssertionOutputBufferBeforeWriting) {
 }
 
 TEST(NfcCtapCodec, PacksShortCtapApdu) {
-  const uint8_t kCbor[] = {0xA1u, 0x01u, 0x02u, 0x03u};
+  const uint8_t cbor[] = {0xA1u, 0x01u, 0x02u, 0x03u};
   uint8_t apdu[kTestLit32];
   uint16_t apdu_len = 0;
 
-  ASSERT_TRUE(nfc_ctap_pack_cbor_apdu(NFC_CTAP_CMD_GET_ASSERTION, &kCbor[0],
-                                      sizeof(kCbor), false, &apdu[0],
+  ASSERT_TRUE(nfc_ctap_pack_cbor_apdu(NFC_CTAP_CMD_GET_ASSERTION, &cbor[0],
+                                      sizeof(cbor), false, &apdu[0],
                                       sizeof(apdu), &apdu_len));
 
   ASSERT_EQ(apdu_len, 11u);
@@ -261,11 +261,11 @@ TEST(NfcCtapCodec, PacksCommandOnlyCtapApdu) {
 }
 
 TEST(NfcCtapCodec, RejectsOverflowingCborLength) {
-  const uint8_t kCbor[] = {0xA1u};
+  const uint8_t cbor[] = {0xA1u};
   uint8_t apdu[kTestLit32];
   uint16_t apdu_len = 0;
 
-  EXPECT_FALSE(nfc_ctap_pack_cbor_apdu(NFC_CTAP_CMD_GET_ASSERTION, &kCbor[0],
+  EXPECT_FALSE(nfc_ctap_pack_cbor_apdu(NFC_CTAP_CMD_GET_ASSERTION, &cbor[0],
                                        UINT16_MAX, false, &apdu[0],
                                        sizeof(apdu), &apdu_len));
 }
@@ -311,20 +311,20 @@ TEST(NfcCtapCodec, PacksSelectFidoApduWithOptionalLe) {
 }
 
 TEST(NfcCtapCodec, RecognizesFidoSelectP2NoFciVariant) {
-  const uint8_t kSelectNoFciNoLe[] = {0x00u, 0xA4u, 0x04u, 0x0Cu, 0x08u,
+  const uint8_t select_no_fci_no_le[] = {0x00u, 0xA4u, 0x04u, 0x0Cu, 0x08u,
+                                         0xA0u, 0x00u, 0x00u, 0x06u, 0x47u,
+                                         0x2Fu, 0x00u, 0x01u};
+  const uint8_t select_no_fci_le[] = {0x00u, 0xA4u, 0x04u, 0x0Cu, 0x08u,
                                       0xA0u, 0x00u, 0x00u, 0x06u, 0x47u,
-                                      0x2Fu, 0x00u, 0x01u};
-  const uint8_t kSelectNoFciLe[] = {0x00u, 0xA4u, 0x04u, 0x0Cu, 0x08u,
-                                    0xA0u, 0x00u, 0x00u, 0x06u, 0x47u,
-                                    0x2Fu, 0x00u, 0x01u, 0x00u};
+                                      0x2Fu, 0x00u, 0x01u, 0x00u};
   bool add_le_00 = true;
 
   ASSERT_TRUE(nfc_ctap_apdu_is_select_fido_aid(
-      &kSelectNoFciNoLe[0], sizeof(kSelectNoFciNoLe), &add_le_00));
+      &select_no_fci_no_le[0], sizeof(select_no_fci_no_le), &add_le_00));
   EXPECT_FALSE(add_le_00);
 
   ASSERT_TRUE(nfc_ctap_apdu_is_select_fido_aid(
-      &kSelectNoFciLe[0], sizeof(kSelectNoFciLe), &add_le_00));
+      &select_no_fci_le[0], sizeof(select_no_fci_le), &add_le_00));
   EXPECT_TRUE(add_le_00);
 }
 
@@ -349,25 +349,25 @@ TEST(NfcCtapCodec, RejectsMalformedSelectFidoApdus) {
 }
 
 TEST(NfcCtapCodec, IdentifiesCtapApduCommandLayouts) {
-  const uint8_t kCbor[] = {0xA1u, 0x01u, 0x02u};
+  const uint8_t cbor[] = {0xA1u, 0x01u, 0x02u};
   uint8_t apdu[kTestLit32];
   uint16_t apdu_len = 0;
   uint8_t cmd = 0u;
 
-  ASSERT_TRUE(nfc_ctap_pack_cbor_apdu(NFC_CTAP_CMD_GET_INFO, &kCbor[0],
-                                      sizeof(kCbor), false, &apdu[0],
+  ASSERT_TRUE(nfc_ctap_pack_cbor_apdu(NFC_CTAP_CMD_GET_INFO, &cbor[0],
+                                      sizeof(cbor), false, &apdu[0],
                                       sizeof(apdu), &apdu_len));
   ASSERT_TRUE(nfc_ctap_apdu_command(&apdu[0], apdu_len, &cmd));
   EXPECT_EQ(cmd, NFC_CTAP_CMD_GET_INFO);
 
-  ASSERT_TRUE(nfc_ctap_pack_cbor_apdu(NFC_CTAP_CMD_MAKE_CREDENTIAL, &kCbor[0],
-                                      sizeof(kCbor), true, &apdu[0],
+  ASSERT_TRUE(nfc_ctap_pack_cbor_apdu(NFC_CTAP_CMD_MAKE_CREDENTIAL, &cbor[0],
+                                      sizeof(cbor), true, &apdu[0],
                                       sizeof(apdu), &apdu_len));
   ASSERT_TRUE(nfc_ctap_apdu_command(&apdu[0], apdu_len, &cmd));
   EXPECT_EQ(cmd, NFC_CTAP_CMD_MAKE_CREDENTIAL);
 
-  ASSERT_TRUE(nfc_ctap_pack_cbor_apdu(NFC_CTAP_CMD_CLIENT_PIN, &kCbor[0],
-                                      sizeof(kCbor), false, &apdu[0],
+  ASSERT_TRUE(nfc_ctap_pack_cbor_apdu(NFC_CTAP_CMD_CLIENT_PIN, &cbor[0],
+                                      sizeof(cbor), false, &apdu[0],
                                       sizeof(apdu), &apdu_len));
   ASSERT_TRUE(nfc_ctap_apdu_command(&apdu[0], apdu_len, &cmd));
   EXPECT_EQ(cmd, NFC_CTAP_CMD_CLIENT_PIN);
@@ -376,8 +376,8 @@ TEST(NfcCtapCodec, IdentifiesCtapApduCommandLayouts) {
       &apdu[0], static_cast<uint16_t>(apdu_len - 1u), &cmd));
   EXPECT_EQ(cmd, NFC_CTAP_CMD_CLIENT_PIN);
 
-  ASSERT_TRUE(nfc_ctap_pack_cbor_apdu(NFC_CTAP_CMD_GET_ASSERTION, &kCbor[0],
-                                      sizeof(kCbor), true, &apdu[0],
+  ASSERT_TRUE(nfc_ctap_pack_cbor_apdu(NFC_CTAP_CMD_GET_ASSERTION, &cbor[0],
+                                      sizeof(cbor), true, &apdu[0],
                                       sizeof(apdu), &apdu_len));
   ASSERT_TRUE(nfc_ctap_apdu_command(&apdu[0], apdu_len, &cmd));
   EXPECT_EQ(cmd, NFC_CTAP_CMD_GET_ASSERTION);
@@ -392,19 +392,19 @@ TEST(NfcCtapCodec, IdentifiesCtapApduCommandLayouts) {
   ASSERT_TRUE(nfc_ctap_apdu_command(&apdu[0], apdu_len, &cmd));
   EXPECT_EQ(cmd, NFC_CTAP_CMD_GET_ASSERTION);
 
-  const uint8_t kExtendedGetInfoNoLe[] = {
+  const uint8_t extended_get_info_no_le[] = {
       0x80u, 0x10u, 0x00u, 0x00u, 0x00u, 0x00u, 0x01u, NFC_CTAP_CMD_GET_INFO};
-  ASSERT_TRUE(nfc_ctap_apdu_command(&kExtendedGetInfoNoLe[0],
-                                    sizeof(kExtendedGetInfoNoLe), &cmd));
+  ASSERT_TRUE(nfc_ctap_apdu_command(&extended_get_info_no_le[0],
+                                    sizeof(extended_get_info_no_le), &cmd));
   EXPECT_EQ(cmd, NFC_CTAP_CMD_GET_INFO);
 }
 
 TEST(NfcCtapCodec, ClassifiesOnlyCtapCommandApdus) {
-  const uint8_t kCbor[] = {0xA1u, 0x01u, 0x02u};
-  const uint8_t kNdefSelect[] = {0x00u, 0xA4u, 0x04u, 0x00u, 0x07u,
+  const uint8_t cbor[] = {0xA1u, 0x01u, 0x02u};
+  const uint8_t ndef_select[] = {0x00u, 0xA4u, 0x04u, 0x00u, 0x07u,
                                  0xD2u, 0x76u, 0x00u, 0x00u, 0x85u,
                                  0x01u, 0x01u, 0x00u};
-  const uint8_t kRawReadBinary[] = {0x00u, 0xB0u, 0x00u, 0x00u, 0x10u};
+  const uint8_t raw_read_binary[] = {0x00u, 0xB0u, 0x00u, 0x00u, 0x10u};
   uint8_t apdu[kTestLit32];
   uint16_t apdu_len = 0;
   uint8_t cmd = 0u;
@@ -416,34 +416,34 @@ TEST(NfcCtapCodec, ClassifiesOnlyCtapCommandApdus) {
   EXPECT_FALSE(nfc_ctap_apdu_command(&apdu[0], apdu_len, &cmd));
 
   EXPECT_FALSE(nfc_ctap_apdu_is_select_fido_aid(
-      &kNdefSelect[0], sizeof(kNdefSelect), NERO_NFC_NULL));
+      &ndef_select[0], sizeof(ndef_select), NERO_NFC_NULL));
   EXPECT_FALSE(
-      nfc_ctap_apdu_command(&kNdefSelect[0], sizeof(kNdefSelect), &cmd));
-  EXPECT_FALSE(
-      nfc_ctap_apdu_command(&kRawReadBinary[0], sizeof(kRawReadBinary), &cmd));
+      nfc_ctap_apdu_command(&ndef_select[0], sizeof(ndef_select), &cmd));
+  EXPECT_FALSE(nfc_ctap_apdu_command(&raw_read_binary[0],
+                                     sizeof(raw_read_binary), &cmd));
 
-  const uint8_t kControlEnd[] = {0x80u, NFC_CTAP_INS_CONTROL,
+  const uint8_t control_end[] = {0x80u, NFC_CTAP_INS_CONTROL,
                                  NFC_CTAP_P1_CONTROL_END, 0x00u};
   EXPECT_TRUE(
-      nfc_ctap_apdu_is_control_end(&kControlEnd[0], sizeof(kControlEnd)));
+      nfc_ctap_apdu_is_control_end(&control_end[0], sizeof(control_end)));
   EXPECT_FALSE(
-      nfc_ctap_apdu_command(&kControlEnd[0], sizeof(kControlEnd), &cmd));
+      nfc_ctap_apdu_command(&control_end[0], sizeof(control_end), &cmd));
 
-  ASSERT_TRUE(nfc_ctap_pack_cbor_apdu(NFC_CTAP_CMD_GET_ASSERTION, &kCbor[0],
-                                      sizeof(kCbor), false, &apdu[0],
+  ASSERT_TRUE(nfc_ctap_pack_cbor_apdu(NFC_CTAP_CMD_GET_ASSERTION, &cbor[0],
+                                      sizeof(cbor), false, &apdu[0],
                                       sizeof(apdu), &apdu_len));
   ASSERT_TRUE(nfc_ctap_apdu_command(&apdu[0], apdu_len, &cmd));
   EXPECT_EQ(cmd, NFC_CTAP_CMD_GET_ASSERTION);
 }
 
 TEST(NfcCtapCodec, RejectsIncompleteOrOverlongCtapApduLayouts) {
-  const uint8_t kCbor[] = {0xA1u, 0x01u, 0x02u};
+  const uint8_t cbor[] = {0xA1u, 0x01u, 0x02u};
   uint8_t apdu[kTestLit32];
   uint16_t apdu_len = 0;
   uint8_t cmd = 0u;
 
-  ASSERT_TRUE(nfc_ctap_pack_cbor_apdu(NFC_CTAP_CMD_GET_INFO, &kCbor[0],
-                                      sizeof(kCbor), false, &apdu[0],
+  ASSERT_TRUE(nfc_ctap_pack_cbor_apdu(NFC_CTAP_CMD_GET_INFO, &cbor[0],
+                                      sizeof(cbor), false, &apdu[0],
                                       sizeof(apdu), &apdu_len));
   EXPECT_FALSE(nfc_ctap_apdu_command(std::span<uint8_t>{apdu}.data(),
                                      static_cast<uint16_t>(apdu_len - 2u),
@@ -452,8 +452,8 @@ TEST(NfcCtapCodec, RejectsIncompleteOrOverlongCtapApduLayouts) {
   EXPECT_FALSE(nfc_ctap_apdu_command(
       &apdu[0], static_cast<uint16_t>(apdu_len + 1u), &cmd));
 
-  ASSERT_TRUE(nfc_ctap_pack_cbor_apdu(NFC_CTAP_CMD_CLIENT_PIN, &kCbor[0],
-                                      sizeof(kCbor), true, &apdu[0],
+  ASSERT_TRUE(nfc_ctap_pack_cbor_apdu(NFC_CTAP_CMD_CLIENT_PIN, &cbor[0],
+                                      sizeof(cbor), true, &apdu[0],
                                       sizeof(apdu), &apdu_len));
   EXPECT_FALSE(nfc_ctap_apdu_command(std::span<uint8_t>{apdu}.data(),
                                      static_cast<uint16_t>(apdu_len - 3u),
@@ -462,78 +462,78 @@ TEST(NfcCtapCodec, RejectsIncompleteOrOverlongCtapApduLayouts) {
   EXPECT_FALSE(nfc_ctap_apdu_command(
       &apdu[0], static_cast<uint16_t>(apdu_len + 1u), &cmd));
 
-  const uint8_t kZeroLcShort[] = {0x80u, 0x10u, 0x00u, 0x00u, 0x00u};
+  const uint8_t zero_lc_short[] = {0x80u, 0x10u, 0x00u, 0x00u, 0x00u};
   EXPECT_FALSE(
-      nfc_ctap_apdu_command(&kZeroLcShort[0], sizeof(kZeroLcShort), &cmd));
+      nfc_ctap_apdu_command(&zero_lc_short[0], sizeof(zero_lc_short), &cmd));
 
-  const uint8_t kZeroLcExtended[] = {0x80u, 0x10u, 0x00u, 0x00u, 0x00u,
-                                     0x00u, 0x00u, 0x00u, 0x00u};
-  EXPECT_FALSE(nfc_ctap_apdu_command(&kZeroLcExtended[0],
-                                     sizeof(kZeroLcExtended), &cmd));
+  const uint8_t zero_lc_extended[] = {0x80u, 0x10u, 0x00u, 0x00u, 0x00u,
+                                      0x00u, 0x00u, 0x00u, 0x00u};
+  EXPECT_FALSE(nfc_ctap_apdu_command(&zero_lc_extended[0],
+                                     sizeof(zero_lc_extended), &cmd));
 
-  const uint8_t kWrappedExtendedLc[] = {
+  const uint8_t wrapped_extended_lc[] = {
       0x80u, 0x10u, 0x00u, 0x00u, 0x00u, 0xFFu, 0xFFu, NFC_CTAP_CMD_GET_INFO};
-  EXPECT_FALSE(nfc_ctap_apdu_command(&kWrappedExtendedLc[0],
-                                     sizeof(kWrappedExtendedLc), &cmd));
+  EXPECT_FALSE(nfc_ctap_apdu_command(&wrapped_extended_lc[0],
+                                     sizeof(wrapped_extended_lc), &cmd));
 
-  const uint8_t kP1Rfu[] = {0x80u, 0x10u, 0x01u,
+  const uint8_t p1_rfu[] = {0x80u, 0x10u, 0x01u,
                             0x00u, 0x01u, NFC_CTAP_CMD_GET_INFO};
-  EXPECT_FALSE(nfc_ctap_apdu_command(&kP1Rfu[0], sizeof(kP1Rfu), &cmd));
-  const uint8_t kP2Rfu[] = {0x80u, 0x10u, 0x00u,
+  EXPECT_FALSE(nfc_ctap_apdu_command(&p1_rfu[0], sizeof(p1_rfu), &cmd));
+  const uint8_t p2_rfu[] = {0x80u, 0x10u, 0x00u,
                             0x01u, 0x01u, NFC_CTAP_CMD_GET_INFO};
-  EXPECT_FALSE(nfc_ctap_apdu_command(&kP2Rfu[0], sizeof(kP2Rfu), &cmd));
+  EXPECT_FALSE(nfc_ctap_apdu_command(&p2_rfu[0], sizeof(p2_rfu), &cmd));
 }
 
 TEST(NfcCtapCodec, RelayResponseDispositionPassesThroughCompliantStatusWords) {
-  /* [CTAP2.3] §11.3.5.2 — 9000 success and 61xx/91xx status-update relay
+  /* [CTAP2.3] §11.3.5.2 -- 9000 success and 61xx/91xx status-update relay
    * verbatim. */
-  const uint8_t kSuccess[] = {0x00u, 0xA1u, 0x90u, 0x00u};
-  const uint8_t kGetresponseContinuation[] = {0x91u, 0x00u};
-  const uint8_t kIsoMoreData[] = {0x61u, 0x1Au};
-  const uint8_t kErrorStatusRelayed[] = {
+  const uint8_t success[] = {0x00u, 0xA1u, 0x90u, 0x00u};
+  const uint8_t getresponse_continuation[] = {0x91u, 0x00u};
+  const uint8_t iso_more_data[] = {0x61u, 0x1Au};
+  const uint8_t error_status_relayed[] = {
       0x14u, 0x69u, 0x01u}; /* CTAP err + warning, status!=0 */
 
-  EXPECT_EQ(nfc_ctap_relay_response_disposition(&kSuccess[0], sizeof(kSuccess)),
+  EXPECT_EQ(nfc_ctap_relay_response_disposition(&success[0], sizeof(success)),
             NFC_CTAP_RELAY_PASSTHROUGH);
   EXPECT_EQ(nfc_ctap_relay_response_disposition(
-                &kGetresponseContinuation[0], sizeof(kGetresponseContinuation)),
+                &getresponse_continuation[0], sizeof(getresponse_continuation)),
             NFC_CTAP_RELAY_PASSTHROUGH);
-  EXPECT_EQ(nfc_ctap_relay_response_disposition(&kIsoMoreData[0],
-                                                sizeof(kIsoMoreData)),
+  EXPECT_EQ(nfc_ctap_relay_response_disposition(&iso_more_data[0],
+                                                sizeof(iso_more_data)),
             NFC_CTAP_RELAY_PASSTHROUGH);
-  EXPECT_EQ(nfc_ctap_relay_response_disposition(&kErrorStatusRelayed[0],
-                                                sizeof(kErrorStatusRelayed)),
+  EXPECT_EQ(nfc_ctap_relay_response_disposition(&error_status_relayed[0],
+                                                sizeof(error_status_relayed)),
             NFC_CTAP_RELAY_PASSTHROUGH);
 }
 
 TEST(NfcCtapCodec,
      RelayResponseDispositionFailsClosedWithoutSynthesizingSuccess) {
-  /* [CTAP2.3] §11.3.5.2 — a transparent relay never appends/synthesizes 9000.
+  /* [CTAP2.3] §11.3.5.2 -- a transparent relay never appends/synthesizes 9000.
    */
-  const uint8_t kNoStatusWord[] = {0x2Eu};          /* 1 byte: no SW at all */
-  const uint8_t kStatuslessBody[] = {0x00u, 0xA1u}; /* misreads as SW 0x00A1 */
-  const uint8_t kHardError[] = {0x00u, 0xA1u, 0x6Au,
+  const uint8_t no_status_word[] = {0x2Eu};         /* 1 byte: no SW at all */
+  const uint8_t statusless_body[] = {0x00u, 0xA1u}; /* misreads as SW 0x00A1 */
+  const uint8_t hard_error[] = {0x00u, 0xA1u, 0x6Au,
                                 0x82u}; /* CTAP success + warning = bad */
-  const uint8_t kWarningSuccessConflict[] = {0x00u, 0xA1u, 0x63u, 0x00u};
+  const uint8_t warning_success_conflict[] = {0x00u, 0xA1u, 0x63u, 0x00u};
 
-  EXPECT_EQ(nfc_ctap_relay_response_disposition(&kNoStatusWord[0],
-                                                sizeof(kNoStatusWord)),
+  EXPECT_EQ(nfc_ctap_relay_response_disposition(&no_status_word[0],
+                                                sizeof(no_status_word)),
             NFC_CTAP_RELAY_FAIL_CLOSED);
-  EXPECT_EQ(nfc_ctap_relay_response_disposition(&kStatuslessBody[0],
-                                                sizeof(kStatuslessBody)),
+  EXPECT_EQ(nfc_ctap_relay_response_disposition(&statusless_body[0],
+                                                sizeof(statusless_body)),
             NFC_CTAP_RELAY_FAIL_CLOSED);
   EXPECT_EQ(
-      nfc_ctap_relay_response_disposition(&kHardError[0], sizeof(kHardError)),
+      nfc_ctap_relay_response_disposition(&hard_error[0], sizeof(hard_error)),
       NFC_CTAP_RELAY_FAIL_CLOSED);
   EXPECT_EQ(nfc_ctap_relay_response_disposition(
-                &kWarningSuccessConflict[0], sizeof(kWarningSuccessConflict)),
+                &warning_success_conflict[0], sizeof(warning_success_conflict)),
             NFC_CTAP_RELAY_FAIL_CLOSED);
   EXPECT_EQ(nfc_ctap_relay_response_disposition(NERO_NFC_NULL, 4u),
             NFC_CTAP_RELAY_FAIL_CLOSED);
 }
 
 TEST(NfcCtapCodec, MarksOnlyLongRunningFidoApdusForCcidTimeExtension) {
-  const uint8_t kCbor[] = {0xA1u, 0x01u, 0x02u};
+  const uint8_t cbor[] = {0xA1u, 0x01u, 0x02u};
   uint8_t apdu[kTestLit32];
   uint16_t apdu_len = 0;
   uint8_t cmd = 0u;
@@ -542,98 +542,98 @@ TEST(NfcCtapCodec, MarksOnlyLongRunningFidoApdusForCcidTimeExtension) {
       nfc_ctap_pack_select_fido_apdu(true, &apdu[0], sizeof(apdu), &apdu_len));
   EXPECT_TRUE(nfc_ctap_apdu_needs_ccid_time_extension(&apdu[0], apdu_len));
 
-  ASSERT_TRUE(nfc_ctap_pack_cbor_apdu(NFC_CTAP_CMD_MAKE_CREDENTIAL, &kCbor[0],
-                                      sizeof(kCbor), false, &apdu[0],
+  ASSERT_TRUE(nfc_ctap_pack_cbor_apdu(NFC_CTAP_CMD_MAKE_CREDENTIAL, &cbor[0],
+                                      sizeof(cbor), false, &apdu[0],
                                       sizeof(apdu), &apdu_len));
   EXPECT_TRUE(nfc_ctap_apdu_needs_ccid_time_extension(&apdu[0], apdu_len));
 
-  ASSERT_TRUE(nfc_ctap_pack_cbor_apdu(NFC_CTAP_CMD_GET_ASSERTION, &kCbor[0],
-                                      sizeof(kCbor), false, &apdu[0],
+  ASSERT_TRUE(nfc_ctap_pack_cbor_apdu(NFC_CTAP_CMD_GET_ASSERTION, &cbor[0],
+                                      sizeof(cbor), false, &apdu[0],
                                       sizeof(apdu), &apdu_len));
   EXPECT_TRUE(nfc_ctap_apdu_needs_ccid_time_extension(&apdu[0], apdu_len));
 
-  ASSERT_TRUE(nfc_ctap_pack_cbor_apdu(NFC_CTAP_CMD_GET_INFO, &kCbor[0],
-                                      sizeof(kCbor), false, &apdu[0],
+  ASSERT_TRUE(nfc_ctap_pack_cbor_apdu(NFC_CTAP_CMD_GET_INFO, &cbor[0],
+                                      sizeof(cbor), false, &apdu[0],
                                       sizeof(apdu), &apdu_len));
   EXPECT_FALSE(nfc_ctap_apdu_needs_ccid_time_extension(&apdu[0], apdu_len));
 
-  ASSERT_TRUE(nfc_ctap_pack_cbor_apdu(NFC_CTAP_CMD_CLIENT_PIN, &kCbor[0],
-                                      sizeof(kCbor), false, &apdu[0],
+  ASSERT_TRUE(nfc_ctap_pack_cbor_apdu(NFC_CTAP_CMD_CLIENT_PIN, &cbor[0],
+                                      sizeof(cbor), false, &apdu[0],
                                       sizeof(apdu), &apdu_len));
   EXPECT_TRUE(nfc_ctap_apdu_needs_ccid_time_extension(&apdu[0], apdu_len));
 
-  const uint8_t kGetresponse[] = {0x80u, NFC_CTAP_INS_GETRESPONSE, 0x00u,
-                                  0x00u};
+  const uint8_t getresponse[] = {0x80u, NFC_CTAP_INS_GETRESPONSE, 0x00u, 0x00u};
   EXPECT_TRUE(
-      nfc_ctap_apdu_is_getresponse(&kGetresponse[0], sizeof(kGetresponse)));
-  EXPECT_TRUE(nfc_ctap_apdu_needs_ccid_time_extension(&kGetresponse[0],
-                                                      sizeof(kGetresponse)));
+      nfc_ctap_apdu_is_getresponse(&getresponse[0], sizeof(getresponse)));
+  EXPECT_TRUE(nfc_ctap_apdu_needs_ccid_time_extension(&getresponse[0],
+                                                      sizeof(getresponse)));
   EXPECT_FALSE(
-      nfc_ctap_apdu_command(&kGetresponse[0], sizeof(kGetresponse), &cmd));
+      nfc_ctap_apdu_command(&getresponse[0], sizeof(getresponse), &cmd));
 
-  const uint8_t kGetresponseCancel[] = {0x80u, NFC_CTAP_INS_GETRESPONSE,
+  const uint8_t getresponse_cancel[] = {0x80u, NFC_CTAP_INS_GETRESPONSE,
                                         NFC_CTAP_P1_GETRESPONSE_CANCEL, 0x00u};
-  EXPECT_TRUE(nfc_ctap_apdu_is_getresponse(&kGetresponseCancel[0],
-                                           sizeof(kGetresponseCancel)));
+  EXPECT_TRUE(nfc_ctap_apdu_is_getresponse(&getresponse_cancel[0],
+                                           sizeof(getresponse_cancel)));
   EXPECT_TRUE(nfc_ctap_apdu_needs_ccid_time_extension(
-      &kGetresponseCancel[0], sizeof(kGetresponseCancel)));
+      &getresponse_cancel[0], sizeof(getresponse_cancel)));
 }
 
 TEST(NfcCtapCodec, DetectsNfcCtap9100ContinuationStatus) {
-  const uint8_t kContinuation[] = {0x01u, 0x02u, 0x91u, 0x00u};
-  const uint8_t kNonContinuation[] = {0x01u, 0x02u, 0x91u, 0x40u};
-  const uint8_t kComplete[] = {0x01u, 0x02u, 0x90u, 0x00u};
+  const uint8_t continuation[] = {0x01u, 0x02u, 0x91u, 0x00u};
+  const uint8_t non_continuation[] = {0x01u, 0x02u, 0x91u, 0x40u};
+  const uint8_t complete[] = {0x01u, 0x02u, 0x90u, 0x00u};
 
-  EXPECT_TRUE(nfc_ctap_response_more_data(&kContinuation[0], 4));
-  /* [CTAP2.3] §11.3.7.2 — only exactly 0x9100 is a continuation, not other
+  EXPECT_TRUE(nfc_ctap_response_more_data(&continuation[0], 4));
+  /* [CTAP2.3] §11.3.7.2 -- only exactly 0x9100 is a continuation, not other
    * 0x91xx. */
-  EXPECT_FALSE(nfc_ctap_response_more_data(&kNonContinuation[0], 4));
-  EXPECT_FALSE(nfc_ctap_response_more_data(&kComplete[0], 4));
-  EXPECT_FALSE(nfc_ctap_response_more_data(&kComplete[0], 2));
+  EXPECT_FALSE(nfc_ctap_response_more_data(&non_continuation[0], 4));
+  EXPECT_FALSE(nfc_ctap_response_more_data(&complete[0], 4));
+  EXPECT_FALSE(nfc_ctap_response_more_data(&complete[0], 2));
 }
 
 TEST(NfcCtapCodec, RecognizesControlEndApduPerSection1134) {
-  const uint8_t kEndNoLe[] = {0x80u, NFC_CTAP_INS_CONTROL,
-                              NFC_CTAP_P1_CONTROL_END, 0x00u};
-  const uint8_t kEndWithLe[] = {0x80u, NFC_CTAP_INS_CONTROL,
-                                NFC_CTAP_P1_CONTROL_END, 0x00u, 0x00u};
-  const uint8_t kWrongP1[] = {0x80u, NFC_CTAP_INS_CONTROL, 0x00u, 0x00u};
+  const uint8_t end_no_le[] = {0x80u, NFC_CTAP_INS_CONTROL,
+                               NFC_CTAP_P1_CONTROL_END, 0x00u};
+  const uint8_t end_with_le[] = {0x80u, NFC_CTAP_INS_CONTROL,
+                                 NFC_CTAP_P1_CONTROL_END, 0x00u, 0x00u};
+  const uint8_t wrong_p1[] = {0x80u, NFC_CTAP_INS_CONTROL, 0x00u, 0x00u};
 
-  EXPECT_TRUE(nfc_ctap_apdu_is_control_end(&kEndNoLe[0], sizeof(kEndNoLe)));
-  EXPECT_TRUE(nfc_ctap_apdu_is_control_end(&kEndWithLe[0], sizeof(kEndWithLe)));
-  EXPECT_FALSE(nfc_ctap_apdu_is_control_end(&kWrongP1[0], sizeof(kWrongP1)));
+  EXPECT_TRUE(nfc_ctap_apdu_is_control_end(&end_no_le[0], sizeof(end_no_le)));
+  EXPECT_TRUE(
+      nfc_ctap_apdu_is_control_end(&end_with_le[0], sizeof(end_with_le)));
+  EXPECT_FALSE(nfc_ctap_apdu_is_control_end(&wrong_p1[0], sizeof(wrong_p1)));
   EXPECT_FALSE(nfc_ctap_apdu_is_control_end(NERO_NFC_NULL, 0u));
-  EXPECT_FALSE(
-      nfc_ctap_apdu_needs_ccid_time_extension(&kEndNoLe[0], sizeof(kEndNoLe)));
+  EXPECT_FALSE(nfc_ctap_apdu_needs_ccid_time_extension(&end_no_le[0],
+                                                       sizeof(end_no_le)));
 }
 
 TEST(NfcCtapCodec, DissectsSuccessfulCtapResponse) {
-  const uint8_t kRaw[] = {0x00u, 0xA1u, 0x01u, 0x02u, 0x90u, 0x00u};
+  const uint8_t raw[] = {0x00u, 0xA1u, 0x01u, 0x02u, 0x90u, 0x00u};
   uint8_t inner[kTestLit8];
   uint16_t inner_len = 0;
 
-  ASSERT_TRUE(nfc_ctap_dissect_response(&kRaw[0], sizeof(kRaw), &inner[0],
+  ASSERT_TRUE(nfc_ctap_dissect_response(&raw[0], sizeof(raw), &inner[0],
                                         sizeof(inner), &inner_len));
   EXPECT_EQ(inner_len, 3u);
   EXPECT_EQ(inner[0], 0xA1u);
 }
 
 TEST(NfcCtapCodec, RejectsBadCtapResponseStatusWords) {
-  const uint8_t kRawSw[] = {0x00u, 0x01u, 0x02u, 0x63u, 0x00u};
-  const uint8_t kRawCtap[] = {0x01u, 0x02u, 0x90u, 0x00u};
-  const uint8_t kRawSwOnly[] = {0x90u, 0x00u};
+  const uint8_t raw_sw[] = {0x00u, 0x01u, 0x02u, 0x63u, 0x00u};
+  const uint8_t raw_ctap[] = {0x01u, 0x02u, 0x90u, 0x00u};
+  const uint8_t raw_sw_only[] = {0x90u, 0x00u};
   uint16_t inner_len = 0;
 
-  EXPECT_FALSE(nfc_ctap_dissect_response(&kRawSw[0], sizeof(kRawSw),
+  EXPECT_FALSE(nfc_ctap_dissect_response(&raw_sw[0], sizeof(raw_sw),
                                          NERO_NFC_NULL, 0u, &inner_len));
-  EXPECT_FALSE(nfc_ctap_dissect_response(&kRawCtap[0], sizeof(kRawCtap),
+  EXPECT_FALSE(nfc_ctap_dissect_response(&raw_ctap[0], sizeof(raw_ctap),
                                          NERO_NFC_NULL, 0u, &inner_len));
-  EXPECT_FALSE(nfc_ctap_dissect_response(&kRawSwOnly[0], sizeof(kRawSwOnly),
+  EXPECT_FALSE(nfc_ctap_dissect_response(&raw_sw_only[0], sizeof(raw_sw_only),
                                          NERO_NFC_NULL, 0u, &inner_len));
 }
 
 TEST(NfcCtapCodec, EncodeThenPackRoundTripMatchesShortApduLayout) {
-  uint8_t hash[kTestLit32]{};
+  uint8_t const hash[kTestLit32]{};
   uint8_t cbor[kCborScratchSmallCap];
   uint16_t cbor_len = 0;
   uint8_t apdu[kShortApduRoundTripCap];

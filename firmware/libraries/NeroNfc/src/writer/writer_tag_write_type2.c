@@ -16,7 +16,7 @@
 
 #include "nero_nfc_null.h"
 /*
- * writer_tag_write_type2.c — NFC Forum Type 2 NDEF write path.
+ * writer_tag_write_type2.c -- NFC Forum Type 2 NDEF write path.
  */
 
 #include "writer_tag_write_internal.h"
@@ -168,9 +168,9 @@ static bool ntag_write_page(uint8_t page, const uint8_t* data) {
       cmd, NFC_TAG_T2T_WRITE_CMD_LEN, rx, sizeof(rx), true,
       NFC_TAG_T2T_WRITE_ACK_TIMEOUT_MS, false, true);
   /*
-   * [T2T-ISO14443-A-NTAG21x] section 10.4 Table 34 — TTimeOut for WRITE ACK/NAK
-   * (10 ms). [T2T-ISO14443-A] section 5.2 — WRITE is confirmed only by the
-   * 4-bit ACK 1010b (0Ah).
+   * [T2T-ISO14443-A-NTAG21x] section 10.4 Table 34 -- TTimeOut for WRITE
+   * ACK/NAK (10 ms). [T2T-ISO14443-A] section 5.2 -- WRITE is confirmed only by
+   * the 4-bit ACK 1010b (0Ah).
    */
   return (rlen >= 1) &&
          ((rx[0] & NFC_TAG_T2T_ACK_NIBBLE_MASK) == NFC_TAG_T2T_ACK_NIBBLE);
@@ -210,10 +210,10 @@ static bool writer_type2_write_unit(uint16_t unit, const uint8_t* data,
 }
 
 /*
- * [T2T-ISO14443-A-NTAG21x] section 10.1 / Table 28 — GET_VERSION returns
+ * [T2T-ISO14443-A-NTAG21x] section 10.1 / Table 28 -- GET_VERSION returns
  * NFC_TAG_NTAG_VER_REPLY_LEN bytes (optional CRC-A may follow in the FIFO).
- * Tries command 0x60; ST25TN-class ICs ignore it (see [T2T-ISO14443-A-ST25TN] —
- * no GET_VERSION).
+ * Tries command 0x60; ST25TN-class ICs ignore it (see [T2T-ISO14443-A-ST25TN]
+ * -- no GET_VERSION).
  */
 static bool ntag_try_get_version(void) {
   uint8_t cmd = NFC_FRONTEND_NTAG_CMD_GET_VERSION;
@@ -249,7 +249,7 @@ static bool ntag_try_get_version(void) {
                               (unsigned)(version_info.vendor_id));
       nero_nfc_log_write(nhx);
     }
-    nero_nfc_log_line(" != 04h — accepting NTAG fingerprint)");
+    nero_nfc_log_line(" != 04h -- accepting NTAG fingerprint)");
   } else {
     nero_nfc_log_line("  NXP NTAG21x");
   }
@@ -305,7 +305,7 @@ static void serial_ntag21x_tier_hint_from_cc_mlen(uint8_t mlen) {
 
 /*
  * Last page index ceiling for clamping inflated MLEN (e.g. OTP-glitched CC).
- * Prefer CC MLEN whenever page 3 has NFC Forum magic 0xE1 — it matches factory
+ * Prefer CC MLEN whenever page 3 has NFC Forum magic 0xE1 -- it matches factory
  * geometry even when GET_VERSION byte 6 disagrees (seen with UID/vendor-byte
  * clones).
  */
@@ -334,7 +334,7 @@ static void serial_ntag_version_cc_mismatch_hint(uint8_t cc_mlen) {
   }
   if (ver_cap != cc_cap) {
     nero_nfc_log_write(
-        "  Note: GET_VERSION byte 6 disagrees with CC MLEN — using CC for "
+        "  Note: GET_VERSION byte 6 disagrees with CC MLEN -- using CC for "
         "limits\r\n");
   }
 }
@@ -346,8 +346,8 @@ static void serial_ntag_version_cc_mismatch_hint(uint8_t cc_mlen) {
  * NFC_TAG_ST25TN01K_CC_MLEN ([T2T-ISO14443-A-ST25TN] Table 28 / section 7).
  *
  * The return is informational: we do NOT rewrite the CC unless the tag is
- * truly blank, because both NTAG21x and ST25TN block 3 are OTP — bits can
- * only flip 0→1, never the other way.
+ * truly blank, because both NTAG21x and ST25TN block 3 are OTP -- bits can
+ * only flip 0->1, never the other way.
  */
 static uint8_t t2_cc_size(writer_type2_family_t fam) {
   return writer_type2_cc_size(
@@ -374,7 +374,7 @@ bool writer_tag_write_type2_impl(writer_type2_family_t fam) {
 
   if (!writer_payload_configured(&WRITER_APP_PAYLOAD)) {
     nero_nfc_log_write(
-        "  ERROR: no payload configured — enter url/text/wifi/ndef-hex/... "
+        "  ERROR: no payload configured -- enter url/text/wifi/ndef-hex/... "
         "first\r\n");
     return false;
   }
@@ -453,7 +453,7 @@ bool writer_tag_write_type2_impl(writer_type2_family_t fam) {
       nero_nfc_log_line("  Writing CC...");
       if (!ntag_write_page(NFC_TAG_T2T_CC_PAGE_INDEX, cc_page)) {
         nero_nfc_log_line(
-            "  CC write FAILED (CC bits are OTP — already locked?)");
+            "  CC write FAILED (CC bits are OTP -- already locked?)");
         return false;
       }
       writer_hal_delay_ms(NFC_TAG_T2T_WRITE_VERIFY_SETTLE_MS);
@@ -520,7 +520,7 @@ writer_type2_family_t writer_tag_write_identify_type2_family(void) {
     return WRITER_TYPE2_FAMILY_NTAG21X;
   }
 
-  /* GET_VERSION failed → re-WUPA + select to leave the tag in ACTIVE. */
+  /* GET_VERSION failed -> re-WUPA + select to leave the tag in ACTIVE. */
   writer_hal_delay_ms(WRITER_TYPE2_POST_WRITE_SETTLE_MS);
   if (!writer_rf_activate_iso14443a()) {
     nero_nfc_log_line("  Re-activation after GET_VERSION failure: FAILED");
@@ -545,7 +545,7 @@ writer_type2_family_t writer_tag_write_identify_type2_family(void) {
         (void)nero_nfc_snprintf(nhx, sizeof nhx, "%02X", (unsigned)(cc[0]));
         nero_nfc_log_write(nhx);
       }
-      nero_nfc_log_line(") — skipping");
+      nero_nfc_log_line(") -- skipping");
       return WRITER_TYPE2_FAMILY_UNKNOWN;
     }
   }

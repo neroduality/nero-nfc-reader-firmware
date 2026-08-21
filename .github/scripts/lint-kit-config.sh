@@ -15,7 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Resolve and optionally clone the org lint kit (neroduality/.github → lint-c-cpp).
+# Resolve and optionally clone the org lint kit (neroduality/.github -> lint-c-cpp).
 #
 # Config (consumer .github/lint-c-cpp.yaml):
 #   toolchain.lint_kit.repository  (default: neroduality/.github)

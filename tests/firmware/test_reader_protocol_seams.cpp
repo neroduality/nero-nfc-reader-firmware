@@ -116,8 +116,8 @@ TEST(ReaderCcIdProtocol, RejectsNonT1SetParameters) {
   std::array<std::uint8_t, kTestLit10> frame{};
   frame[0] = kTestLit0x61u;
 
-  /* [CCID1.10] §6.2.6 — bError is the byte offset of the first offending field.
-   * A wrong dwLength (bytes 1..4) reports offset 0x01, regardless of
+  /* [CCID1.10] §6.2.6 -- bError is the byte offset of the first offending
+   * field. A wrong dwLength (bytes 1..4) reports offset 0x01, regardless of
    * bProtocolNum. */
   frame[kTestLit7] = 0x01u; /* bProtocolNum = T1 (correct) */
   EXPECT_EQ(reader_ccid_param_error_for_request(frame.data(), frame.size(),
@@ -276,35 +276,43 @@ TEST(ReaderCcIdBulkCodec, EncodesCommandFailedAndSlotAbsentResponses) {
   std::array<uint8_t, kTestLit32> work{};
   constexpr uint8_t kSlotMissing = 0x05u;
 
-  const uint16_t kFailedLen = reader_ccid_encode_command_failed_response(
+  const uint16_t failed_len = reader_ccid_encode_command_failed_response(
       work.data(), work.size(),
       static_cast<uint8_t>(NFC_CCID_MSG_PC_TO_RDR_XFR), 0x03u,
       static_cast<uint8_t>(NFC_CCID_ICC_ACTIVE), 0x01u);
-  ASSERT_EQ(kFailedLen, NFC_CCID_BULK_HEADER_LEN);
+  ASSERT_EQ(failed_len, NFC_CCID_BULK_HEADER_LEN);
   EXPECT_EQ(work[0], (uint8_t)NFC_CCID_MSG_RDR_TO_PC_DATABLOCK);
   EXPECT_EQ(work[6], 0x03u);
   EXPECT_EQ(work[8], 0x01u);
 
-  const uint16_t kAbsentLen = reader_ccid_encode_slot_absent_response(
+  const uint16_t absent_len = reader_ccid_encode_slot_absent_response(
       work.data(), work.size(),
       static_cast<uint8_t>(NFC_CCID_MSG_PC_TO_RDR_SLOTSTATUS), 0x00u, 0x04u,
       kSlotMissing);
-  ASSERT_EQ(kAbsentLen, NFC_CCID_BULK_HEADER_LEN);
+  ASSERT_EQ(absent_len, NFC_CCID_BULK_HEADER_LEN);
   EXPECT_EQ(work[0], (uint8_t)NFC_CCID_MSG_RDR_TO_PC_SLOTSTATUS);
   EXPECT_EQ(work[5], 0x00u);
   EXPECT_EQ(work[8], kSlotMissing);
 }
 
 TEST(ReaderSecurityKeyCcidCodec, CopiesAtsAsPcscAtrAndSelectsCtapTimeouts) {
-  const uint8_t kAts[] = {0x06u, 0x75u, 0x77u, 0x81u, 0x02u, 0x80u};
+  /* [PCSC-P3] Part 3 §3.1.3.2.3.1 -- ATR for an ISO14443-4 card is
+   * 3B 8N 80 01 [ATS historical bytes] TCK. ATS TL=06 T0=75 (TA/TB/TC
+   * present, FSCI=5) TA=77 TB=81 TC=02 leaves one historical byte (0x80). */
+  const uint8_t ats[] = {0x06u, 0x75u, 0x77u, 0x81u, 0x02u, 0x80u};
   std::array<uint8_t, kTestLit32> atr{};
   uint16_t atr_len = 0;
 
   ASSERT_TRUE(reader_security_key_copy_ats_as_pcsc_atr(
-      &kAts[0], sizeof(kAts), atr.data(), atr.size(), &atr_len));
-  EXPECT_EQ(atr_len, 10u);
+      &ats[0], sizeof(ats), atr.data(), atr.size(), &atr_len));
+  ASSERT_EQ(atr_len, 6u);
   EXPECT_EQ(atr[0], 0x3Bu);
-  EXPECT_EQ(atr[1], 0x86u);
+  EXPECT_EQ(atr[1], 0x81u);
+  EXPECT_EQ(atr[2], 0x80u);
+  EXPECT_EQ(atr[3], 0x01u);
+  EXPECT_EQ(atr[4], 0x80u);
+  /* TCK = XOR of bytes T0..Tk = 0x81 ^ 0x80 ^ 0x01 ^ 0x80. */
+  EXPECT_EQ(atr[5], 0x80u);
 
   EXPECT_EQ(reader_security_key_ctap_timeout_for_command(
                 NFC_CTAP_CMD_GET_ASSERTION, 5000u, 500u),
@@ -329,7 +337,7 @@ TEST(ReaderIsoDepTiming, ComputesBoundedTimingValues) {
   EXPECT_EQ(reader_iso_dep_pre_first_iblock_delay_ms(250000u), 200u);
   EXPECT_EQ(reader_iso_dep_link_response_timeout_ms(1000u), 80u);
   EXPECT_EQ(reader_iso_dep_link_response_timeout_ms(500000u), 530u);
-  /* [ISO14443-4] §7.2 — the full FWT range must be honored, not truncated at
+  /* [ISO14443-4] §7.2 -- the full FWT range must be honored, not truncated at
    * 600 ms. A 700 ms FWT yields 700+30 margin = 730 ms; FWI=14 (~4949 ms FWT)
    * stays well under the 5000 ms ceiling; an over-large FWT clamps to the WTX
    * ceiling. */
@@ -356,11 +364,11 @@ TEST(ReaderIsoDepTiming, ComputesChunkBudget) {
 }
 
 TEST(ReaderIsoDepAts, RejectsShortAtsAndKeepsDefaults) {
-  const std::array<std::uint8_t, 1> kAts = {0x01u};
+  const std::array<std::uint8_t, 1> ats = {0x01u};
   reader_iso_dep_ats_profile_t profile{};
 
   EXPECT_FALSE(
-      reader_iso_dep_parse_ats_profile(kAts.data(), kAts.size(), &profile));
+      reader_iso_dep_parse_ats_profile(ats.data(), ats.size(), &profile));
   EXPECT_EQ(profile.fsci, 0u);
   EXPECT_EQ(profile.pic_frame_max, 256u);
   EXPECT_EQ(profile.fwi, 4u);
@@ -374,7 +382,7 @@ TEST(ReaderIsoDepAts, RejectsShortAtsAndKeepsDefaults) {
 }
 
 TEST(ReaderIsoDepAts, MapsFsciToFrameSize) {
-  /* [ISO14443-4] Table 6 — FSCI 0..8 -> FSC 16,24,32,40,48,64,96,128,256;
+  /* [ISO14443-4] Table 6 -- FSCI 0..8 -> FSC 16,24,32,40,48,64,96,128,256;
    * FSCI 9..15 are RFU and clamp to the maximum frame size (256). */
   EXPECT_EQ(reader_iso_dep_fsc_from_fsci(0u), 16u);
   EXPECT_EQ(reader_iso_dep_fsc_from_fsci(1u), 24u);
@@ -391,12 +399,12 @@ TEST(ReaderIsoDepAts, MapsFsciToFrameSize) {
 TEST(ReaderIsoDepAts, ParsesOptionalInterfaceBytesAndHistory) {
   /* [ISO14443-4] T0=0x78 -> TA/TB/TC present (b5/b6/b7) and FSCI=8 (FSC 256).
    */
-  const std::array<std::uint8_t, 7> kAts = {0x07u, 0x78u, 0x11u, 0x80u,
-                                            0x03u, 0xA1u, 0xA2u};
+  const std::array<std::uint8_t, 7> ats = {0x07u, 0x78u, 0x11u, 0x80u,
+                                           0x03u, 0xA1u, 0xA2u};
   reader_iso_dep_ats_profile_t profile{};
 
   ASSERT_TRUE(
-      reader_iso_dep_parse_ats_profile(kAts.data(), kAts.size(), &profile));
+      reader_iso_dep_parse_ats_profile(ats.data(), ats.size(), &profile));
   EXPECT_EQ(profile.fsci, 8u);
   EXPECT_EQ(profile.pic_frame_max, 256u);
   EXPECT_TRUE(profile.has_ta);
@@ -413,23 +421,30 @@ TEST(ReaderIsoDepAts, ParsesOptionalInterfaceBytesAndHistory) {
   EXPECT_EQ(profile.historical_len, 2u);
 }
 
-TEST(ReaderIsoDepAts, RejectsRfuFwi) {
-  const std::array<std::uint8_t, 3> kAts = {0x03u, 0x20u, 0xF0u};
+TEST(ReaderIsoDepAts, SubstitutesDefaultFwiForRfuValue) {
+  /* [ISO14443-4] §5.3.5 -- FWI 15 is RFU; NFC Forum Digital Protocol requires
+   * substituting the default FWI (4) while keeping the rest of the ATS (FSC,
+   * TB presence) usable rather than rejecting the activation. */
+  const std::array<std::uint8_t, 3> ats = {0x03u, 0x20u, 0xF0u};
   reader_iso_dep_ats_profile_t profile{};
 
-  EXPECT_FALSE(
-      reader_iso_dep_parse_ats_profile(kAts.data(), kAts.size(), &profile));
+  ASSERT_TRUE(
+      reader_iso_dep_parse_ats_profile(ats.data(), ats.size(), &profile));
+  EXPECT_TRUE(profile.has_tb);
+  EXPECT_EQ(profile.tb, 0xF0u);
+  EXPECT_EQ(profile.fsci, 0u);
+  EXPECT_EQ(profile.pic_frame_max, 16u);
   EXPECT_EQ(profile.fwi, ISO_DEP_FWI_DEFAULT);
   EXPECT_EQ(profile.fwt_us,
             reader_iso_dep_fwt_us_from_fwi(ISO_DEP_FWI_DEFAULT));
 }
 
 TEST(ReaderIsoDepAts, UsesDefaultsWhenOptionalBytesAbsent) {
-  const std::array<std::uint8_t, 3> kAts = {0x03u, 0x00u, 0xFEu};
+  const std::array<std::uint8_t, 3> ats = {0x03u, 0x00u, 0xFEu};
   reader_iso_dep_ats_profile_t profile{};
 
   ASSERT_TRUE(
-      reader_iso_dep_parse_ats_profile(kAts.data(), kAts.size(), &profile));
+      reader_iso_dep_parse_ats_profile(ats.data(), ats.size(), &profile));
   EXPECT_EQ(profile.fsci, 0u);
   EXPECT_EQ(profile.pic_frame_max, 16u);
   EXPECT_EQ(profile.fwi, 4u);
@@ -446,11 +461,11 @@ TEST(ReaderIsoDepAts, UsesDefaultsWhenOptionalBytesAbsent) {
 TEST(ReaderIsoDepAts, LeavesMissingAdvertisedBytesDefaulted) {
   /* [ISO14443-4] T0=0x78 advertises TA/TB/TC and FSCI=8, but only TA is
    * present. */
-  const std::array<std::uint8_t, 3> kAts = {0x03u, 0x78u, 0x11u};
+  const std::array<std::uint8_t, 3> ats = {0x03u, 0x78u, 0x11u};
   reader_iso_dep_ats_profile_t profile{};
 
   ASSERT_TRUE(
-      reader_iso_dep_parse_ats_profile(kAts.data(), kAts.size(), &profile));
+      reader_iso_dep_parse_ats_profile(ats.data(), ats.size(), &profile));
   EXPECT_EQ(profile.fsci, 8u);
   EXPECT_EQ(profile.pic_frame_max, 256u);
   EXPECT_TRUE(profile.has_ta);
@@ -464,103 +479,103 @@ TEST(ReaderIsoDepAts, LeavesMissingAdvertisedBytesDefaulted) {
 }
 
 TEST(ReaderIsoDepFrame, ComputesReceiveHeaderAndInfOffsets) {
-  const std::array<std::uint8_t, 4> kCidWithoutPcbBit = {0x02u, 0x05u, 0x90u,
-                                                         0x00u};
-  const std::array<std::uint8_t, 5> kSilentNad = {0x0Au, 0x05u, 0x00u, 0x90u,
+  const std::array<std::uint8_t, 4> cid_without_pcb_bit = {0x02u, 0x05u, 0x90u,
+                                                           0x00u};
+  const std::array<std::uint8_t, 5> silent_nad = {0x0Au, 0x05u, 0x00u, 0x90u,
                                                   0x00u};
 
   EXPECT_EQ(reader_iso_dep_rx_hdr_skip(0x02u), 1u);
   EXPECT_EQ(reader_iso_dep_rx_hdr_skip(0x0Au), 2u);
   EXPECT_EQ(reader_iso_dep_rx_hdr_skip(0x06u), 2u);
   EXPECT_EQ(reader_iso_dep_rx_hdr_skip(0x0Eu), 3u);
-  EXPECT_EQ(reader_iso_dep_pick_inf_offset(kCidWithoutPcbBit.data(),
-                                           kCidWithoutPcbBit.size(), true,
+  EXPECT_EQ(reader_iso_dep_pick_inf_offset(cid_without_pcb_bit.data(),
+                                           cid_without_pcb_bit.size(), true,
                                            0x05u, false, 0u),
             2u);
-  EXPECT_EQ(reader_iso_dep_pick_inf_offset(kSilentNad.data(), kSilentNad.size(),
+  EXPECT_EQ(reader_iso_dep_pick_inf_offset(silent_nad.data(), silent_nad.size(),
                                            true, 0x05u, true, 0x01u),
             3u);
-  EXPECT_EQ(reader_iso_dep_pick_inf_offset(kSilentNad.data(), kSilentNad.size(),
+  EXPECT_EQ(reader_iso_dep_pick_inf_offset(silent_nad.data(), silent_nad.size(),
                                            false, 0u, true, 0x01u),
             2u);
 }
 
 TEST(ReaderIsoDepFrame, ReadsNadByteWhenPresent) {
-  const std::array<std::uint8_t, 3> kCidNad = {0x0Eu, 0x05u, 0x7Fu};
+  const std::array<std::uint8_t, 3> cid_nad = {0x0Eu, 0x05u, 0x7Fu};
   constexpr std::uint8_t kDefaultNad = 0x00u;
 
-  EXPECT_EQ(reader_iso_dep_rx_nad_byte(kCidNad.data(), kCidNad.size(),
-                                       kCidNad[0], kDefaultNad),
+  EXPECT_EQ(reader_iso_dep_rx_nad_byte(cid_nad.data(), cid_nad.size(),
+                                       cid_nad[0], kDefaultNad),
             0x7Fu);
   EXPECT_EQ(
-      reader_iso_dep_rx_nad_byte(kCidNad.data(), 2, kCidNad[0], kDefaultNad),
+      reader_iso_dep_rx_nad_byte(cid_nad.data(), 2, cid_nad[0], kDefaultNad),
       kDefaultNad);
 }
 
 TEST(ReaderIsoDepFrame, MatchesRBlockAckNakAndCid) {
-  const std::array<std::uint8_t, 2> kAckCid = {0xAAu, 0x05u};
-  const std::array<std::uint8_t, 2> kNakCid = {0xBAu, 0x05u};
-  const std::array<std::uint8_t, 2> kWrongCid = {0xAAu, 0x06u};
+  const std::array<std::uint8_t, 2> ack_cid = {0xAAu, 0x05u};
+  const std::array<std::uint8_t, 2> nak_cid = {0xBAu, 0x05u};
+  const std::array<std::uint8_t, 2> wrong_cid = {0xAAu, 0x06u};
   std::uint8_t ack_block = kTestLit0xFFu;
 
   EXPECT_TRUE(reader_iso_dep_rx_is_chain_ack_for_block(
-      kAckCid.data(), kAckCid.size(), 0u, true, 0x05u, &ack_block));
+      ack_cid.data(), ack_cid.size(), 0u, true, 0x05u, &ack_block));
   EXPECT_EQ(ack_block, 0u);
   EXPECT_TRUE(reader_iso_dep_rx_is_chain_nak_for_block(
-      kNakCid.data(), kNakCid.size(), 0u, true, 0x05u));
+      nak_cid.data(), nak_cid.size(), 0u, true, 0x05u));
   EXPECT_FALSE(reader_iso_dep_rx_is_chain_ack_for_block(
-      kWrongCid.data(), kWrongCid.size(), 0u, true, 0x05u, NERO_NFC_NULL));
+      wrong_cid.data(), wrong_cid.size(), 0u, true, 0x05u, NERO_NFC_NULL));
   EXPECT_FALSE(reader_iso_dep_rx_is_chain_ack_for_block(
-      kNakCid.data(), kNakCid.size(), 0u, true, 0x05u, NERO_NFC_NULL));
-  /* [ISO14443-4] §7.5.4 Rule 8 — R(ACK) block number must equal the chained
+      nak_cid.data(), nak_cid.size(), 0u, true, 0x05u, NERO_NFC_NULL));
+  /* [ISO14443-4] §7.5.4 Rule 8 -- R(ACK) block number must equal the chained
    * I-block (blk_sent); a toggled block number is rejected (no bespoke
    * tolerance). */
-  const std::array<std::uint8_t, 2> kAckToggledBlock = {0xABu, 0x05u};
+  const std::array<std::uint8_t, 2> ack_toggled_block = {0xABu, 0x05u};
   EXPECT_FALSE(reader_iso_dep_rx_is_chain_ack_for_block(
-      kAckToggledBlock.data(), kAckToggledBlock.size(), 0u, true, 0x05u,
+      ack_toggled_block.data(), ack_toggled_block.size(), 0u, true, 0x05u,
       NERO_NFC_NULL));
   std::uint8_t ack_block1 = kTestLit0xFFu;
-  const std::array<std::uint8_t, 2> kAckBlock1Match = {0xABu, 0x05u};
+  const std::array<std::uint8_t, 2> ack_block1_match = {0xABu, 0x05u};
   EXPECT_TRUE(reader_iso_dep_rx_is_chain_ack_for_block(
-      kAckBlock1Match.data(), kAckBlock1Match.size(), 1u, true, 0x05u,
+      ack_block1_match.data(), ack_block1_match.size(), 1u, true, 0x05u,
       &ack_block1));
   EXPECT_EQ(ack_block1, 1u);
 }
 
 TEST(ReaderIsoDepFrame, ValidatesReceivedIBlockAgainstCurrentPcdNumber) {
-  const std::array<std::uint8_t, 3> kBlock0 = {0x02u, 0x90u, 0x00u};
-  const std::array<std::uint8_t, 4> kBlock1Cid = {0x0Bu, 0x05u, 0x90u, 0x00u};
-  const std::array<std::uint8_t, 1> kShortCid = {0x0Au};
-  const std::array<std::uint8_t, 1> kRBlock = {0xA2u};
+  const std::array<std::uint8_t, 3> block0 = {0x02u, 0x90u, 0x00u};
+  const std::array<std::uint8_t, 4> block1_cid = {0x0Bu, 0x05u, 0x90u, 0x00u};
+  const std::array<std::uint8_t, 1> short_cid = {0x0Au};
+  const std::array<std::uint8_t, 1> r_block = {0xA2u};
 
-  EXPECT_TRUE(reader_iso_dep_rx_i_block_number_matches(kBlock0.data(),
-                                                       kBlock0.size(), 0u));
-  EXPECT_FALSE(reader_iso_dep_rx_i_block_number_matches(kBlock0.data(),
-                                                        kBlock0.size(), 1u));
-  EXPECT_TRUE(reader_iso_dep_rx_i_block_number_matches(kBlock1Cid.data(),
-                                                       kBlock1Cid.size(), 1u));
-  EXPECT_FALSE(reader_iso_dep_rx_i_block_number_matches(kShortCid.data(),
-                                                        kShortCid.size(), 0u));
-  EXPECT_FALSE(reader_iso_dep_rx_i_block_number_matches(kRBlock.data(),
-                                                        kRBlock.size(), 0u));
+  EXPECT_TRUE(reader_iso_dep_rx_i_block_number_matches(block0.data(),
+                                                       block0.size(), 0u));
+  EXPECT_FALSE(reader_iso_dep_rx_i_block_number_matches(block0.data(),
+                                                        block0.size(), 1u));
+  EXPECT_TRUE(reader_iso_dep_rx_i_block_number_matches(block1_cid.data(),
+                                                       block1_cid.size(), 1u));
+  EXPECT_FALSE(reader_iso_dep_rx_i_block_number_matches(short_cid.data(),
+                                                        short_cid.size(), 0u));
+  EXPECT_FALSE(reader_iso_dep_rx_i_block_number_matches(r_block.data(),
+                                                        r_block.size(), 0u));
 }
 
 TEST(ReaderIsoDepFrame, ComputesWtxResponseTimeoutBounds) {
-  const std::array<std::uint8_t, 2> kWtxMin = {0xF2u, 0x01u};
-  const std::array<std::uint8_t, 2> kWtxMax = {0xF2u, 0x3Bu};
-  const std::array<std::uint8_t, 2> kWtxInvalid = {0xF2u, 0x00u};
+  const std::array<std::uint8_t, 2> wtx_min = {0xF2u, 0x01u};
+  const std::array<std::uint8_t, 2> wtx_max = {0xF2u, 0x3Bu};
+  const std::array<std::uint8_t, 2> wtx_invalid = {0xF2u, 0x00u};
 
-  EXPECT_EQ(reader_iso_dep_wtx_response_timeout_ms(4833u, kWtxMin.data(),
-                                                   kWtxMin.size(), 1u),
+  EXPECT_EQ(reader_iso_dep_wtx_response_timeout_ms(4833u, wtx_min.data(),
+                                                   wtx_min.size(), 1u),
             80u);
-  EXPECT_EQ(reader_iso_dep_wtx_response_timeout_ms(100000u, kWtxMax.data(),
-                                                   kWtxMax.size(), 1u),
+  EXPECT_EQ(reader_iso_dep_wtx_response_timeout_ms(100000u, wtx_max.data(),
+                                                   wtx_max.size(), 1u),
             5000u);
   EXPECT_EQ(
       reader_iso_dep_wtx_response_timeout_ms(500000u, NERO_NFC_NULL, 0, 1u),
       530u);
-  EXPECT_EQ(reader_iso_dep_wtx_response_timeout_ms(100000u, kWtxInvalid.data(),
-                                                   kWtxInvalid.size(), 1u),
+  EXPECT_EQ(reader_iso_dep_wtx_response_timeout_ms(100000u, wtx_invalid.data(),
+                                                   wtx_invalid.size(), 1u),
             130u);
 }
 
@@ -580,12 +595,12 @@ TEST(ReaderIsoDepFrame, RecognizesPlausibleSelectResponsePrefixes) {
 }
 
 TEST(ReaderIsoDepFrame, ExtractsFinalIBlockInfWithoutTrimmingStatusTail) {
-  const std::array<std::uint8_t, 4> kFrame = {0x02u, 0xA1u, 0x90u, 0x00u};
+  const std::array<std::uint8_t, 4> frame = {0x02u, 0xA1u, 0x90u, 0x00u};
   std::uint16_t inf_len = 0u;
   std::uint8_t crc_tail_len = kTestLit0xFFu;
 
   ASSERT_TRUE(reader_iso_dep_i_block_inf_len(
-      kFrame.data(), kFrame.size(), 1u, kFrame[0], &inf_len, &crc_tail_len));
+      frame.data(), frame.size(), 1u, frame[0], &inf_len, &crc_tail_len));
   EXPECT_EQ(inf_len, 3u);
   EXPECT_EQ(crc_tail_len, 0u);
 }
@@ -593,12 +608,12 @@ TEST(ReaderIsoDepFrame, ExtractsFinalIBlockInfWithoutTrimmingStatusTail) {
 TEST(ReaderIsoDepFrame, ExtractsChainedIBlockInfAndTrimsRfCrcTail) {
   std::array<std::uint8_t, kTestLit5> frame = {kTestLit0x12u, kTestLit0xA1u,
                                                kTestLit0x61u, 0x00u, 0x00u};
-  const std::uint16_t kCrc = reader_iso_dep_crc_a(frame.data(), 3u);
+  const std::uint16_t crc = reader_iso_dep_crc_a(frame.data(), 3u);
   std::uint16_t inf_len = 0u;
   std::uint8_t crc_tail_len = 0u;
 
-  frame[kTestLit3] = static_cast<std::uint8_t>(kCrc & kTestLit0x00FFu);
-  frame[kTestLit4] = static_cast<std::uint8_t>(kCrc >> kTestLit8u);
+  frame[kTestLit3] = static_cast<std::uint8_t>(crc & kTestLit0x00FFu);
+  frame[kTestLit4] = static_cast<std::uint8_t>(crc >> kTestLit8u);
 
   ASSERT_TRUE(reader_iso_dep_i_block_inf_len(
       frame.data(), frame.size(), 1u, frame[0], &inf_len, &crc_tail_len));
@@ -607,11 +622,11 @@ TEST(ReaderIsoDepFrame, ExtractsChainedIBlockInfAndTrimsRfCrcTail) {
 }
 
 TEST(ReaderIsoDepFrame, RejectsShortIBlockInfFrame) {
-  const std::array<std::uint8_t, 2> kFrame = {0x02u, 0xA1u};
+  const std::array<std::uint8_t, 2> frame = {0x02u, 0xA1u};
   std::uint16_t inf_len = kTestLit0xFffFu;
 
   EXPECT_FALSE(reader_iso_dep_i_block_inf_len(
-      kFrame.data(), kFrame.size(), 1u, kFrame[0], &inf_len, NERO_NFC_NULL));
+      frame.data(), frame.size(), 1u, frame[0], &inf_len, NERO_NFC_NULL));
   EXPECT_EQ(inf_len, 0u);
 }
 
@@ -647,13 +662,13 @@ TEST(ReaderIsoDepFrame, RejectsUndersizedChainedAckBuffer) {
 }
 
 TEST(ReaderIsoDepApduRelay, BuildsIBlockTxWithCidNadAndChaining) {
-  const std::array<std::uint8_t, 4> kApdu = {0x80u, 0x10u, 0x20u, 0x30u};
+  const std::array<std::uint8_t, 4> apdu = {0x80u, 0x10u, 0x20u, 0x30u};
   std::array<std::uint8_t, kTestLit8> tx{};
   reader_iso_dep_i_block_tx_t tx_info{};
 
-  ASSERT_TRUE(reader_iso_dep_build_i_block_tx(
-      tx.data(), tx.size(), kApdu.data(), kApdu.size(), 0u, 2u, true, 0x05u,
-      true, 0x01u, 1u, &tx_info));
+  ASSERT_TRUE(reader_iso_dep_build_i_block_tx(tx.data(), tx.size(), apdu.data(),
+                                              apdu.size(), 0u, 2u, true, 0x05u,
+                                              true, 0x01u, 1u, &tx_info));
   EXPECT_EQ(tx_info.pcb, 0x1Fu);
   EXPECT_EQ(tx_info.hdr_len, 3u);
   EXPECT_EQ(tx_info.frag_len, 2u);
@@ -667,29 +682,29 @@ TEST(ReaderIsoDepApduRelay, BuildsIBlockTxWithCidNadAndChaining) {
 }
 
 TEST(ReaderIsoDepApduRelay, RejectsUndersizedIBlockTxBuffer) {
-  const std::array<std::uint8_t, 3> kApdu = {0x01u, 0x02u, 0x03u};
+  const std::array<std::uint8_t, 3> apdu = {0x01u, 0x02u, 0x03u};
   std::array<std::uint8_t, kTestLit3> tx{};
   reader_iso_dep_i_block_tx_t tx_info{};
 
   EXPECT_FALSE(reader_iso_dep_build_i_block_tx(
-      tx.data(), tx.size(), kApdu.data(), kApdu.size(), 0u, 2u, true, 0x05u,
+      tx.data(), tx.size(), apdu.data(), apdu.size(), 0u, 2u, true, 0x05u,
       false, 0u, 0u, &tx_info));
   EXPECT_EQ(tx_info.wire_len, 0u);
 }
 
 TEST(ReaderIsoDepApduRelay, BuildsWtxEchoPrefix) {
-  const std::array<std::uint8_t, 3> kRx = {0xFAu, 0x05u, 0x82u};
+  const std::array<std::uint8_t, 3> rx = {0xFAu, 0x05u, 0x82u};
   std::array<std::uint8_t, kTestLit4> wtx{};
   std::uint8_t wtx_len = 0u;
 
-  ASSERT_TRUE(reader_iso_dep_build_wtx_echo(wtx.data(), wtx.size(), kRx.data(),
-                                            kRx.size(), 2u, &wtx_len));
+  ASSERT_TRUE(reader_iso_dep_build_wtx_echo(wtx.data(), wtx.size(), rx.data(),
+                                            rx.size(), 2u, &wtx_len));
   EXPECT_EQ(wtx_len, 3u);
   EXPECT_EQ(wtx[0], 0xFAu);
   EXPECT_EQ(wtx[1], 0x05u);
   EXPECT_EQ(wtx[2], 0x02u);
-  EXPECT_FALSE(reader_iso_dep_build_wtx_echo(wtx.data(), 2u, kRx.data(),
-                                             kRx.size(), 2u, &wtx_len));
+  EXPECT_FALSE(reader_iso_dep_build_wtx_echo(wtx.data(), 2u, rx.data(),
+                                             rx.size(), 2u, &wtx_len));
   EXPECT_EQ(wtx_len, 0u);
 }
 
@@ -697,30 +712,30 @@ TEST(ReaderIsoDepApduRelay, RejectsRfuWtxMultipliers) {
   std::array<std::uint8_t, kTestLit4> wtx{};
   std::uint8_t wtx_len = 0u;
 
-  const std::array<std::uint8_t, 2> kWtxZero = {0xF2u, 0x00u};
-  const std::array<std::uint8_t, 2> kWtxSixty = {0xF2u, 0x3Cu};
-  const std::array<std::uint8_t, 2> kWtxSixtyThree = {0xF2u, 0x3Fu};
+  const std::array<std::uint8_t, 2> wtx_zero = {0xF2u, 0x00u};
+  const std::array<std::uint8_t, 2> wtx_sixty = {0xF2u, 0x3Cu};
+  const std::array<std::uint8_t, 2> wtx_sixty_three = {0xF2u, 0x3Fu};
 
   EXPECT_FALSE(reader_iso_dep_build_wtx_echo(
-      wtx.data(), wtx.size(), kWtxZero.data(), kWtxZero.size(), 1u, &wtx_len));
+      wtx.data(), wtx.size(), wtx_zero.data(), wtx_zero.size(), 1u, &wtx_len));
   EXPECT_EQ(wtx_len, 0u);
   EXPECT_FALSE(reader_iso_dep_build_wtx_echo(wtx.data(), wtx.size(),
-                                             kWtxSixty.data(), kWtxSixty.size(),
+                                             wtx_sixty.data(), wtx_sixty.size(),
                                              1u, &wtx_len));
   EXPECT_FALSE(reader_iso_dep_build_wtx_echo(
-      wtx.data(), wtx.size(), kWtxSixtyThree.data(), kWtxSixtyThree.size(), 1u,
-      &wtx_len));
+      wtx.data(), wtx.size(), wtx_sixty_three.data(), wtx_sixty_three.size(),
+      1u, &wtx_len));
 }
 
 TEST(ReaderIsoDepApduRelay, AppendsInfOrDropsOnCapacity) {
-  const std::array<std::uint8_t, 3> kInfBytes = {0xA1u, 0x90u, 0x00u};
+  const std::array<std::uint8_t, 3> inf_bytes = {0xA1u, 0x90u, 0x00u};
   std::array<std::uint8_t, kTestLit4> resp{};
   std::uint16_t total = 1u;
   bool appended = false;
 
   resp[0] = kTestLit0x7Fu;
   ASSERT_TRUE(reader_iso_dep_append_inf(resp.data(), resp.size(), &total,
-                                        kInfBytes.data(), 2u, &appended));
+                                        inf_bytes.data(), 2u, &appended));
   EXPECT_TRUE(appended);
   EXPECT_EQ(total, 3u);
   EXPECT_EQ(resp[0], 0x7Fu);
@@ -728,103 +743,102 @@ TEST(ReaderIsoDepApduRelay, AppendsInfOrDropsOnCapacity) {
   EXPECT_EQ(resp[2], 0x90u);
 
   ASSERT_TRUE(reader_iso_dep_append_inf(resp.data(), resp.size(), &total,
-                                        kInfBytes.data(), 3u, &appended));
+                                        inf_bytes.data(), 3u, &appended));
   EXPECT_FALSE(appended);
   EXPECT_EQ(total, 3u);
 }
 
 TEST(ReaderIsoDepFrame, DetectsApduStatusWord) {
-  const std::array<std::uint8_t, 3> kSuccess = {0x01u, 0x90u, 0x00u};
-  const std::array<std::uint8_t, 3> kContinuation = {0x01u, 0x61u, 0x05u};
-  const std::array<std::uint8_t, 3> kCtapGetresponse = {0x01u, 0x91u, 0x00u};
-  const std::array<std::uint8_t, 3> kNoStatus = {0x01u, 0x60u, 0x00u};
+  const std::array<std::uint8_t, 3> success = {0x01u, 0x90u, 0x00u};
+  const std::array<std::uint8_t, 3> continuation = {0x01u, 0x61u, 0x05u};
+  const std::array<std::uint8_t, 3> ctap_getresponse = {0x01u, 0x91u, 0x00u};
+  const std::array<std::uint8_t, 3> no_status = {0x01u, 0x60u, 0x00u};
 
-  EXPECT_TRUE(reader_iso_dep_apdu_response_has_status_word(kSuccess.data(),
-                                                           kSuccess.size()));
+  EXPECT_TRUE(reader_iso_dep_apdu_response_has_status_word(success.data(),
+                                                           success.size()));
   EXPECT_TRUE(reader_iso_dep_apdu_response_has_status_word(
-      kContinuation.data(), kContinuation.size()));
+      continuation.data(), continuation.size()));
   EXPECT_TRUE(reader_iso_dep_apdu_response_has_status_word(
-      kCtapGetresponse.data(), kCtapGetresponse.size()));
-  EXPECT_FALSE(reader_iso_dep_apdu_response_has_status_word(kNoStatus.data(),
-                                                            kNoStatus.size()));
+      ctap_getresponse.data(), ctap_getresponse.size()));
+  EXPECT_FALSE(reader_iso_dep_apdu_response_has_status_word(no_status.data(),
+                                                            no_status.size()));
   EXPECT_FALSE(reader_iso_dep_apdu_response_has_status_word(NERO_NFC_NULL, 0u));
 }
 
 TEST(ReaderIsoDepStatus, TrimsResidualCrcAfterSuccessStatus) {
-  const std::array<std::uint8_t, 6> kResp = {0x00u, 0xA1u, 0x90u,
-                                             0x00u, 0x65u, 0x39u};
+  const std::array<std::uint8_t, 6> resp = {0x00u, 0xA1u, 0x90u,
+                                            0x00u, 0x65u, 0x39u};
 
-  EXPECT_EQ(reader_iso_dep_trim_crc_suffix(kResp.data(), kResp.size()), 4u);
+  EXPECT_EQ(reader_iso_dep_trim_crc_suffix(resp.data(), resp.size()), 4u);
 }
 
 TEST(ReaderIsoDepStatus, DetectsIso14443aCrcSuffix) {
-  const std::array<std::uint8_t, 7> kFrame = {0x02u, 0x00u, 0xA1u, 0x90u,
-                                              0x00u, 0x88u, 0x5Au};
-  const std::array<std::uint8_t, 7> kNoCrc = {0x02u, 0x00u, 0xA1u, 0x90u,
+  const std::array<std::uint8_t, 7> frame = {0x02u, 0x00u, 0xA1u, 0x90u,
+                                             0x00u, 0x88u, 0x5Au};
+  const std::array<std::uint8_t, 7> no_crc = {0x02u, 0x00u, 0xA1u, 0x90u,
                                               0x00u, 0x90u, 0x00u};
 
-  EXPECT_TRUE(reader_iso_dep_has_crc_a_suffix(kFrame.data(), kFrame.size()));
-  EXPECT_FALSE(reader_iso_dep_has_crc_a_suffix(kNoCrc.data(), kNoCrc.size()));
+  EXPECT_TRUE(reader_iso_dep_has_crc_a_suffix(frame.data(), frame.size()));
+  EXPECT_FALSE(reader_iso_dep_has_crc_a_suffix(no_crc.data(), no_crc.size()));
   EXPECT_EQ(
-      reader_iso_dep_chained_crc_tail_len(0x12u, kFrame.data(), kFrame.size()),
+      reader_iso_dep_chained_crc_tail_len(0x12u, frame.data(), frame.size()),
       2u);
   EXPECT_EQ(
-      reader_iso_dep_chained_crc_tail_len(0x02u, kFrame.data(), kFrame.size()),
+      reader_iso_dep_chained_crc_tail_len(0x02u, frame.data(), frame.size()),
       0u);
 }
 
 TEST(ReaderIsoDepStatus, TrimsResidualCrcThatLooksLikeCommandError) {
-  const std::array<std::uint8_t, 6> kResp = {0x00u, 0xA1u, 0x90u,
-                                             0x00u, 0x69u, 0x01u};
+  const std::array<std::uint8_t, 6> resp = {0x00u, 0xA1u, 0x90u,
+                                            0x00u, 0x69u, 0x01u};
 
-  EXPECT_EQ(reader_iso_dep_trim_crc_suffix(kResp.data(), kResp.size()), 4u);
+  EXPECT_EQ(reader_iso_dep_trim_crc_suffix(resp.data(), resp.size()), 4u);
 }
 
 TEST(ReaderIsoDepStatus, TrimsTailWhenEarlierStatusHasHigherConfidence) {
-  const std::array<std::uint8_t, 6> kResp = {0x00u, 0xA1u, 0x63u,
-                                             0x01u, 0x01u, 0x02u};
+  const std::array<std::uint8_t, 6> resp = {0x00u, 0xA1u, 0x63u,
+                                            0x01u, 0x01u, 0x02u};
 
-  EXPECT_EQ(reader_iso_dep_trim_crc_suffix(kResp.data(), kResp.size()), 4u);
+  EXPECT_EQ(reader_iso_dep_trim_crc_suffix(resp.data(), resp.size()), 4u);
 }
 
 TEST(ReaderIsoDepStatus, TrimsResidualCrcAfterGetResponseStatus) {
-  const std::array<std::uint8_t, 6> kResp = {0x00u, 0xA1u, 0x61u,
-                                             0x00u, 0x65u, 0x39u};
+  const std::array<std::uint8_t, 6> resp = {0x00u, 0xA1u, 0x61u,
+                                            0x00u, 0x65u, 0x39u};
 
-  EXPECT_EQ(reader_iso_dep_trim_crc_suffix(kResp.data(), kResp.size()), 4u);
+  EXPECT_EQ(reader_iso_dep_trim_crc_suffix(resp.data(), resp.size()), 4u);
 }
 
 TEST(ReaderIsoDepStatus, KeepsUnchainedGetResponseStatus) {
-  const std::array<std::uint8_t, 4> kResp = {0x00u, 0xA1u, 0x61u, 0x00u};
+  const std::array<std::uint8_t, 4> resp = {0x00u, 0xA1u, 0x61u, 0x00u};
 
-  EXPECT_EQ(reader_iso_dep_trim_crc_suffix(kResp.data(), kResp.size()),
-            kResp.size());
+  EXPECT_EQ(reader_iso_dep_trim_crc_suffix(resp.data(), resp.size()),
+            resp.size());
 }
 
 TEST(ReaderIsoDepStatus, KeepsCommandErrorWithoutPrecedingStatus) {
-  const std::array<std::uint8_t, 4> kResp = {0x01u, 0x02u, 0x69u, 0xFFu};
+  const std::array<std::uint8_t, 4> resp = {0x01u, 0x02u, 0x69u, 0xFFu};
 
-  EXPECT_EQ(reader_iso_dep_trim_crc_suffix(kResp.data(), kResp.size()),
-            kResp.size());
+  EXPECT_EQ(reader_iso_dep_trim_crc_suffix(resp.data(), resp.size()),
+            resp.size());
 }
 
 TEST_F(NeroNfcReaderAppFixture, RejectsShortRatsCommit) {
-  const std::array<std::uint8_t, 1> kRx = {0x06u};
+  const std::array<std::uint8_t, 1> rx = {0x06u};
 
   reader_context_reset(reader_context_active());
-  EXPECT_FALSE(
-      reader_security_key_iso_dep_commit_rats_rx(1, kRx.data(), 0x70u));
+  EXPECT_FALSE(reader_security_key_iso_dep_commit_rats_rx(1, rx.data(), 0x70u));
   EXPECT_EQ(G_BLOCK_NUM, 0u);
 }
 
 TEST_F(NeroNfcReaderAppFixture, CommitRatsStoresAtsAndResetsBlockNum) {
-  /* [ISO14443-4] §5.2.5 — TL (byte 0) equals the ATS length including itself.
+  /* [ISO14443-4] §5.2.5 -- TL (byte 0) equals the ATS length including itself.
    */
-  const std::array<std::uint8_t, 4> kRx = {0x04u, 0x75u, 0x77u, 0x81u};
+  const std::array<std::uint8_t, 4> rx = {0x04u, 0x75u, 0x77u, 0x81u};
 
   reader_context_reset(reader_context_active());
   G_BLOCK_NUM = 1u;
-  ASSERT_TRUE(reader_security_key_iso_dep_commit_rats_rx(4, kRx.data(), 0x70u));
+  ASSERT_TRUE(reader_security_key_iso_dep_commit_rats_rx(4, rx.data(), 0x70u));
   EXPECT_EQ(G_ATS_LEN, 4u);
   EXPECT_EQ(G_ATS_DATA[0], 0x04u);
   EXPECT_EQ(G_ISO_DEP_RATS_PARAM, 0x70u);
@@ -834,21 +848,20 @@ TEST_F(NeroNfcReaderAppFixture, CommitRatsStoresAtsAndResetsBlockNum) {
 TEST_F(NeroNfcReaderAppFixture, CommitRatsUsesTlAndDropsTrailingBytes) {
   /* TL=0x03 with extra received bytes (e.g. CRC): only the TL-length ATS is
    * kept. */
-  const std::array<std::uint8_t, 5> kRx = {0x03u, 0x75u, 0x77u, 0xAAu, 0xBBu};
+  const std::array<std::uint8_t, 5> rx = {0x03u, 0x75u, 0x77u, 0xAAu, 0xBBu};
 
   reader_context_reset(reader_context_active());
-  ASSERT_TRUE(reader_security_key_iso_dep_commit_rats_rx(5, kRx.data(), 0x70u));
+  ASSERT_TRUE(reader_security_key_iso_dep_commit_rats_rx(5, rx.data(), 0x70u));
   EXPECT_EQ(G_ATS_LEN, 3u);
   EXPECT_EQ(G_ATS_DATA[0], 0x03u);
 }
 
 TEST_F(NeroNfcReaderAppFixture, CommitRatsRejectsTruncatedAtsByTl) {
   /* TL claims 6 bytes but only 4 were received: fail closed, do not relay. */
-  const std::array<std::uint8_t, 4> kRx = {0x06u, 0x75u, 0x77u, 0x81u};
+  const std::array<std::uint8_t, 4> rx = {0x06u, 0x75u, 0x77u, 0x81u};
 
   reader_context_reset(reader_context_active());
-  EXPECT_FALSE(
-      reader_security_key_iso_dep_commit_rats_rx(4, kRx.data(), 0x70u));
+  EXPECT_FALSE(reader_security_key_iso_dep_commit_rats_rx(4, rx.data(), 0x70u));
 }
 
 TEST_F(NeroNfcReaderAppFixture, ProbeCanUpgradeWhenTcAdvertisesCid) {
@@ -863,7 +876,7 @@ TEST_F(NeroNfcReaderAppFixture, ProbeCanUpgradeWhenTcAdvertisesCid) {
 }
 
 TEST_F(NeroNfcReaderAppFixture, TxAddNadRequiresCidFraming) {
-  const std::array<std::uint8_t, 4> kApdu = {0x00u, 0xA4u, 0x04u, 0x00u};
+  const std::array<std::uint8_t, 4> apdu = {0x00u, 0xA4u, 0x04u, 0x00u};
 
   reader_context_reset(reader_context_active());
   G_ISO_DEP_HAVE_TC = true;
@@ -871,46 +884,45 @@ TEST_F(NeroNfcReaderAppFixture, TxAddNadRequiresCidFraming) {
   G_ISO_DEP_PCB_HAS_CID = false;
   G_ISO_DEP_PIC_FRAME_MAX = kTestLit256u;
   EXPECT_FALSE(
-      reader_security_key_iso_dep_tx_add_nad(kApdu.size(), kApdu.data()));
+      reader_security_key_iso_dep_tx_add_nad(apdu.size(), apdu.data()));
 
   G_ISO_DEP_PCB_HAS_CID = true;
-  EXPECT_TRUE(
-      reader_security_key_iso_dep_tx_add_nad(kApdu.size(), kApdu.data()));
+  EXPECT_TRUE(reader_security_key_iso_dep_tx_add_nad(apdu.size(), apdu.data()));
 
-  const std::array<std::uint8_t, 1> kCtap = {0x80u};
+  const std::array<std::uint8_t, 1> ctap = {0x80u};
   EXPECT_FALSE(
-      reader_security_key_iso_dep_tx_add_nad(kCtap.size(), kCtap.data()));
+      reader_security_key_iso_dep_tx_add_nad(ctap.size(), ctap.data()));
 }
 
 TEST_F(NeroNfcReaderAppFixture,
        GetDataUidReturns6F00WhenResponseBufferTooSmall) {
-  const uint8_t kApdu[] = {0xFFu, 0xCAu, 0x00u, 0x00u, 0x00u};
+  const uint8_t apdu[] = {0xFFu, 0xCAu, 0x00u, 0x00u, 0x00u};
   uint8_t rsp[kTestLit2];
   for (uint8_t i = 0u; i < NFC_FRONTEND_ISO15693_UID_LEN; ++i) {
     (void)nero_nfc_store_u8(&G_UID15[0], NFC_FRONTEND_ISO15693_UID_LEN, i,
                             kTestLit0xABu);
   }
   G_TAG_KIND = READER_TAG_KIND_TYPE5;
-  const uint16_t kRlen = reader_ccid_handle_get_data_apdu(
-      &kApdu[0], static_cast<uint16_t>(sizeof(kApdu)), &rsp[0],
+  const uint16_t rlen = reader_ccid_handle_get_data_apdu(
+      &apdu[0], static_cast<uint16_t>(sizeof(apdu)), &rsp[0],
       static_cast<uint16_t>(sizeof(rsp)));
-  EXPECT_EQ(kRlen, 2u);
+  EXPECT_EQ(rlen, 2u);
   EXPECT_EQ(rsp[0], 0x6Fu);
   EXPECT_EQ(rsp[1], 0x00u);
 }
 
 TEST_F(NeroNfcReaderAppFixture,
        StorageGetDataDispatchesExtendedPcscIdentifiers) {
-  const uint8_t kApdu[] = {0xFFu, 0xCAu, NFC_PCSC_GET_DATA_TYPE5_CC, 0x00u,
-                           0x00u};
+  const uint8_t apdu[] = {0xFFu, 0xCAu, NFC_PCSC_GET_DATA_TYPE5_CC, 0x00u,
+                          0x00u};
   uint8_t rsp[kTestLit8];
 
   G_TAG_KIND = READER_TAG_KIND_TYPE5;
-  const uint16_t kRlen = reader_ccid_handle_get_data_apdu(
-      &kApdu[0], static_cast<uint16_t>(sizeof(kApdu)), &rsp[0],
+  const uint16_t rlen = reader_ccid_handle_get_data_apdu(
+      &apdu[0], static_cast<uint16_t>(sizeof(apdu)), &rsp[0],
       static_cast<uint16_t>(sizeof(rsp)));
 
-  ASSERT_EQ(kRlen, 2u);
+  ASSERT_EQ(rlen, 2u);
   EXPECT_EQ(rsp[0], static_cast<uint8_t>(NFC_ISO7816_SW1_WRONG_DATA));
   EXPECT_EQ(rsp[1], static_cast<uint8_t>(NFC_ISO7816_SW2_FUNC_NOT_SUPPORTED));
 }
@@ -921,32 +933,32 @@ TEST_F(NeroNfcReaderAppFixture,
   reader_tags_utest_set_type2_storage_info(kTestLit144u, true, true);
   G_TAG_KIND = READER_TAG_KIND_TYPE2;
 
-  const uint8_t kGetVersion[] = {
+  const uint8_t get_version[] = {
       static_cast<uint8_t>(CCID_RAW_T2_CMD_GET_VERSION)};
-  const uint8_t kRead[] = {static_cast<uint8_t>(CCID_RAW_T2_CMD_READ),
-                           static_cast<uint8_t>(NFC_STORAGE_TYPE2_CC_PAGE)};
-  const uint8_t kFastRead[] = {
+  const uint8_t read[] = {static_cast<uint8_t>(CCID_RAW_T2_CMD_READ),
+                          static_cast<uint8_t>(NFC_STORAGE_TYPE2_CC_PAGE)};
+  const uint8_t fast_read[] = {
       static_cast<uint8_t>(CCID_RAW_T2_CMD_FAST_READ),
       static_cast<uint8_t>(NFC_STORAGE_TYPE2_CC_PAGE),
       static_cast<uint8_t>(NFC_STORAGE_TYPE2_CC_PAGE + 1u)};
-  const uint8_t kWrite[] = {
+  const uint8_t write[] = {
       kTestLit0xA2u, static_cast<uint8_t>(NFC_STORAGE_TYPE2_FIRST_DATA_PAGE),
       kTestLit0x11u, kTestLit0x22u,
       kTestLit0x33u, kTestLit0x44u};
 
   EXPECT_TRUE(reader_ccid_type2_raw_transceive_allowed(
-      &kGetVersion[0], static_cast<uint16_t>(sizeof(kGetVersion))));
+      &get_version[0], static_cast<uint16_t>(sizeof(get_version))));
   EXPECT_TRUE(reader_ccid_type2_raw_transceive_allowed(
-      &kRead[0], static_cast<uint16_t>(sizeof(kRead))));
+      &read[0], static_cast<uint16_t>(sizeof(read))));
   EXPECT_TRUE(reader_ccid_type2_raw_transceive_allowed(
-      &kFastRead[0], static_cast<uint16_t>(sizeof(kFastRead))));
+      &fast_read[0], static_cast<uint16_t>(sizeof(fast_read))));
   EXPECT_FALSE(reader_ccid_type2_raw_transceive_allowed(
-      &kWrite[0], static_cast<uint16_t>(sizeof(kWrite))));
+      &write[0], static_cast<uint16_t>(sizeof(write))));
   EXPECT_FALSE(reader_ccid_type2_raw_transceive_allowed(NERO_NFC_NULL, 1u));
 
   G_TAG_KIND = READER_TAG_KIND_TYPE4;
   EXPECT_FALSE(reader_ccid_type2_raw_transceive_allowed(
-      &kGetVersion[0], static_cast<uint16_t>(sizeof(kGetVersion))));
+      &get_version[0], static_cast<uint16_t>(sizeof(get_version))));
 }
 
 TEST_F(NeroNfcReaderAppFixture,
@@ -960,10 +972,10 @@ TEST_F(NeroNfcReaderAppFixture,
                             static_cast<uint8_t>(kTestLit0x10u + i));
   }
 
-  const uint8_t kInventory[] = {
-      kTestLit0x01u, static_cast<uint8_t>(CCID_RAW_T5_CMD_INVENTORY)};
+  const uint8_t inventory[] = {kTestLit0x01u,
+                               static_cast<uint8_t>(CCID_RAW_T5_CMD_INVENTORY)};
   /* ISO15693 addressed UID is little-endian vs G_UID15 MSB-first storage. */
-  const uint8_t kReadSingle[] = {
+  const uint8_t read_single[] = {
       static_cast<uint8_t>(NFC_TAG_T5T_ISO15693_FLAGS_ADDRESSED),
       static_cast<uint8_t>(NFC_TAG_T5T_ISO15693_CMD_READ_SINGLE),
       kTestLit0x17u,
@@ -975,7 +987,7 @@ TEST_F(NeroNfcReaderAppFixture,
       kTestLit0x11u,
       kTestLit0x10u,
       0x00u};
-  const uint8_t kWriteSingle[] = {
+  const uint8_t write_single[] = {
       static_cast<uint8_t>(NFC_TAG_T5T_ISO15693_FLAGS_ADDRESSED),
       static_cast<uint8_t>(NFC_TAG_T5T_ISO15693_CMD_WRITE_SINGLE),
       kTestLit0x17u,
@@ -993,13 +1005,13 @@ TEST_F(NeroNfcReaderAppFixture,
       kTestLit0x04u};
 
   EXPECT_TRUE(reader_ccid_type5_raw_transceive_allowed(
-      &kInventory[0], static_cast<uint16_t>(sizeof(kInventory))));
+      &inventory[0], static_cast<uint16_t>(sizeof(inventory))));
   EXPECT_TRUE(reader_ccid_type5_raw_transceive_allowed(
-      &kReadSingle[0], static_cast<uint16_t>(sizeof(kReadSingle))));
+      &read_single[0], static_cast<uint16_t>(sizeof(read_single))));
   EXPECT_FALSE(reader_ccid_type5_raw_transceive_allowed(
-      &kWriteSingle[0], static_cast<uint16_t>(sizeof(kWriteSingle))));
+      &write_single[0], static_cast<uint16_t>(sizeof(write_single))));
 
   G_TAG_KIND = READER_TAG_KIND_TYPE2;
   EXPECT_FALSE(reader_ccid_type5_raw_transceive_allowed(
-      &kInventory[0], static_cast<uint16_t>(sizeof(kInventory))));
+      &inventory[0], static_cast<uint16_t>(sizeof(inventory))));
 }

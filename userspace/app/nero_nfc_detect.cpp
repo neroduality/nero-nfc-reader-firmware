@@ -52,9 +52,9 @@ std::optional<std::string> SerialPortUsbVendorId(const std::string& port) {
   if (!port.starts_with(kDevPathPrefix)) {
     return std::nullopt;
   }
-  const std::string kTtyName = port.substr(kDevPathPrefix.size());
+  const std::string tty_name = port.substr(kDevPathPrefix.size());
   std::filesystem::path node =
-      std::filesystem::path("/sys/class/tty") / kTtyName / "device";
+      std::filesystem::path("/sys/class/tty") / tty_name / "device";
   for (int depth = 0; depth < kSysfsDeviceParentSearchMaxDepth; ++depth) {
     std::string vendor;
     if (ReadSysfsToken((node / "idVendor").string(), vendor)) {
@@ -69,8 +69,8 @@ std::optional<std::string> SerialPortUsbVendorId(const std::string& port) {
 }
 
 bool IsStlinkVirtualSerialPort(const std::string& port) {
-  const auto kVendor = SerialPortUsbVendorId(port);
-  return kVendor.has_value() && *kVendor == kStlinkUsbVendorId;
+  const auto vendor = SerialPortUsbVendorId(port);
+  return vendor.has_value() && *vendor == kStlinkUsbVendorId;
 }
 
 std::vector<std::string> FilterNeroCdcSerialPorts(
@@ -131,10 +131,10 @@ std::string SelectBestPort(const std::vector<std::string>& ports) {
     return {};
   }
   // Prefer ttyACM over ttyUSB; within the same prefix, pick lowest index.
-  const auto kTtyacm = std::ranges::find_if(
+  const auto ttyacm = std::ranges::find_if(
       ports, [](const std::string& p) { return p.contains("ttyACM"); });
-  if (kTtyacm != ports.end()) {
-    return *kTtyacm;
+  if (ttyacm != ports.end()) {
+    return *ttyacm;
   }
   return ports.front();
 }

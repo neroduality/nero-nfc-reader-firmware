@@ -26,6 +26,11 @@ enum {
   K_ST25_TX_WAIT_FLOOR_US = 5000u,
 };
 
+uint32_t st25_runtime_elapsed_ms(const st25_runtime_ops_t* ops,
+                                 uint32_t start_ms) {
+  return ops->millis() - start_ms;
+}
+
 uint32_t st25_runtime_tx_wait_budget_us(uint16_t tx_len) {
   uint32_t tx_bits = ((uint32_t)(tx_len)*K_ST25_TX_BITS_PER_BYTE_PARITY) +
                      K_ST25_TX_BIT_OVERHEAD;

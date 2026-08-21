@@ -29,10 +29,11 @@ usage() {
 Usage: bash make/wipe-host-build-trees.sh {test|lint|verify|ci}
 
 Scopes:
-  test   — tests/build
-  lint   — build/lint/{tests,userspace,firmware}, build/clang-tidy-compile-db
-  verify — tests/build, tests/build-scan, tests/scan-build-report
-  ci     — all CMake + lint trees Main CI may configure (always wipes; no opt-out)
+  test   -- tests/build
+  lint   -- build/lint/{tests,userspace,firmware}, build/clang-tidy-compile-db
+  verify -- tests/build, tests/build-scan, tests/scan-build-report
+  ci     -- all CMake + lint trees Main CI may configure, plus tests/build-codeql
+           (always wipes; no opt-out)
 
 Set NERO_KEEP_HOST_BUILDS=1 to skip wiping for test/lint/verify only (faster local iteration).
 EOF
@@ -52,7 +53,7 @@ wipe_dir() {
 wipe_lint_build_trees() {
   wipe_dir "${repo_root}/build/lint/tests"
   wipe_dir "${repo_root}/build/lint/userspace"
-  # Firmware compile_commands must not survive source renames (.cpp→.c); otherwise
+  # Firmware compile_commands must not survive source renames (.cpp->.c); otherwise
   # configure-compile-db skips rebuild and OpenSSF audits synthesized stale rows.
   wipe_dir "${repo_root}/build/lint/firmware"
   wipe_dir "${repo_root}/build/clang-tidy-compile-db"
@@ -61,6 +62,7 @@ wipe_lint_build_trees() {
 wipe_ci_build_trees() {
   wipe_dir "${repo_root}/tests/build"
   wipe_dir "${repo_root}/tests/build-scan"
+  wipe_dir "${repo_root}/tests/build-codeql"
   wipe_dir "${repo_root}/tests/scan-build-report"
   wipe_lint_build_trees
   wipe_dir "${repo_root}/build/userspace"

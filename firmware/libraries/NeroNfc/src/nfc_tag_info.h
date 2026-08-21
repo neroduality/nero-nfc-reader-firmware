@@ -330,7 +330,7 @@ static inline uint16_t nfc_tag_type2_last_page_from_data_area(
   uint16_t pages;
 
   /*
-   * [T2T-ISO14443-A] Type 2 Tag Op Spec 1.1 §2.1.3 / §6.1 — user pages follow
+   * [T2T-ISO14443-A] Type 2 Tag Op Spec 1.1 §2.1.3 / §6.1 -- user pages follow
    * the CC at page NFC_TAG_T2T_CC_PAGE_INDEX; page count derives from the
    * data-area size in bytes (4 bytes per page per [T2T-ISO14443-A] §5.1).
    */
@@ -562,7 +562,7 @@ NERO_NFC_NODISCARD static inline bool nfc_tag_type4_apply_cc(
                      nero_nfc_u8_at(cc, (size_t)(cc_len),
                                     (size_t)(NFC_TAG_T4T_CC_MLC_LSB_INDEX)));
     /*
-     * [T4T-ISO14443-4] Mapping 2.0 §5.1 Table 5 — NDEF File Control TLV is
+     * [T4T-ISO14443-4] Mapping 2.0 §5.1 Table 5 -- NDEF File Control TLV is
      * T=04h, L=06h; MLe is valid in 000Fh..FFFFh and MLc in 0001h..FFFFh.
      * Reject a CC whose declared length, TLV header, or MLe/MLc fall outside
      * the spec ranges.
@@ -692,8 +692,8 @@ static inline void nfc_tag_type5_apply_cc(nfc_tag_type5_info_t* info,
   }
   /*
    * [T5T-NFCFORUM] §4.3: byte 2 (MLEN) selects CC length. Non-zero
-   * MLEN → NFC_TAG_T5T_CC_LEN_SHORT CC whose T5T_Area size is MLEN (in 8-byte
-   * units). Zero MLEN → NFC_TAG_T5T_CC_LEN_EXTENDED CC; area size is in
+   * MLEN -> NFC_TAG_T5T_CC_LEN_SHORT CC whose T5T_Area size is MLEN (in 8-byte
+   * units). Zero MLEN -> NFC_TAG_T5T_CC_LEN_EXTENDED CC; area size is in
    * bytes 6..7.
    */
   if (nero_nfc_u8_at(cc, (size_t)(cc_len),
@@ -811,7 +811,7 @@ static inline void nfc_tag_type5_apply_system_info(nfc_tag_type5_info_t* info,
 }
 
 /*
- * [T5T-ISO15693] section 10.3.4 / [T5T-ISO15693-ST25DV] section 7.6.23 —
+ * [T5T-ISO15693] section 10.3.4 / [T5T-ISO15693-ST25DV] section 7.6.23 --
  * Extended Get System Info response parser. The extended memory-size field is
  * two block-count bytes plus one block-size byte, so tags above 256 blocks
  * (ST25DV16KC / ST25DV64KC) are reachable. Frame: resp_flags, info_flags, UID

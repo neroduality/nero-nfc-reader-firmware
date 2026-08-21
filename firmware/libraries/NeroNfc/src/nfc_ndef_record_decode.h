@@ -42,7 +42,7 @@ enum {
   NFC_NDEF_RTD_TYPE_TEXT = 0x54u, /* RTD 'T' text record */
   NFC_NDEF_RTD_TYPE_URI = 0x55u,  /* RTD 'U' URI record */
 
-  /* RTD URI 1.0 prefix table index 0x04 — "https://". */
+  /* RTD URI 1.0 prefix table index 0x04 -- "https://". */
   NFC_NDEF_URI_PREFIX_HTTPS = 0x04u,
 };
 

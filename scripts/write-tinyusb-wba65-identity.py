@@ -59,7 +59,7 @@ def main() -> int:
     digest = hashlib.sha256(payload.encode("utf-8")).hexdigest()
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(digest + "\n" + payload, encoding="utf-8")
-    print(f"── TinyUSB WBA65 identity → {args.out} ──")
+    print(f"── TinyUSB WBA65 identity -> {args.out} ──")
     return 0
 
 

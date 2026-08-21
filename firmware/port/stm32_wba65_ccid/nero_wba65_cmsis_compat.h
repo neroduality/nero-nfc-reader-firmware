@@ -18,7 +18,7 @@
 
 /*
  * STM32 Arduino core 2.12.0 ships STM32WBA65xx CMSIS headers that rename some
- * classic CMSIS-5 identifiers (IRQn → IR_QN; system header declares
+ * classic CMSIS-5 identifiers (IRQn -> IR_QN; system header declares
  * system_core_clock while system_stm32wbaxx.c still defines SystemCoreClock).
  * TinyUSB and owned WBA USB setup still use the classic names.
  */
@@ -31,7 +31,7 @@ extern "C" {
 
 /*
  * Vendor object file still exports the classic CMSIS symbol name. TinyUSB
- * compile flags map SystemCoreClock → system_core_clock (-D), so this header
+ * compile flags map SystemCoreClock -> system_core_clock (-D), so this header
  * stays C-identifier clean for clang-tidy.
  */
 extern uint32_t system_core_clock __asm__("SystemCoreClock");

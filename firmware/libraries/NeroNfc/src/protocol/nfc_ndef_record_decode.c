@@ -24,10 +24,10 @@
 #include <string.h>
 
 enum {
-  NFC_NDEF_HDR_IL =
-      0x08u, /* ID Length present — decode-only; not needed by encode callers */
+  NFC_NDEF_HDR_IL = 0x08u, /* ID Length present -- decode-only; not needed by
+                              encode callers */
   NFC_NDEF_HDR_CF =
-      0x20u, /* Chunk Flag — decode-only; chunked records are rejected here */
+      0x20u, /* Chunk Flag -- decode-only; chunked records are rejected here */
   NFC_NDEF_TEXT_STATUS_LANG_LEN_MASK = 0x3Fu,
   NFC_NDEF_TEXT_STATUS_UTF16 = 0x80u,
   NFC_NDEF_RECORD_MIN_HDR_LEN = 3u,
@@ -142,7 +142,7 @@ bool nfc_ndef_decode_uri_payload(const uint8_t* payload, uint32_t len,
       out[0] = '\0';
       return false;
     }
-    /* [RFC3986] §2.1 — a percent sign must introduce a "%" HEXDIG HEXDIG
+    /* [RFC3986] §2.1 -- a percent sign must introduce a "%" HEXDIG HEXDIG
      * triplet. */
     if (payload[i] == (uint8_t)'%') {
       if (((i + NFC_NDEF_URI_PCT_LO_OFFSET) >= len) ||

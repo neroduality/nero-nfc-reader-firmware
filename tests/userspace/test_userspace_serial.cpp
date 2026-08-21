@@ -72,7 +72,7 @@ TEST(SerialOpen, OpenFailsForMissingPath) {
 
 TEST(SerialOpen, OpenFailsWhenPathIsRegularFile) {
   char tmpl[] = "/tmp/nero_serial_utestXXXXXX";
-  int tfd = mkstemp(&tmpl[0]);
+  int const tfd = mkstemp(&tmpl[0]);
   ASSERT_GE(tfd, 0);
   ASSERT_EQ(write(tfd, "x", 1), 1);
   close(tfd);
@@ -81,7 +81,7 @@ TEST(SerialOpen, OpenFailsWhenPathIsRegularFile) {
 }
 
 TEST_F(UserspaceSerialTest, ResetWithSkipDelaysTouchesIoctlOnPty) {
-  int master = posix_openpt(O_RDWR | O_NOCTTY);
+  int const master = posix_openpt(O_RDWR | O_NOCTTY);
   if (master < 0) {
     GTEST_SKIP() << "posix_openpt not available";
   }
@@ -89,7 +89,7 @@ TEST_F(UserspaceSerialTest, ResetWithSkipDelaysTouchesIoctlOnPty) {
   ASSERT_EQ(unlockpt(master), 0);
   char pts[kPtsPathScratchCap]{};
   ASSERT_EQ(ptsname_r(master, &pts[0], sizeof(pts)), 0);
-  int fd = open(&pts[0], O_RDWR | O_NOCTTY);
+  int const fd = open(&pts[0], O_RDWR | O_NOCTTY | O_CLOEXEC);
   ASSERT_GE(fd, 0);
 
   nero_nfc::NeroNfcUtestSetSerialResetSkipDelays(true);
@@ -99,7 +99,7 @@ TEST_F(UserspaceSerialTest, ResetWithSkipDelaysTouchesIoctlOnPty) {
 }
 
 TEST(SerialOpen, OpensPtySlaveWhenAvailable) {
-  int master = posix_openpt(O_RDWR | O_NOCTTY);
+  int const master = posix_openpt(O_RDWR | O_NOCTTY);
   if (master < 0) {
     GTEST_SKIP() << "posix_openpt not available";
   }
@@ -107,7 +107,7 @@ TEST(SerialOpen, OpensPtySlaveWhenAvailable) {
   ASSERT_EQ(unlockpt(master), 0);
   char pts[kPtsPathScratchCap]{};
   ASSERT_EQ(ptsname_r(master, &pts[0], sizeof(pts)), 0);
-  int fd = nero_nfc::SerialOpen(std::string(&pts[0]));
+  int const fd = nero_nfc::SerialOpen(std::string(&pts[0]));
   ASSERT_GE(fd, 0);
   EXPECT_TRUE(nero_nfc::SerialClose(fd));
   close(master);

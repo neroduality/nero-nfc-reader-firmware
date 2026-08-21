@@ -16,14 +16,14 @@
 
 #include "nero_nfc_null.h"
 /*
- * writer_app.c — Writer orchestration (setup, loop, RF init, tag polling).
+ * writer_app.c -- Writer orchestration (setup, loop, RF init, tag polling).
  *
  * Tag NDEF write paths live in writer_tag_write.c for the X-NUCLEO-NFC08A1
  * reader.
  *
  * Serial CLI configures payload (`writer_serial_cli`); encoding lives in
  * `writer_payload`. Tags supported:
- *   - NFC Forum Type 2 (NTAG213/215/216 + ST25TN512/ST25TN01K) —
+ *   - NFC Forum Type 2 (NTAG213/215/216 + ST25TN512/ST25TN01K) --
  *     4-byte page writes
  *     · NTAG21x is identified via NXP-proprietary GET_VERSION (0x60).
  *     · ST25TN does NOT implement GET_VERSION (per DS13433); it is
@@ -31,15 +31,15 @@
  *       code per ISO/IEC 7816-5) and confirmed by reading the CC magic
  *       byte 0xE1 from block 3.
  *     · Writes up to WRITER_NDEF_MAX_BYTES (880 B), covering NTAG216 (868 B).
- *   - NFC Forum Type 4 (ST25TA02K + NTAG I2C Plus) — ISO-DEP APDU writes
- *     · Full T4T write sequence: RATS → SELECT NDEF App → SELECT CC →
- *       READ CC → SELECT NDEF file → clear NLEN → write data in MLc-bounded
- *       UPDATE BINARY chunks → set NLEN. APDU status words gate each step;
+ *   - NFC Forum Type 4 (ST25TA02K + NTAG I2C Plus) -- ISO-DEP APDU writes
+ *     · Full T4T write sequence: RATS -> SELECT NDEF App -> SELECT CC ->
+ *       READ CC -> SELECT NDEF file -> clear NLEN -> write data in MLc-bounded
+ *       UPDATE BINARY chunks -> set NLEN. APDU status words gate each step;
  *       use CDC reader mode for a full read-back round trip.
  *     · Tags identified by SAK bit 6 (0x20, ISO-DEP) set.
- *   - NFC Forum Type 5 (ST25DV64KC + ST25TV02KC)     — 4-byte block writes
+ *   - NFC Forum Type 5 (ST25DV64KC + ST25TV02KC)     -- 4-byte block writes
  *     · ST25TV02KC (DS13304) only implements the standard one-byte-addressed
- *       ReadSingleBlock/WriteSingleBlock (0x20/0x21) — extended commands
+ *       ReadSingleBlock/WriteSingleBlock (0x20/0x21) -- extended commands
  *       0x30/0x31 are not supported.
  *     · ST25DV64KC (DS13519) supports both forms; we use 1-byte addressing
  *       while the CC + NDEF TLV fits in blocks 0..0xFF (1 KB).
@@ -333,7 +333,7 @@ static bool try_one_tag(void) {
   nfc_frontend_ensure_tx_rx(WRITER_FRONTEND);
   if (writer_rf_activate_iso14443a()) {
     if ((WRITER_APP_SAK & NFC_TAG_T4T_SAK_ISO14443_4_BIT) != 0u) {
-      /* SAK bit 6 (0x20) set → ISO 14443-4 compliant tag (ST25TA, NTAG I2C
+      /* SAK bit 6 (0x20) set -> ISO 14443-4 compliant tag (ST25TA, NTAG I2C
        * Plus, etc.)
        */
       writer_print_tag_banner("║  NFC FORUM TYPE 4 TAG (ISO 14443-4)    ║");
@@ -348,7 +348,7 @@ static bool try_one_tag(void) {
       return true;
     }
 
-    /* SAK bit 6 clear → NFC Forum Type 2 */
+    /* SAK bit 6 clear -> NFC Forum Type 2 */
     writer_type2_family_t fam;
 
     writer_print_tag_banner("║  NFC FORUM TYPE 2 TAG (ISO 14443-A)    ║");
@@ -523,7 +523,7 @@ void writer_loop(void) {
   if (load > WRITER_APP_COUPLING_APPROACH) {
     ctx->poll_interval_ms = WRITER_APP_POLL_INTERVAL_NEAR_MS;
     if (!ctx->was_near) {
-      nero_nfc_log_line("\r\n  >> Field change — polling faster");
+      nero_nfc_log_line("\r\n  >> Field change -- polling faster");
       ctx->was_near = true;
     }
   } else {

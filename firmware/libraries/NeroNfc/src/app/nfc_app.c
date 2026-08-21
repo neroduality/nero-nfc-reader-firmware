@@ -15,7 +15,7 @@
 // limitations under the License.
 
 /*
- * nfc_app.c — combined firmware mode-switcher.
+ * nfc_app.c -- combined firmware mode-switcher.
  *
  * Combined-mode and serial pushback state live in nero_nfc_app_t (§2).
  */
@@ -62,7 +62,7 @@ static const char* mode_name(nero_nfc_runtime_mode_t mode) {
 }
 
 static void print_banner(void) {
-  nero_nfc_app_t* app = nero_nfc_app_active();
+  const nero_nfc_app_t* app = nero_nfc_app_active();
   nero_nfc_log_write("\r\n[nfc] Active mode: ");
   nero_nfc_log_write(mode_name(nero_nfc_app_runtime_mode(app)));
   nero_nfc_log_line(
@@ -121,7 +121,7 @@ static bool scan_mode_switch(void) {
       case NFC_MODE_SCAN_PUSHBACK_STOP:
         /*
          * Writer mode: return non-mode bytes to the ring for
-         * writer_serial_cli (ndef-hex / url / …).
+         * writer_serial_cli (ndef-hex / url / ...).
          *
          * Reader mode: discard them and keep scanning. Reader never drains
          * the pushback ring, so a leading glitch (or a premature ndef-hex)
@@ -147,7 +147,7 @@ bool nfc_app_scan_mode_uart(void) {
 #if defined(NERO_CCID_ONLY_BUILD)
   return false;
 #else
-  nero_nfc_app_t* app = nero_nfc_app_active();
+  const nero_nfc_app_t* app = nero_nfc_app_active();
   nero_nfc_runtime_mode_t before;
 
   if (app == NERO_NFC_NULL) {
@@ -172,7 +172,7 @@ bool nfc_app_poll_mode_switch(void) {
 }
 
 bool nfc_app_runtime_is_reader(void) {
-  nero_nfc_app_t* app = nero_nfc_app_active();
+  const nero_nfc_app_t* app = nero_nfc_app_active();
   if (app == NERO_NFC_NULL) {
     return true;
   }

@@ -44,14 +44,14 @@ nero_nfc_app_storage_t g_app_storage;
 }  // namespace
 
 void WriterHalUtestReset() {
-  nero_nfc_app_t* active = nero_nfc_app_active();
+  const nero_nfc_app_t* active = nero_nfc_app_active();
   if (active != NERO_NFC_NULL) {
     (void)nero_nfc_app_unbind_active(active);
   }
   nero_nfc_board_config_t board{};
   nero_nfc_board_config_defaults(&board);
-  const nero_nfc_platform_ops_t kOps = nero_nfc_platform_host_fake_ops();
-  (void)nero_nfc_app_init(&g_app_storage, &kOps, &board,
+  const nero_nfc_platform_ops_t ops = nero_nfc_platform_host_fake_ops();
+  (void)nero_nfc_app_init(&g_app_storage, &ops, &board,
                           NERO_NFC_PRODUCT_COMBINED);
   writer_context_reset(writer_context_active());
   g_input.clear();
@@ -82,9 +82,9 @@ int writer_hal_serial_read_byte() {
   if (g_input.empty()) {
     return -1;
   }
-  const auto kCh = static_cast<unsigned char>(g_input.front());
+  const auto ch = static_cast<unsigned char>(g_input.front());
   g_input.erase(0u, 1u);
-  return static_cast<int>(kCh);
+  return static_cast<int>(ch);
 }
 
 void writer_hal_delay_ms(uint32_t ms) { g_millis += ms; }

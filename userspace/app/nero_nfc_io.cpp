@@ -31,13 +31,13 @@ bool NeroNfcWriteAll(FILE* stream, std::string_view s) {
     return false;
   }
   while (written < s.size()) {
-    const std::string_view kRemaining = s.substr(written);
-    const std::size_t kN =
-        std::fwrite(kRemaining.data(), 1, kRemaining.size(), stream);
-    if (kN == 0) {
+    const std::string_view remaining = s.substr(written);
+    const std::size_t n =
+        std::fwrite(remaining.data(), 1, remaining.size(), stream);
+    if (n == 0) {
       return false;
     }
-    written += kN;
+    written += n;
   }
   return true;
 }

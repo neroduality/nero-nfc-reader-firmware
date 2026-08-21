@@ -16,7 +16,7 @@
 
 #include "nero_nfc_null.h"
 /*
- * reader_ccid_pn53x.c — PN53x / ACR122 contactless emulation handlers.
+ * reader_ccid_pn53x.c -- PN53x / ACR122 contactless emulation handlers.
  */
 
 #if defined(NERO_CCID_USB_BUILD)
@@ -267,8 +267,8 @@ static uint16_t handle_pn53x_list_passive(const uint8_t* cmd, uint16_t cmd_len,
       (needed > (size_t)(rsp_cap))) {
     return pn53x_overflow_reply(PN53X_RSP_IN_LIST_PASSIVE_TARGET, rsp, rsp_cap);
   }
-  rsp[pos++] = PN53X_SINGLE_TARGET; /* NbTg — one target found */
-  rsp[pos++] = PN53X_SINGLE_TARGET; /* Tg — target number 1 */
+  rsp[pos++] = PN53X_SINGLE_TARGET; /* NbTg -- one target found */
+  rsp[pos++] = PN53X_SINGLE_TARGET; /* Tg -- target number 1 */
   rsp[pos++] = typea.atqa[0];
   rsp[pos++] = typea.atqa[1];
   rsp[pos++] = typea.sak;
@@ -399,7 +399,7 @@ static uint16_t handle_pn53x_in_data_exchange(const uint8_t* cmd,
     return 0u;
   }
   if (nero_nfc_u8_at(cmd, (size_t)(cmd_len), (size_t)(PN53X_CMD_TG_OFFSET)) !=
-      PN53X_SINGLE_TARGET) { /* InDataExchange Tg — target number 1 */
+      PN53X_SINGLE_TARGET) { /* InDataExchange Tg -- target number 1 */
     return build_pn53x_status_reply(PN53X_RSP_IN_DATA_EXCHANGE,
                                     PN53X_STATUS_TIMEOUT, rsp, rsp_cap);
   }

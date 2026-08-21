@@ -16,7 +16,7 @@
 
 #include "nero_nfc_null.h"
 /*
- * writer_tag_write_type4.c — ISO-DEP Type 4 NDEF write path.
+ * writer_tag_write_type4.c -- ISO-DEP Type 4 NDEF write path.
  */
 
 #include "nero_nfc_log.h"
@@ -187,7 +187,7 @@ static int writer_iso_dep_transact(const uint8_t* apdu, uint16_t apdu_len,
     if (rlen < 1) {
       return -1;
     }
-    /* S(WTX): bits 7-6=11 (S-block), bits 5-4=11 (WTX), bit 1=1 → masked PCB =
+    /* S(WTX): bits 7-6=11 (S-block), bits 5-4=11 (WTX), bit 1=1 -> masked PCB =
      * 0xF2. */
     if ((rx[0] & WRITER_ISO_DEP_PCB_S_WTX_MASK) == WRITER_ISO_DEP_PCB_S_WTX) {
       uint8_t hdr_skip = writer_iso_dep_rx_hdr_skip(rx[0]);
@@ -214,7 +214,7 @@ static int writer_iso_dep_transact(const uint8_t* apdu, uint16_t apdu_len,
       }
       continue;
     }
-    /* Normal I-block response — done. */
+    /* Normal I-block response -- done. */
     break;
   }
 
@@ -324,10 +324,10 @@ static void writer_type4_print_tag_profile(const nfc_tag_type4_info_t* type4) {
 /*
  * Full T4T NDEF write sequence ([T4T-ISO14443-4] / [ISO7816-4] ISO-DEP):
  *   1. RATS + ATS ([ISO14443-4] section 5.1)
- *   2. SELECT NDEF application (AID D2760000850101 — [T4T-ISO14443-4] /
+ *   2. SELECT NDEF application (AID D2760000850101 -- [T4T-ISO14443-4] /
  * [T4T-ISO14443-4-NT4H424] section 8.2.3)
  *   3. SELECT CC file (NFC_TAG_T4T_CC_FILE_ID / E103h)
- *   4. READ BINARY CC — parse NDEF file ID, check write access byte, log
+ *   4. READ BINARY CC -- parse NDEF file ID, check write access byte, log
  * MLe/MLc
  *   5. SELECT NDEF file
  *   6. UPDATE BINARY offset 0: clear NLEN=0x0000 (marks file invalid during
@@ -349,7 +349,7 @@ bool writer_tag_write_type4_impl(void) {
 
   if (!writer_payload_configured(&WRITER_APP_PAYLOAD)) {
     nero_nfc_log_write(
-        "  ERROR: no payload configured — enter url/text/wifi/ndef-hex/... "
+        "  ERROR: no payload configured -- enter url/text/wifi/ndef-hex/... "
         "first\r\n");
     return false;
   }
@@ -545,7 +545,7 @@ bool writer_tag_write_type4_impl(void) {
   nfc_tutorial_t4t_select_file(nero_nfc_log_putc, ndef_file_hi, ndef_file_lo);
   nfc_tutorial_t4t_nlen(nero_nfc_log_putc, 0u);
 
-  /* Clear NLEN=0x0000 — marks the NDEF file invalid during write. */
+  /* Clear NLEN=0x0000 -- marks the NDEF file invalid during write. */
   {
     const uint8_t
         clear_nlen[NFC_ISO7816_SHORT_APDU_HDR_LEN + NFC_PCSC_T4_NLEN_LEN] = {
@@ -649,7 +649,7 @@ bool writer_tag_write_type4_impl(void) {
     nero_nfc_log_line("  NDEF data: OK");
   }
 
-  /* Finalise — set NLEN to the actual NDEF message length. */
+  /* Finalise -- set NLEN to the actual NDEF message length. */
   {
     uint8_t set_nlen[NFC_ISO7816_SHORT_APDU_HDR_LEN + NFC_PCSC_T4_NLEN_LEN] = {
         (uint8_t)(NFC_ISO7816_CLA_ISO),

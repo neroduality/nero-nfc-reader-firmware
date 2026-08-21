@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// writer — write NDEF through CDC serial or PC/SC CCID.
+// writer -- write NDEF through CDC serial or PC/SC CCID.
 //
 // Serial port: set PORT=/dev/ttyACM0 (optional); otherwise auto-detect.
 // Remaining args are forwarded as writer payload command tail.
@@ -86,7 +86,7 @@ bool IsHelpArg(std::string_view arg) {
 
 std::optional<std::string> FlagValue(const std::string& arg,
                                      std::string_view name) {
-  std::string prefix = "--" + std::string(name) + "=";
+  std::string const prefix = "--" + std::string(name) + "=";
   if (arg.starts_with(prefix)) {
     return arg.substr(prefix.size());
   }
@@ -115,9 +115,9 @@ int main(int argc, char** argv) {
     return true;
   };
 
-  const auto kArgs = std::span(argv, static_cast<std::size_t>(argc));
-  for (std::size_t i = 1u; i < kArgs.size(); ++i) {
-    std::string arg(kArgs[i]);
+  const auto args = std::span(argv, static_cast<std::size_t>(argc));
+  for (std::size_t i = 1u; i < args.size(); ++i) {
+    std::string const arg(args[i]);
     auto uri = FlagValue(arg, "uri");
     auto link = FlagValue(arg, "link");
     auto unit_link = FlagValue(arg, "unit-link");
@@ -141,7 +141,7 @@ int main(int argc, char** argv) {
     auto wifi = FlagValue(arg, "wifi");
     auto data = FlagValue(arg, "data");
     if (IsHelpArg(arg)) {
-      Usage(kArgs[0]);
+      Usage(args[0]);
       return nero_nfc::kCliExitSuccess;
     }
     if (arg.starts_with("--bridge=")) {
@@ -151,7 +151,7 @@ int main(int argc, char** argv) {
         nero_nfc::NeroNfcStderrLine(
             "error: unsupported --bridge value \"{}\" (use cdc or pcsc)",
             arg.substr(std::string("--bridge=").size()));
-        Usage(kArgs[0]);
+        Usage(args[0]);
         return nero_nfc::kCliExitUsageError;
       }
       requested_bridge = parsed;
@@ -165,7 +165,7 @@ int main(int argc, char** argv) {
             "error: unsupported --pcsc-share value \"{}\" (use shared or "
             "exclusive)",
             arg.substr(std::string("--pcsc-share=").size()));
-        Usage(kArgs[0]);
+        Usage(args[0]);
         return nero_nfc::kCliExitUsageError;
       }
       pcsc_share_mode = *parsed;
@@ -244,7 +244,7 @@ int main(int argc, char** argv) {
         return nero_nfc::kCliExitUsageError;
       }
     } else if (address || destination) {
-      std::string value =
+      std::string const value =
           address ? "https://www.google.com/maps/search/?api=1&query=" +
                         nero_nfc::WriterUrlComponentEncode(*address)
                   : "https://www.google.com/maps/dir/?api=1&destination=" +

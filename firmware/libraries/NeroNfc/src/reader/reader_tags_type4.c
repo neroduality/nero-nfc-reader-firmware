@@ -16,7 +16,7 @@
 
 #include "nero_nfc_null.h"
 /*
- * reader_tags_type4.c — ISO-DEP Type 4 tag read path.
+ * reader_tags_type4.c -- ISO-DEP Type 4 tag read path.
  */
 
 #include "nfc_tag_info_print.h"
@@ -325,8 +325,8 @@ bool reader_tags_read_type4_ndef(void) {
     nero_nfc_log_line(" bytes)");
     return false;
   }
-  /* Read NDEF message data in 254-byte chunks — READ BINARY Le is limited to
-   * 254 (resp[] is 256 bytes; data + 2 SW bytes = 256 max → 254 data bytes per
+  /* Read NDEF message data in 254-byte chunks -- READ BINARY Le is limited to
+   * 254 (resp[] is 256 bytes; data + 2 SW bytes = 256 max -> 254 data bytes per
    * call). s_ndef_buf is a shared module-level static (also used by the T5
    * reader). */
   {

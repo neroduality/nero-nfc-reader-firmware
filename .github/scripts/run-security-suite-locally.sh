@@ -68,7 +68,7 @@ if [[ $# -gt 0 ]]; then
   exit 2
 fi
 
-# Inner width between corners (╔ + N×═ + ╗ and ║ … ║ must share the same N).
+# Inner width between corners (╔ + N×═ + ╗ and ║ ... ║ must share the same N).
 readonly BOX_INNER_WIDTH=62
 
 banner() {

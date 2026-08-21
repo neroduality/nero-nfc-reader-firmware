@@ -37,7 +37,7 @@ enum {
   READER_CCID_PARAM_BIFSC = 0xFEu,
   READER_CCID_POWER_SELECT_MAX = 0x03u,
   /*
-   * [CCID1.10] Rev 1.10 section 6.2.6 — when a parameter error fails the
+   * [CCID1.10] Rev 1.10 section 6.2.6 -- when a parameter error fails the
    * command, bError carries the byte offset of the first offending field in the
    * command message header. These are those field offsets, not abstract error
    * codes.
@@ -71,7 +71,7 @@ NERO_NFC_NODISCARD static inline bool reader_ccid_load_u32_le(
 
 static inline uint16_t reader_ccid_build_t0_params(uint8_t* param,
                                                    unsigned cap) {
-  /* [CCID1.10] Rev 1.10 section 6.2.3 RDR_to_PC_Parameters — T=0 protocol data
+  /* [CCID1.10] Rev 1.10 section 6.2.3 RDR_to_PC_Parameters -- T=0 protocol data
    * structure. */
   if (cap < (unsigned)NFC_CCID_T0_PARAMS_LEN || param == NERO_NFC_NULL) {
     return 0u;
@@ -103,7 +103,7 @@ static inline uint16_t reader_ccid_build_t0_params(uint8_t* param,
 
 static inline uint16_t reader_ccid_build_t1_params(uint8_t* param,
                                                    unsigned cap) {
-  /* [CCID1.10] Rev 1.10 section 6.2.3 RDR_to_PC_Parameters — T=1 protocol data
+  /* [CCID1.10] Rev 1.10 section 6.2.3 RDR_to_PC_Parameters -- T=1 protocol data
    * structure. */
   if (cap < (unsigned)NFC_CCID_T1_PARAMS_LEN || param == NERO_NFC_NULL) {
     return 0u;
@@ -199,7 +199,7 @@ static inline uint8_t reader_ccid_param_error_for_request(
   if ((frame != NERO_NFC_NULL) && (nbytes >= NFC_CCID_BULK_HEADER_LEN) &&
       (nero_nfc_u8_at(frame, (size_t)(nbytes), (size_t)(0)) ==
        set_params_msg)) {
-    /* [CCID1.10] Rev 1.10 section 6.2.6 — report the lowest offending byte
+    /* [CCID1.10] Rev 1.10 section 6.2.6 -- report the lowest offending byte
      * offset first: dwLength (1), then bProtocolNum (7), then abRFU[0]/[1]
      * (8/9). */
     if (!reader_ccid_load_u32_le(frame, nbytes, 1u, &data_len) ||

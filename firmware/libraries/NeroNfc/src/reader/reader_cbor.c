@@ -35,6 +35,9 @@ enum {
   READER_CBOR_AI_UINT16_LEN = 2u,
   READER_CBOR_AI_UINT32_LEN = 4u,
   READER_CBOR_BREAK_BYTE = 0xFFu,
+  /* [RFC8949-CBOR-CTAP2] §3.1 -- a map entry is a key data item followed by a
+   * value data item, so skipping one entry skips two items. */
+  READER_CBOR_MAP_ITEMS_PER_ENTRY = 2u,
   READER_CBOR_HEADER_INDEF_BYTES = 0x5Fu,
   READER_CBOR_LEGACY_ALIAS_KEY = 3u,
   READER_CBOR_MAJOR_TAG = 6u,
@@ -356,9 +359,11 @@ static bool cbor_skip_depth(cbor_reader_t* c, unsigned depth) {
             c->pos = (uint16_t)(c->pos + 1u);
             return true;
           }
-          if (!cbor_skip_depth(c, depth + 1u) ||
-              !cbor_skip_depth(c, depth + 1u)) {
-            return false;
+          for (unsigned item = 0u; item < READER_CBOR_MAP_ITEMS_PER_ENTRY;
+               item++) {
+            if (!cbor_skip_depth(c, depth + 1u)) {
+              return false;
+            }
           }
         }
         return false;
@@ -394,9 +399,11 @@ static bool cbor_skip_depth(cbor_reader_t* c, unsigned depth) {
       return true;
     case NFC_CBOR_MAJOR_MAP:
       for (uint32_t i = 0u; i < value; i++) {
-        if (!cbor_skip_depth(c, depth + 1u) ||
-            !cbor_skip_depth(c, depth + 1u)) {
-          return false;
+        for (unsigned item = 0u; item < READER_CBOR_MAP_ITEMS_PER_ENTRY;
+             item++) {
+          if (!cbor_skip_depth(c, depth + 1u)) {
+            return false;
+          }
         }
       }
       return true;

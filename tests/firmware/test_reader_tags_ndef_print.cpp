@@ -30,8 +30,8 @@
 namespace {
 
 void AppendBytes(std::vector<std::uint8_t>& out, const char* text) {
-  const std::string_view kText{text == NERO_NFC_NULL ? "" : text};
-  for (char ch : kText) {
+  const std::string_view text_view{text == NERO_NFC_NULL ? "" : text};
+  for (char ch : text_view) {
     out.push_back(static_cast<std::uint8_t>(static_cast<unsigned char>(ch)));
   }
 }
@@ -43,11 +43,11 @@ std::vector<std::uint8_t> MakeShortMimeRecord(
       NFC_NDEF_HDR_MB | NFC_NDEF_HDR_ME | NFC_NDEF_HDR_SR | NFC_NDEF_TNF_MIME));
   record.push_back(0u);
   record.push_back(static_cast<std::uint8_t>(payload.size()));
-  const auto kTypeLenIndex = static_cast<std::size_t>(1u);
-  const std::string_view kMime{mime == NERO_NFC_NULL ? "" : mime};
-  for (char ch : kMime) {
+  const auto type_len_index = static_cast<std::size_t>(1u);
+  const std::string_view mime_view{mime == NERO_NFC_NULL ? "" : mime};
+  for (char ch : mime_view) {
     record.push_back(static_cast<std::uint8_t>(static_cast<unsigned char>(ch)));
-    record[kTypeLenIndex]++;
+    record[type_len_index]++;
   }
   record.insert(record.end(), payload.begin(), payload.end());
   return record;
@@ -56,7 +56,7 @@ std::vector<std::uint8_t> MakeShortMimeRecord(
 }  // namespace
 
 TEST(ReaderTagsNdefPrint, DecodesWifiWscMimeRecord) {
-  const std::vector<std::uint8_t> kPayload = {
+  const std::vector<std::uint8_t> payload = {
       0x10u, 0x4Au, 0x00u, 0x01u, 0x10u, 0x10u, 0x0Eu, 0x00u, 0x31u, 0x10u,
       0x26u, 0x00u, 0x01u, 0x01u, 0x10u, 0x45u, 0x00u, 0x04u, 'S',   'S',
       'I',   'D',   0x10u, 0x03u, 0x00u, 0x02u, 0x00u, 0x20u, 0x10u, 0x0Fu,
@@ -64,16 +64,16 @@ TEST(ReaderTagsNdefPrint, DecodesWifiWscMimeRecord) {
       's',   's',   'p',   'h',   'r',   'a',   's',   'e',   0x10u, 0x20u,
       0x00u, 0x06u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u,
   };
-  const auto kRecord = MakeShortMimeRecord("application/vnd.wfa.wsc", kPayload);
+  const auto record = MakeShortMimeRecord("application/vnd.wfa.wsc", payload);
   WriterHalUtestReset();
 
-  reader_tags_print_ndef_records(kRecord.data(),
-                                 static_cast<uint16_t>(kRecord.size()));
+  reader_tags_print_ndef_records(record.data(),
+                                 static_cast<uint16_t>(record.size()));
 
-  const std::string kOutput = WriterHalUtestOutput();
-  EXPECT_NE(kOutput.find("Type=application/vnd.wfa.wsc"), std::string::npos);
-  EXPECT_NE(kOutput.find("Decoded=\"Wi-Fi: ssid=SSID auth=WPA2-Personal "
-                         "encryption=AES key=passphrase\""),
+  const std::string output = WriterHalUtestOutput();
+  EXPECT_NE(output.find("Type=application/vnd.wfa.wsc"), std::string::npos);
+  EXPECT_NE(output.find("Decoded=\"Wi-Fi: ssid=SSID auth=WPA2-Personal "
+                        "encryption=AES key=passphrase\""),
             std::string::npos);
 }
 
@@ -83,16 +83,15 @@ TEST(ReaderTagsNdefPrint, DecodesVcardMimeRecord) {
       payload,
       "BEGIN:VCARD\r\nVERSION:4.0\r\nFN:Ada Lovelace\r\nTEL:+15551234567\r\n"
       "EMAIL:ada@example.test\r\nEND:VCARD\r\n");
-  const auto kRecord = MakeShortMimeRecord("text/vcard", payload);
+  const auto record = MakeShortMimeRecord("text/vcard", payload);
   WriterHalUtestReset();
 
-  reader_tags_print_ndef_records(kRecord.data(),
-                                 static_cast<uint16_t>(kRecord.size()));
+  reader_tags_print_ndef_records(record.data(),
+                                 static_cast<uint16_t>(record.size()));
 
-  const std::string kOutput = WriterHalUtestOutput();
-  EXPECT_NE(kOutput.find("Type=text/vcard"), std::string::npos);
-  EXPECT_NE(
-      kOutput.find("Decoded=\"Contact: name=Ada Lovelace tel=+15551234567 "
-                   "email=ada@example.test\""),
-      std::string::npos);
+  const std::string output = WriterHalUtestOutput();
+  EXPECT_NE(output.find("Type=text/vcard"), std::string::npos);
+  EXPECT_NE(output.find("Decoded=\"Contact: name=Ada Lovelace tel=+15551234567 "
+                        "email=ada@example.test\""),
+            std::string::npos);
 }

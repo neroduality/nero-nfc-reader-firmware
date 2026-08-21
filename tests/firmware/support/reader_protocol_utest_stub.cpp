@@ -56,7 +56,7 @@ int reader_protocol_transceive14(const uint8_t* tx_data, uint16_t tx_len,
   (void)no_rx_par;
   /* Touch the output buffer so the parameter stays non-const (API contract). */
   if ((rx != NERO_NFC_NULL) && (rx_max > 0u)) {
-    *rx = *rx;
+    *rx = 0u;
   }
   return -1;
 }
@@ -68,7 +68,7 @@ int reader_protocol_iso15693_transceive(const uint8_t* tx, uint16_t tx_len,
   (void)tx_len;
   (void)timeout_ms;
   if ((rx != NERO_NFC_NULL) && (rx_max > 0u)) {
-    *rx = *rx;
+    *rx = 0u;
   }
   return -1;
 }

@@ -537,7 +537,7 @@ static bool iso_dep_rats_traced(uint16_t timeout_ms, uint8_t rats_param,
     (void)nero_nfc_snprintf(nhx, sizeof nhx, "%02X", (unsigned)(rats_param));
     nero_nfc_log_write(nhx);
   }
-  nero_nfc_log_write(" → rx_len=");
+  nero_nfc_log_write(" -> rx_len=");
   {
     char ndc[NERO_NFC_FORMAT_SNPRINTF_DEC_CAP];
     (void)nero_nfc_snprintf(ndc, sizeof ndc, "%d", (int)((int32_t)(rlen)));
@@ -552,10 +552,10 @@ static bool iso_dep_rats_traced(uint16_t timeout_ms, uint8_t rats_param,
     }
   }
   if (!reader_security_key_iso_dep_commit_rats_rx(rlen, rx, rats_param)) {
-    nero_nfc_log_line(" → FAIL (need rx_len>=2)");
+    nero_nfc_log_line(" -> FAIL (need rx_len>=2)");
     return false;
   }
-  nero_nfc_log_line(" → OK");
+  nero_nfc_log_line(" -> OK");
   return true;
 }
 
@@ -567,13 +567,13 @@ bool reader_security_key_iso_dep_session_open(uint16_t rats_timeout_ms) {
   nero_nfc_log_line("\r\n  [ISO-DEP] ═══ session ═══");
   nero_nfc_log_line("  [ISO-DEP] Plan: (1) probe RATS E0/70 -> ATS");
   nero_nfc_log_write(
-      "  [ISO-DEP]       (2) if TC requests CID: full reopen (DESELECT→WUPA→"
+      "  [ISO-DEP]       (2) if TC requests CID: full reopen (DESELECT->WUPA->"
       "RATS 5a), not software CID on probe session\r\n");
   nero_nfc_log_line(
       "  [ISO-DEP]       (3) else keep probe session (no CID in PCB)");
 
   reader_security_key_iso_dep_reset_framing();
-  nero_nfc_log_line("\r\n  [ISO-DEP] Step 1 — probe RATS (discover ATS / TC)");
+  nero_nfc_log_line("\r\n  [ISO-DEP] Step 1 -- probe RATS (discover ATS / TC)");
   if (!iso_dep_rats_traced(
           rats_timeout_ms,
           (uint8_t)(READER_SECURITY_KEY_ISO_DEP_RATS_FSDI7_CID0), "Step 1")) {
@@ -584,7 +584,7 @@ bool reader_security_key_iso_dep_session_open(uint16_t rats_timeout_ms) {
 
   if (reader_security_key_iso_dep_probe_can_upgrade_cid()) {
     nero_nfc_log_write(
-        "\r\n  [ISO-DEP] Step 2 — TC advertises CID; full ISO-DEP reopen for "
+        "\r\n  [ISO-DEP] Step 2 -- TC advertises CID; full ISO-DEP reopen for "
         "stable CID framing (see "
         "reader_security_key_iso_dep_recover_session)\r\n");
     if (!reader_security_key_iso_dep_recover_session()) {
@@ -605,7 +605,7 @@ bool reader_security_key_iso_dep_session_open(uint16_t rats_timeout_ms) {
   }
 
   nero_nfc_log_line(
-      "\r\n  [ISO-DEP] Step 2 — TC has no CID requirement in PCB");
+      "\r\n  [ISO-DEP] Step 2 -- TC has no CID requirement in PCB");
   nero_nfc_log_line("  [ISO-DEP] DONE: probe session (no CID in PCB).");
   return true;
 }
@@ -805,7 +805,7 @@ static bool iso_dep_open_main_from_active_quiet(uint16_t rats_timeout_ms) {
 bool reader_security_key_iso_dep_open_main_from_active(
     uint16_t rats_timeout_ms) {
   nero_nfc_log_line(
-      "\r\n  [ISO-DEP] Step 5a — main RATS FSDI=7 CID=0 + CID in PCB (E0 70)");
+      "\r\n  [ISO-DEP] Step 5a -- main RATS FSDI=7 CID=0 + CID in PCB (E0 70)");
   if (iso_dep_rats_traced(
           rats_timeout_ms,
           (uint8_t)(READER_SECURITY_KEY_ISO_DEP_RATS_FSDI7_CID0), "Step 5a")) {
@@ -816,7 +816,7 @@ bool reader_security_key_iso_dep_open_main_from_active(
   }
 
   nero_nfc_log_line(
-      "\r\n  [ISO-DEP] Step 5b — fallback RATS FSDI=4 CID=0 + CID (E0 40)");
+      "\r\n  [ISO-DEP] Step 5b -- fallback RATS FSDI=4 CID=0 + CID (E0 40)");
   if (iso_dep_rats_traced(
           rats_timeout_ms,
           (uint8_t)(READER_SECURITY_KEY_ISO_DEP_RATS_FSDI4_CID0), "Step 5b")) {
@@ -827,7 +827,7 @@ bool reader_security_key_iso_dep_open_main_from_active(
   }
 
   nero_nfc_log_line(
-      "\r\n  [ISO-DEP] Step 5c — fallback RATS FSDI=4 CID=1 (E0 41)");
+      "\r\n  [ISO-DEP] Step 5c -- fallback RATS FSDI=4 CID=1 (E0 41)");
   if (iso_dep_rats_traced(
           rats_timeout_ms,
           (uint8_t)(READER_SECURITY_KEY_ISO_DEP_RATS_FSDI4_CID1), "Step 5c")) {
@@ -889,7 +889,7 @@ static bool iso_dep_recover_session_quiet(void) {
 void reader_security_key_iso_dep_wait_post_deselect_gap(void) {
   uint32_t elapsed;
   uint32_t remaining;
-  reader_iso_dep_session_runtime_t* session = &G_READER.iso_dep_session;
+  const reader_iso_dep_session_runtime_t* session = &G_READER.iso_dep_session;
 
   if (session->last_deselect_ms == 0u) {
     return;

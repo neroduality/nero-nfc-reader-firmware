@@ -40,9 +40,9 @@ std::string StorageAtrHex(nfc_tag_kind_t kind) {
           kind, atr.data(), static_cast<std::uint16_t>(atr.size()), &len)) {
     return {};
   }
-  const auto kStorageAtr = std::span{atr}.subspan(0u, len);
+  const auto storage_atr = std::span{atr}.subspan(0u, len);
   return nero_nfc::HexBytes(
-      std::vector<std::uint8_t>(kStorageAtr.begin(), kStorageAtr.end()));
+      std::vector<std::uint8_t>(storage_atr.begin(), storage_atr.end()));
 }
 
 bool ContainsText(const std::string& text, std::string_view needle) {
@@ -51,11 +51,11 @@ bool ContainsText(const std::string& text, std::string_view needle) {
 
 void ExpectPresentedMetadata(const nero_nfc::PcscTagSnapshot& tag,
                              std::initializer_list<std::string_view> expected) {
-  const std::string kFormatted = nero_nfc::FormatPcscTagSnapshot(tag);
-  for (std::string_view needle : expected) {
-    EXPECT_TRUE(ContainsText(kFormatted, needle))
+  const std::string formatted = nero_nfc::FormatPcscTagSnapshot(tag);
+  for (std::string_view const needle : expected) {
+    EXPECT_TRUE(ContainsText(formatted, needle))
         << "missing: " << needle << "\n"
-        << kFormatted;
+        << formatted;
   }
 }
 
@@ -86,7 +86,7 @@ TEST(UserspacePcscTagDetails, ParsesStorageAtrForType5) {
 }
 
 TEST(UserspacePcscTagDetails, RejectsStorageAtrWithBadTck) {
-  /* [ISO7816-3] §8 — a storage ATR with a corrupted TCK must be rejected (no
+  /* [ISO7816-3] §8 -- a storage ATR with a corrupted TCK must be rejected (no
    * hint). */
   nero_nfc::PcscTagSnapshot tag;
   std::string atr = StorageAtrHex(NFC_TAG_KIND_TYPE2);
@@ -101,7 +101,7 @@ TEST(UserspacePcscTagDetails, RejectsStorageAtrWithBadTck) {
 }
 
 TEST(UserspacePcscTagDetails, RejectsStorageAtrWithWrongTs) {
-  /* [ISO7816-3] — TS must be 0x3B (direct convention); a wrong TS yields no
+  /* [ISO7816-3] -- TS must be 0x3B (direct convention); a wrong TS yields no
    * hint. */
   nero_nfc::PcscTagSnapshot tag;
   tag.atr_hex_ = "3F 8F 80 01 80 4F 0C A0 00 00 03 06 03 00 00 00 00 00 00 B0";
@@ -132,21 +132,21 @@ TEST(UserspacePcscTagDetails, AppliesType4ContactlessHintFromSakBit6) {
 }
 
 TEST(UserspacePcscTagDetails, RecognizesNtag21xVersionBytes) {
-  const std::vector<std::uint8_t> kVersion = {0x00u, 0x04u, 0x04u, 0x02u,
-                                              0x01u, 0x00u, 0x0Fu, 0x03u};
-  EXPECT_TRUE(nero_nfc::LooksLikeNtag21xVersion(kVersion));
+  const std::vector<std::uint8_t> version = {0x00u, 0x04u, 0x04u, 0x02u,
+                                             0x01u, 0x00u, 0x0Fu, 0x03u};
+  EXPECT_TRUE(nero_nfc::LooksLikeNtag21xVersion(version));
   EXPECT_FALSE(nero_nfc::LooksLikeNtag21xVersion({0x00u, 0x04u, 0x03u}));
 }
 
 TEST(UserspacePcscTagDetails, AppliesType2DetailLinesFromCcAndVersion) {
   nero_nfc::PcscTagSnapshot tag;
-  const std::vector<std::uint8_t> kUid = {0x04u, 0xA1u, 0xB2u, 0xC3u,
-                                          0xD4u, 0xE5u, 0xF6u};
-  const std::vector<std::uint8_t> kVersion = {0x00u, 0x04u, 0x04u, 0x02u,
-                                              0x01u, 0x00u, 0x0Fu, 0x03u};
-  const std::vector<std::uint8_t> kCc = {0xE1u, 0x10u, 0x12u, 0x00u};
+  const std::vector<std::uint8_t> uid = {0x04u, 0xA1u, 0xB2u, 0xC3u,
+                                         0xD4u, 0xE5u, 0xF6u};
+  const std::vector<std::uint8_t> version = {0x00u, 0x04u, 0x04u, 0x02u,
+                                             0x01u, 0x00u, 0x0Fu, 0x03u};
+  const std::vector<std::uint8_t> cc = {0xE1u, 0x10u, 0x12u, 0x00u};
 
-  nero_nfc::ApplyType2Details(tag, kUid, kVersion, kCc, {}, std::nullopt);
+  nero_nfc::ApplyType2Details(tag, uid, version, cc, {}, std::nullopt);
 
   EXPECT_EQ(tag.tech_list_, "NfcA, MifareUltralight, Ndef");
   EXPECT_EQ(tag.manufacturer_, "NXP");
@@ -172,13 +172,13 @@ TEST(UserspacePcscTagDetails, AppliesType2DetailLinesFromCcAndVersion) {
 TEST(UserspacePcscTagDetails,
      AppliesNtagProductFromVersionWhenUidManufacturerIsUnknown) {
   nero_nfc::PcscTagSnapshot tag;
-  const std::vector<std::uint8_t> kUid = {0x53u, 0x84u, 0x8Fu, 0xE5u,
-                                          0x52u, 0x00u, 0x01u};
-  const std::vector<std::uint8_t> kVersion = {0x00u, 0x04u, 0x04u, 0x02u,
-                                              0x01u, 0x00u, 0x13u, 0x03u};
-  const std::vector<std::uint8_t> kCc = {0xE1u, 0x10u, 0x7Fu, 0x00u};
+  const std::vector<std::uint8_t> uid = {0x53u, 0x84u, 0x8Fu, 0xE5u,
+                                         0x52u, 0x00u, 0x01u};
+  const std::vector<std::uint8_t> version = {0x00u, 0x04u, 0x04u, 0x02u,
+                                             0x01u, 0x00u, 0x13u, 0x03u};
+  const std::vector<std::uint8_t> cc = {0xE1u, 0x10u, 0x7Fu, 0x00u};
 
-  nero_nfc::ApplyType2Details(tag, kUid, kVersion, kCc, {}, std::nullopt);
+  nero_nfc::ApplyType2Details(tag, uid, version, cc, {}, std::nullopt);
 
   EXPECT_EQ(tag.manufacturer_, "NXP");
   EXPECT_EQ(tag.product_name_, "NTAG216");
@@ -188,16 +188,16 @@ TEST(UserspacePcscTagDetails,
      AppliesAndPresentsSharedMetadataForStorageAndType4Tags) {
   {
     nero_nfc::PcscTagSnapshot tag;
-    const std::vector<std::uint8_t> kUid = {0x53u, 0x84u, 0x8Fu, 0xE5u,
-                                            0x52u, 0x00u, 0x01u};
-    const std::vector<std::uint8_t> kVersion = {0x00u, 0x04u, 0x04u, 0x02u,
-                                                0x01u, 0x00u, 0x13u, 0x03u};
-    const std::vector<std::uint8_t> kCc = {0xE1u, 0x10u, 0x7Fu, 0x00u};
+    const std::vector<std::uint8_t> uid = {0x53u, 0x84u, 0x8Fu, 0xE5u,
+                                           0x52u, 0x00u, 0x01u};
+    const std::vector<std::uint8_t> version = {0x00u, 0x04u, 0x04u, 0x02u,
+                                               0x01u, 0x00u, 0x13u, 0x03u};
+    const std::vector<std::uint8_t> cc = {0xE1u, 0x10u, 0x7Fu, 0x00u};
     tag.reader_name_ = "unit-test reader";
     tag.tag_type_ = "PC/SC storage: ISO 14443-3A / NFC Forum Type 2";
-    tag.uid_hex_ = nero_nfc::HexBytes(kUid);
+    tag.uid_hex_ = nero_nfc::HexBytes(uid);
 
-    nero_nfc::ApplyType2Details(tag, kUid, kVersion, kCc, {}, std::nullopt);
+    nero_nfc::ApplyType2Details(tag, uid, version, cc, {}, std::nullopt);
 
     EXPECT_EQ(tag.tech_list_, "NfcA, MifareUltralight, Ndef");
     EXPECT_EQ(tag.manufacturer_, "NXP");
@@ -217,16 +217,16 @@ TEST(UserspacePcscTagDetails,
 
   {
     nero_nfc::PcscTagSnapshot tag;
-    const std::vector<std::uint8_t> kUid = {0x04u, 0x25u, 0x85u, 0x93u,
-                                            0x12u, 0x34u, 0x56u};
-    const std::vector<std::uint8_t> kCc = {0x00u, 0x0Fu, 0x20u, 0x00u, 0xFFu,
-                                           0x00u, 0xF6u, 0x04u, 0x06u, 0xE1u,
-                                           0x04u, 0x01u, 0xF4u, 0x00u, 0x00u};
+    const std::vector<std::uint8_t> uid = {0x04u, 0x25u, 0x85u, 0x93u,
+                                           0x12u, 0x34u, 0x56u};
+    const std::vector<std::uint8_t> cc = {0x00u, 0x0Fu, 0x20u, 0x00u, 0xFFu,
+                                          0x00u, 0xF6u, 0x04u, 0x06u, 0xE1u,
+                                          0x04u, 0x01u, 0xF4u, 0x00u, 0x00u};
     tag.reader_name_ = "unit-test reader";
     tag.tag_type_ = "NFC Forum Type 4-compatible NDEF file";
-    tag.uid_hex_ = nero_nfc::HexBytes(kUid);
+    tag.uid_hex_ = nero_nfc::HexBytes(uid);
 
-    nero_nfc::ApplyType4Details(tag, kUid, kCc);
+    nero_nfc::ApplyType4Details(tag, uid, cc);
 
     EXPECT_EQ(tag.tech_list_, "NfcA, IsoDep, Ndef");
     EXPECT_EQ(tag.manufacturer_, "NXP");
@@ -245,18 +245,18 @@ TEST(UserspacePcscTagDetails,
 
   {
     nero_nfc::PcscTagSnapshot tag;
-    const std::vector<std::uint8_t> kUid = {0xE0u, 0x02u, 0x01u, 0x02u,
-                                            0x03u, 0x04u, 0x05u, 0x06u};
-    const std::vector<std::uint8_t> kSystemInfo = {
+    const std::vector<std::uint8_t> uid = {0xE0u, 0x02u, 0x01u, 0x02u,
+                                           0x03u, 0x04u, 0x05u, 0x06u};
+    const std::vector<std::uint8_t> system_info = {
         0x00u, 0x0Fu, 0x06u, 0x05u, 0x04u, 0x03u, 0x02u, 0x01u,
         0x02u, 0xE0u, 0x00u, 0x00u, 0xFFu, 0x07u, 0x03u, 0x51u};
-    const std::vector<std::uint8_t> kCc = {0xE1u, 0x40u, 0xFFu, 0x04u};
+    const std::vector<std::uint8_t> cc = {0xE1u, 0x40u, 0xFFu, 0x04u};
     tag.reader_name_ = "unit-test reader";
     tag.tag_type_ = "PC/SC storage: ISO 15693 / NFC Forum Type 5";
-    tag.uid_hex_ = nero_nfc::HexBytes(kUid);
-    tag.type5_system_info_hex_ = nero_nfc::HexBytes(kSystemInfo);
+    tag.uid_hex_ = nero_nfc::HexBytes(uid);
+    tag.type5_system_info_hex_ = nero_nfc::HexBytes(system_info);
 
-    nero_nfc::ApplyType5Details(tag, kUid, kSystemInfo, kCc);
+    nero_nfc::ApplyType5Details(tag, uid, system_info, cc);
 
     EXPECT_EQ(tag.tech_list_, "NfcV, Ndef");
     EXPECT_EQ(tag.manufacturer_, "STMicroelectronics");
@@ -280,13 +280,13 @@ TEST(UserspacePcscTagDetails,
 
 TEST(UserspacePcscTagDetails, AppliesType4DetailLinesFromCc) {
   nero_nfc::PcscTagSnapshot tag;
-  const std::vector<std::uint8_t> kUid = {0x04u, 0x25u, 0x85u, 0x93u,
-                                          0x12u, 0x34u, 0x56u};
-  const std::vector<std::uint8_t> kCc = {0x00u, 0x0Fu, 0x20u, 0x00u, 0xFFu,
-                                         0x00u, 0xF6u, 0x04u, 0x06u, 0xE1u,
-                                         0x04u, 0x01u, 0xF4u, 0x00u, 0x00u};
+  const std::vector<std::uint8_t> uid = {0x04u, 0x25u, 0x85u, 0x93u,
+                                         0x12u, 0x34u, 0x56u};
+  const std::vector<std::uint8_t> cc = {0x00u, 0x0Fu, 0x20u, 0x00u, 0xFFu,
+                                        0x00u, 0xF6u, 0x04u, 0x06u, 0xE1u,
+                                        0x04u, 0x01u, 0xF4u, 0x00u, 0x00u};
 
-  nero_nfc::ApplyType4Details(tag, kUid, kCc);
+  nero_nfc::ApplyType4Details(tag, uid, cc);
 
   EXPECT_EQ(tag.tech_list_, "NfcA, IsoDep, Ndef");
   EXPECT_NE(std::ranges::find_if(tag.detail_lines_,

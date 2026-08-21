@@ -76,9 +76,7 @@ const char* KindNameFromRawBitsForTest(unsigned bits) {
   return writer_payload_kind_name(k);
 }
 
-}  // namespace
-
-static void FillChar(char* dest, size_t cap, char ch) {
+void FillChar(char* dest, size_t cap, char ch) {
   ASSERT_NE(dest, NERO_NFC_NULL);
   ASSERT_GE(cap, 2u);
   auto* bytes = reinterpret_cast<uint8_t*>(dest);
@@ -88,13 +86,15 @@ static void FillChar(char* dest, size_t cap, char ch) {
   (void)nero_nfc_store_u8(bytes, cap, cap - 1u, static_cast<uint8_t>('\0'));
 }
 
-static void SetUrlPayload(writer_payload_config_t* cfg,
-                          const char* value = "neroduality.com/contact/") {
+void SetUrlPayload(writer_payload_config_t* cfg,
+                   const char* value = "neroduality.com/contact/") {
   ASSERT_NE(cfg, NERO_NFC_NULL);
   cfg->kind = WRITER_PAYLOAD_URL_HTTPS;
   cfg->uri_id = kTestLit0x04u;
   (void)nero_nfc_snprintf(&cfg->str1[0], sizeof(cfg->str1), "%s", value);
 }
+
+}  // namespace
 
 TEST(WriterPayload, DefaultAndKindNames) {
   writer_payload_config_t cfg{};
@@ -133,12 +133,12 @@ TEST(WriterPayload, UrlHttpsWellKnownTlv) {
   writer_payload_default(&cfg);
   SetUrlPayload(&cfg);
   uint8_t tlv[WRITER_NDEF_MAX_BYTES + kTestLit8];
-  uint16_t n = writer_payload_build_tlv(&cfg, &tlv[0], sizeof(tlv));
+  uint16_t const n = writer_payload_build_tlv(&cfg, &tlv[0], sizeof(tlv));
   ASSERT_GT(n, 0u);
   EXPECT_EQ(tlv[0], 0x03u);
   ASSERT_NE(tlv[1], 0xFFu);
-  const uint8_t kNdefLen = std::span{tlv}[1];
-  ASSERT_EQ(nero_nfc_u8_at(&tlv[0], n, 2u + kNdefLen), 0xFEu);
+  const uint8_t ndef_len = std::span{tlv}[1];
+  ASSERT_EQ(nero_nfc_u8_at(&tlv[0], n, 2u + ndef_len), 0xFEu);
   EXPECT_EQ(nero_nfc_u8_at(&tlv[0], n, 2u), 0xD1u);
   EXPECT_EQ(nero_nfc_u8_at(&tlv[0], n, 3u), 0x01u);
   EXPECT_EQ(nero_nfc_u8_at(&tlv[0], n, 5u), 0x55u);
@@ -151,7 +151,7 @@ TEST(WriterPayload, PlainTextNdef) {
   cfg.kind = WRITER_PAYLOAD_PLAIN_TEXT;
   (void)nero_nfc_snprintf(&cfg.str1[0], sizeof(cfg.str1), "%s", "hello");
   uint8_t ndef[kTestLit64];
-  uint16_t nl = writer_payload_build_ndef(&cfg, &ndef[0], sizeof(ndef));
+  uint16_t const nl = writer_payload_build_ndef(&cfg, &ndef[0], sizeof(ndef));
   ASSERT_GT(nl, 0u);
   EXPECT_EQ(ndef[0], 0xD1u);
   EXPECT_EQ(ndef[3], 0x54u);
@@ -213,13 +213,13 @@ TEST(WriterPayload, VcardMime) {
   EXPECT_EQ(out[0], 0xD2u);
   ASSERT_GT(out[1], 0u);
   ASSERT_GT(out[2], 0u);
-  const auto kTypeLen = static_cast<size_t>(out[1]);
-  const auto kPayloadLen = static_cast<size_t>(out[2]);
-  ASSERT_LT((3u + kTypeLen + kPayloadLen), sizeof(out));
-  const auto kBodyBytes = std::span{out}.subspan(3u + kTypeLen, kPayloadLen);
-  const std::string kBody(reinterpret_cast<const char*>(kBodyBytes.data()),
-                          kBodyBytes.size());
-  EXPECT_NE(kBody.find("VERSION:4.0"), std::string::npos);
+  const auto type_len = static_cast<size_t>(out[1]);
+  const auto payload_len = static_cast<size_t>(out[2]);
+  ASSERT_LT((3u + type_len + payload_len), sizeof(out));
+  const auto body_bytes = std::span{out}.subspan(3u + type_len, payload_len);
+  const std::string body(reinterpret_cast<const char*>(body_bytes.data()),
+                         body_bytes.size());
+  EXPECT_NE(body.find("VERSION:4.0"), std::string::npos);
 }
 
 TEST(WriterPayload, VcardRejectsControlCharInField) {
@@ -274,18 +274,18 @@ TEST(WriterPayload, BtOobMacRoundTrip) {
   (void)nero_nfc_snprintf(&cfg.str1[0], sizeof(cfg.str1), "%s",
                           "01:23:45:67:89:AB");
   uint8_t out[kTestLit80];
-  uint16_t n = writer_payload_build_ndef(&cfg, &out[0], sizeof(out));
+  uint16_t const n = writer_payload_build_ndef(&cfg, &out[0], sizeof(out));
   ASSERT_GT(n, 0u);
   /* MIME payload begins after SR header: type length + 3. */
-  size_t mime_type_len = out[1];
-  size_t payload_len = out[kTestLit2];
+  size_t const mime_type_len = out[1];
+  size_t const payload_len = out[kTestLit2];
   ASSERT_EQ(payload_len, 8u);
-  const size_t kPayloadOff = kTestLit3 + mime_type_len;
+  const size_t payload_off = kTestLit3 + mime_type_len;
   /* [BT-OOB] 2-byte OOB Data Length (LSB first) then BD_ADDR LSB first. */
-  EXPECT_EQ(nero_nfc_u8_at(&out[0], n, kPayloadOff + 0u), 0x08u);
-  EXPECT_EQ(nero_nfc_u8_at(&out[0], n, kPayloadOff + 1u), 0x00u);
-  EXPECT_EQ(nero_nfc_u8_at(&out[0], n, kPayloadOff + 2u), 0xABu);
-  EXPECT_EQ(nero_nfc_u8_at(&out[0], n, kPayloadOff + 7u), 0x01u);
+  EXPECT_EQ(nero_nfc_u8_at(&out[0], n, payload_off + 0u), 0x08u);
+  EXPECT_EQ(nero_nfc_u8_at(&out[0], n, payload_off + 1u), 0x00u);
+  EXPECT_EQ(nero_nfc_u8_at(&out[0], n, payload_off + 2u), 0xABu);
+  EXPECT_EQ(nero_nfc_u8_at(&out[0], n, payload_off + 7u), 0x01u);
 }
 
 TEST(WriterPayload, BtOobRejectsBadMac) {
@@ -312,7 +312,7 @@ TEST(WriterPayload, LongNdefUsesLongTlvHeader) {
                           static_cast<uint8_t>('\0'));
   (void)nero_nfc_snprintf(&cfg.str2[0], sizeof(cfg.str2), "%s", "t|e");
   uint8_t tlv[WRITER_NDEF_MAX_BYTES + kTestLit16];
-  uint16_t n = writer_payload_build_tlv(&cfg, &tlv[0], sizeof(tlv));
+  uint16_t const n = writer_payload_build_tlv(&cfg, &tlv[0], sizeof(tlv));
   ASSERT_GT(n, 0u);
   EXPECT_EQ(tlv[0], 0x03u);
   ASSERT_EQ(tlv[1], 0xFFu)
@@ -356,7 +356,7 @@ TEST(WriterPayload, TlvRejectsBufferTooSmallShortForm) {
   writer_payload_default(&cfg);
   SetUrlPayload(&cfg);
   uint8_t tlv[kTestLit32];
-  uint16_t need = writer_payload_build_tlv(&cfg, &tlv[0], sizeof(tlv));
+  uint16_t const need = writer_payload_build_tlv(&cfg, &tlv[0], sizeof(tlv));
   ASSERT_GT(need, 0u);
   EXPECT_EQ(writer_payload_build_tlv(&cfg, &tlv[0], (uint16_t)(need - 1u)), 0u);
 }
@@ -373,7 +373,7 @@ TEST(WriterPayload, TlvRejectsBufferTooSmallLongForm) {
                           static_cast<uint8_t>('\0'));
   (void)nero_nfc_snprintf(&cfg.str2[0], sizeof(cfg.str2), "%s", "t|e");
   uint8_t big[WRITER_NDEF_MAX_BYTES + kTestLit16];
-  uint16_t need = writer_payload_build_tlv(&cfg, &big[0], sizeof(big));
+  uint16_t const need = writer_payload_build_tlv(&cfg, &big[0], sizeof(big));
   ASSERT_GT(need, 0u);
   EXPECT_EQ(big[0], 0x03u);
   ASSERT_EQ(big[1], 0xFFu);

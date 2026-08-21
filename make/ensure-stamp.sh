@@ -18,7 +18,7 @@
 # Generic stamp handler: writes <stamp> when a third-party archive dependency is
 # present at DEP_DIR. Calls fetch-archive.sh when missing or stale.
 # Invoked from Make with a marker path inside DEP_DIR (e.g. library.properties)
-# as the rule’s target so deleting the extracted tree re-runs the recipe.
+# as the rule's target so deleting the extracted tree re-runs the recipe.
 
 set -euo pipefail
 
@@ -57,7 +57,7 @@ do_stamp() {
     rm -f "${STAMP}"
   fi
 
-  # Stamp says OK but tree is gone (manual delete, partial clean) — clear and re-fetch.
+  # Stamp says OK but tree is gone (manual delete, partial clean) -- clear and re-fetch.
   if [ "${FORCE_EXTERNAL}" != 1 ] && [ -f "${STAMP}" ] && [ "$(cat "${STAMP}")" = "${want}" ] && ! tree_ok; then
     echo "-- Stale stamp ${STAMP##*/} (tree missing or incomplete); re-fetching $(basename "${DEP_DIR}")" >&2
     rm -f "${STAMP}"

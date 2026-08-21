@@ -226,7 +226,7 @@ bool nfc_ctap_pack_cbor_apdu(uint8_t ctap_cmd, const uint8_t* cbor,
   apdu[NFC_ISO7816_APDU_IDX_CLA] = NFC_CTAP_CLA;
   apdu[NFC_ISO7816_APDU_IDX_INS] = NFC_CTAP_INS_MSG;
   apdu[NFC_ISO7816_APDU_IDX_P1] =
-      NFC_CTAP_P1_GETRESPONSE_SUPPORTED; /* [CTAP2.3] section 11.3.7.1 —
+      NFC_CTAP_P1_GETRESPONSE_SUPPORTED; /* [CTAP2.3] section 11.3.7.1 --
                       client supports GETRESPONSE */
   apdu[NFC_ISO7816_APDU_IDX_P2] = NFC_ISO7816_GET_DATA_P2_DEFAULT;
 
@@ -422,7 +422,7 @@ bool nfc_ctap_response_more_data(const uint8_t* resp, int rlen) {
   uint8_t sw1 = 0u;
   uint8_t sw2 = 0u;
 
-  /* [CTAP2.3] §11.3.7.2 — the NFCCTAP continuation status is exactly 0x9100
+  /* [CTAP2.3] §11.3.7.2 -- the NFCCTAP continuation status is exactly 0x9100
    * (SW2 == 0x00); any other 0x91xx is not a defined continuation. The status
    * word carries no remaining-byte count (unlike ISO7816 61xx). */
   return nfc_iso7816_response_sw(resp, rlen, &sw1, &sw2) &&
@@ -477,7 +477,7 @@ nfc_ctap_relay_disposition_t nfc_ctap_relay_response_disposition(
     const uint8_t* raw, uint16_t raw_len) {
   uint16_t sw;
 
-  /* [CTAP2.3] §11.3.5.2 — a complete token response always ends in an ISO7816
+  /* [CTAP2.3] §11.3.5.2 -- a complete token response always ends in an ISO7816
    * status word. A response without one is malformed; fail closed (the relay
    * must never synthesize a success status word). */
   if ((raw == NERO_NFC_NULL) || (raw_len < NFC_ISO7816_SW_STATUS_WORD_LEN)) {
@@ -491,7 +491,7 @@ nfc_ctap_relay_disposition_t nfc_ctap_relay_response_disposition(
   if (sw == NFC_ISO7816_SW_SUCCESS) {
     return NFC_CTAP_RELAY_PASSTHROUGH;
   }
-  /* 61xx / 91xx status-update is relayed verbatim — the host owns GET RESPONSE
+  /* 61xx / 91xx status-update is relayed verbatim -- the host owns GET RESPONSE
    * / NFCCTAP_GETRESPONSE polling (§11.3.7.2). */
   if (((sw & NFC_ISO7816_SW1_HIGH_BYTE_MASK) ==
        NFC_ISO7816_SW1_MORE_DATA_PATTERN) ||
@@ -511,7 +511,7 @@ nfc_ctap_relay_disposition_t nfc_ctap_relay_response_disposition(
     return NFC_CTAP_RELAY_PASSTHROUGH;
   }
   /* Any other trailing word is not a valid ISO7816 status word (e.g. a CBOR
-   * body byte misread as a status word): the response is malformed — fail
+   * body byte misread as a status word): the response is malformed -- fail
    * closed. */
   return NFC_CTAP_RELAY_FAIL_CLOSED;
 }

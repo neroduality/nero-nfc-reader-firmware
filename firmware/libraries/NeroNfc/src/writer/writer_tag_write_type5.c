@@ -16,7 +16,7 @@
 
 #include "nero_nfc_null.h"
 /*
- * writer_tag_write_type5.c — ISO15693 Type 5 NDEF write path.
+ * writer_tag_write_type5.c -- ISO15693 Type 5 NDEF write path.
  */
 
 #include "writer_tag_write_internal.h"
@@ -61,7 +61,7 @@ bool writer_tag_write_type5_inventory_step(void) {
 }
 
 /*
- * Standard 1-byte addressed read/write — works on every NFC Forum Type 5
+ * Standard 1-byte addressed read/write -- works on every NFC Forum Type 5
  * Capability Container (block 0..0xFF). ST25TV02KC only implements this form;
  * ST25DV* implements both 1-byte and 2-byte addressed forms but our short
  * URL NDEF lives well below block 0xFF, so 1-byte is sufficient.
@@ -146,7 +146,7 @@ bool writer_tag_write_type5_impl(void) {
 
   if (!writer_payload_configured(&WRITER_APP_PAYLOAD)) {
     nero_nfc_log_write(
-        "  ERROR: no payload configured — enter url/text/wifi/ndef-hex/... "
+        "  ERROR: no payload configured -- enter url/text/wifi/ndef-hex/... "
         "first\r\n");
     return false;
   }

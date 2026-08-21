@@ -15,7 +15,7 @@
 // limitations under the License.
 
 /*
- * writer_tag_write.c — public API wrappers for tag NDEF write paths.
+ * writer_tag_write.c -- public API wrappers for tag NDEF write paths.
  */
 
 #include "writer_tag_write.h"

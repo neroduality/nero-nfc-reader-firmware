@@ -60,7 +60,7 @@ void nfc_hal_preload_serial(void) {
 }
 
 int nfc_hal_pushback_available(void) {
-  nero_nfc_app_t* app = nero_nfc_app_active();
+  const nero_nfc_app_t* app = nero_nfc_app_active();
   if (app == NERO_NFC_NULL) {
     return 0;
   }

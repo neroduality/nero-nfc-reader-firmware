@@ -16,7 +16,7 @@
 # limitations under the License.
 
 # Shared CI entry: Release unit tests (same as ``make test``) in container matrix jobs.
-# Always wipes CMake trees first (``make/wipe-host-build-trees.sh ci``) — no cache reuse.
+# Always wipes CMake trees first (``make/wipe-host-build-trees.sh ci``) -- no cache reuse.
 # Usage (from firmware root):
 #   AUTO_INSTALL_LINUX_DEPS=1 bash .github/scripts/ci-run-tests.sh
 set -euo pipefail

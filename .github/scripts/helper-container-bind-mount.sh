@@ -33,12 +33,13 @@ _NERO_NFC_BIND_MOUNT_RESTORE_PATHS=(
   third-party
   tests/build
   tests/build-scan
+  tests/build-codeql
   tests/scan-build-report
 )
 
 # Subtrees created before drop so host UID owns them from the first write.
 # mkdir -p as root leaves intermediate dirs (e.g. build/lint) root-owned; always
-# chown the top-level trees below after all mkdirs — never only the leaf path.
+# chown the top-level trees below after all mkdirs -- never only the leaf path.
 _NERO_NFC_BIND_MOUNT_PREPARE_PATHS=(
   .lint-kit-org
   build
@@ -50,10 +51,13 @@ _NERO_NFC_BIND_MOUNT_PREPARE_PATHS=(
   build/lint-overrides
   build/clang-tidy-compile-db
   build/codeql
+  build/codeql-cli
   build/userspace
+  build/userspace-codeql
   third-party
   tests/build
   tests/build-scan
+  tests/build-codeql
   tests/scan-build-report
 )
 
@@ -64,6 +68,7 @@ _NERO_NFC_BIND_MOUNT_CHOWN_ROOTS=(
   third-party
   tests/build
   tests/build-scan
+  tests/build-codeql
   tests/scan-build-report
 )
 

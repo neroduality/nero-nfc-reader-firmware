@@ -74,13 +74,13 @@ priv() {
   fi
 }
 
-echo "── nero-nfc flash toolchain — repo: ${REPO_ROOT} ──"
+echo "── nero-nfc flash toolchain -- repo: ${REPO_ROOT} ──"
 
 need_os=false
 have make || need_os=true
 
 if [[ ${need_os} == true ]]; then
-  echo "── OS packages (make — plus unzip recommended for STM ZIP fetch speed) ──" >&2
+  echo "── OS packages (make -- plus unzip recommended for STM ZIP fetch speed) ──" >&2
   if have apt-get; then
     priv apt-get update -qq
     priv DEBIAN_FRONTEND=noninteractive apt-get install -y make unzip ca-certificates bash

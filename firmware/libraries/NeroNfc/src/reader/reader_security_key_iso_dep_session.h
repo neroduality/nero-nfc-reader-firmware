@@ -34,7 +34,7 @@ reader_security_key_iso_dep_commit_rats_rx(int rlen, const uint8_t* rx,
   if ((rlen < READER_ISO_DEP_ATS_MIN_LEN) || (rx == NERO_NFC_NULL)) {
     return false;
   }
-  /* [ISO14443-4] §5.2.5 — ATS byte 0 (TL) is the authoritative ATS length
+  /* [ISO14443-4] §5.2.5 -- ATS byte 0 (TL) is the authoritative ATS length
    * including itself. Bound storage by TL (not the raw RF receive length, which
    * may carry trailing CRC), and fail closed on a truncated or oversized ATS
    * rather than relaying a partial ATS as success. */

@@ -16,9 +16,9 @@
 # limitations under the License.
 
 # Wrap arduino-cli compile with periodic progress on stderr (arduino-cli is often silent
-# until the final "Sketch uses …" summary). Same heartbeat style as Lima guest / CI.
+# until the final "Sketch uses ..." summary). Same heartbeat style as Lima guest / CI.
 #
-# With --repo-root: same contract as make lint — full -W on the command line, but only
+# With --repo-root: same contract as make lint -- full -W on the command line, but only
 # diagnostics under REPO_ROOT outside third-party/ fail the build. Vendor/Board Manager
 # noise under third-party/ is ignored and not printed on success.
 set -euo pipefail
@@ -147,7 +147,7 @@ run_compile_with_log_heartbeat() {
         "${BOARD_DESCRIPTION}" "${elapsed}" "${size}" >&2
       last_size=${size}
     else
-      printf '── compiling %s (%ss, waiting for arduino-cli output…) ──\n' \
+      printf '── compiling %s (%ss, waiting for arduino-cli output...) ──\n' \
         "${BOARD_DESCRIPTION}" "${elapsed}" >&2
     fi
   done

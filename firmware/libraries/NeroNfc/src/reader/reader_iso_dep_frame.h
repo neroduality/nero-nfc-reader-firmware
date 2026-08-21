@@ -287,7 +287,7 @@ NERO_NFC_NODISCARD static inline bool reader_iso_dep_rx_i_block_number_matches(
   if (rlen < (int)need_hdr) {
     return false;
   }
-  /* [ISO14443-4] block-numbering rules A/B — the PCD accepts an I-block
+  /* [ISO14443-4] block-numbering rules A/B -- the PCD accepts an I-block
    * only when its block number equals the PCD's current block number. */
   return (pcb & ISO_DEP_BLOCK_NUM_MASK) ==
          (expected_block & ISO_DEP_BLOCK_NUM_MASK);
@@ -387,7 +387,7 @@ NERO_NFC_NODISCARD static inline bool reader_iso_dep_rx_is_chain_ack_for_block(
                                       &block)) {
     return false;
   }
-  /* [ISO14443-4] §7.5.4 Rule 8 — during PCD chaining the PICC acknowledges a
+  /* [ISO14443-4] §7.5.4 Rule 8 -- during PCD chaining the PICC acknowledges a
    * chained I-block with an R(ACK) whose block number equals the received
    * I-block's block number (== blk_sent). Require exactly that; do not tolerate
    * the toggled value. */

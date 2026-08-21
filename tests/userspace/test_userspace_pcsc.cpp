@@ -77,30 +77,30 @@ TEST(UserspacePcsc, BuildsAndParsesTextRecord) {
 }
 
 TEST(UserspacePcsc, ParseNdefRejectsReservedUriPrefixCode) {
-  const std::vector<std::uint8_t> kPayload = {0x24u, 'e', 'x', 'a',
-                                              'm',   'p', 'l', 'e'};
+  const std::vector<std::uint8_t> payload = {0x24u, 'e', 'x', 'a',
+                                             'm',   'p', 'l', 'e'};
   std::vector<std::uint8_t> ndef = {
-      kTestLit0xD1u, 0x01u, static_cast<std::uint8_t>(kPayload.size()), 'U'};
-  ndef.insert(ndef.end(), kPayload.begin(), kPayload.end());
+      kTestLit0xD1u, 0x01u, static_cast<std::uint8_t>(payload.size()), 'U'};
+  ndef.insert(ndef.end(), payload.begin(), payload.end());
   auto records = nero_nfc::ParseNdefRecords(ndef);
   ASSERT_EQ(records.size(), 1u);
   EXPECT_FALSE(records[0].decoded_.has_value());
 }
 
 TEST(UserspacePcsc, ParseNdefRejectsUriPayloadWithEmbeddedNul) {
-  const std::vector<std::uint8_t> kPayload = {0x00u, 'o', 'k', '\0', 'x'};
+  const std::vector<std::uint8_t> payload = {0x00u, 'o', 'k', '\0', 'x'};
   std::vector<std::uint8_t> ndef = {
-      kTestLit0xD1u, 0x01u, static_cast<std::uint8_t>(kPayload.size()), 'U'};
-  ndef.insert(ndef.end(), kPayload.begin(), kPayload.end());
+      kTestLit0xD1u, 0x01u, static_cast<std::uint8_t>(payload.size()), 'U'};
+  ndef.insert(ndef.end(), payload.begin(), payload.end());
   auto records = nero_nfc::ParseNdefRecords(ndef);
   ASSERT_EQ(records.size(), 1u);
   EXPECT_FALSE(records[0].decoded_.has_value());
 }
 
 TEST(UserspacePcsc, ParseNdefStopsOnUnsupportedChunkedRecord) {
-  const std::vector<std::uint8_t> kChunked = {0xB1u, 0x01u, 0x02u,
-                                              'U',   0x04u, 'a'};
-  auto records = nero_nfc::ParseNdefRecords(kChunked);
+  const std::vector<std::uint8_t> chunked = {0xB1u, 0x01u, 0x02u,
+                                             'U',   0x04u, 'a'};
+  auto records = nero_nfc::ParseNdefRecords(chunked);
   EXPECT_TRUE(records.empty());
 }
 
@@ -119,7 +119,7 @@ TEST(UserspacePcsc, BuildsMimeRecord) {
 }
 
 TEST(UserspacePcsc, BuildsAndParsesMultiRecordMessage) {
-  std::vector<std::vector<std::uint8_t>> records = {
+  std::vector<std::vector<std::uint8_t>> const records = {
       nero_nfc::BuildNdefUriRecord("https://example.test/one"),
       nero_nfc::BuildNdefUriRecord("https://example.test/two"),
   };
@@ -174,7 +174,7 @@ TEST(UserspacePcsc, FormatsStandardTagFields) {
   tag.ndef_message_ = nero_nfc::BuildNdefUriRecord("https://example.test");
   tag.records_ = nero_nfc::ParseNdefRecords(tag.ndef_message_);
 
-  std::string formatted = nero_nfc::FormatPcscTagSnapshot(tag);
+  std::string const formatted = nero_nfc::FormatPcscTagSnapshot(tag);
 
   EXPECT_NE(formatted.find("PC/SC reader: Nero NFC"), std::string::npos);
   EXPECT_NE(formatted.find("Tech list: NfcA, MifareUltralight, Ndef"),
@@ -211,7 +211,7 @@ TEST(UserspacePcsc, FormatsPassiveType4SmartcardWithoutNdefProbe) {
       "Application probing: no NFC Forum Type 4 NDEF app/file found",
   };
 
-  std::string formatted = nero_nfc::FormatPcscTagSnapshot(tag);
+  std::string const formatted = nero_nfc::FormatPcscTagSnapshot(tag);
 
   EXPECT_NE(formatted.find("Type 4-compatible contactless smartcard"),
             std::string::npos);
@@ -240,7 +240,7 @@ TEST(UserspacePcsc, FormatsCommercialType4NdefTag) {
   tag.ndef_message_ = nero_nfc::BuildNdefTextRecord("type4 hello");
   tag.records_ = nero_nfc::ParseNdefRecords(tag.ndef_message_);
 
-  std::string formatted = nero_nfc::FormatPcscTagSnapshot(tag);
+  std::string const formatted = nero_nfc::FormatPcscTagSnapshot(tag);
 
   EXPECT_NE(formatted.find("OMNIKEY"), std::string::npos);
   EXPECT_NE(formatted.find("NFC Forum Type 4-compatible NDEF file"),
@@ -300,16 +300,16 @@ TEST(UserspacePcsc, FormatsType5MlenOverflowFromExtendedSystemInfo) {
   nero_nfc::PcscTagSnapshot tag;
   tag.reader_name_ = "Nero NFC Arduino UNO R4 WiFi CCID 00 00";
   tag.tag_type_ = "PC/SC storage: ISO 15693 / NFC Forum Type 5";
-  const std::vector<std::uint8_t> kUid = {0xE0u, 0x02u, 0x01u, 0x02u,
-                                          0x03u, 0x04u, 0x05u, 0x06u};
-  const std::vector<std::uint8_t> kSystemInfo = {
+  const std::vector<std::uint8_t> uid = {0xE0u, 0x02u, 0x01u, 0x02u,
+                                         0x03u, 0x04u, 0x05u, 0x06u};
+  const std::vector<std::uint8_t> system_info = {
       0x00u, 0x0Fu, 0x06u, 0x05u, 0x04u, 0x03u, 0x02u, 0x01u,
       0x02u, 0xE0u, 0x00u, 0x00u, 0xFFu, 0x07u, 0x03u, 0x51u};
-  const std::vector<std::uint8_t> kCc = {0xE1u, 0x40u, 0xFFu, 0x04u};
+  const std::vector<std::uint8_t> cc = {0xE1u, 0x40u, 0xFFu, 0x04u};
 
-  nero_nfc::ApplyType5Details(tag, kUid, kSystemInfo, kCc);
+  nero_nfc::ApplyType5Details(tag, uid, system_info, cc);
 
-  std::string formatted = nero_nfc::FormatPcscTagSnapshot(tag);
+  std::string const formatted = nero_nfc::FormatPcscTagSnapshot(tag);
 
   EXPECT_NE(formatted.find("Geometry: 2048 blocks x 4B"), std::string::npos);
   EXPECT_NE(formatted.find("Data area: 8188 bytes"), std::string::npos);
@@ -325,23 +325,23 @@ TEST(UserspacePcsc, ReportsStorageNdefPayloadCapacityNotRawDataArea) {
 TEST(UserspacePcsc, BuildsType4SelectApduWithLeZero) {
   std::vector<std::uint8_t> capdu;
   std::string err;
-  const std::vector<std::uint8_t> kAid = {0xD2u, 0x76u, 0x00u, 0x00u,
-                                          0x85u, 0x01u, 0x01u};
+  const std::vector<std::uint8_t> aid = {0xD2u, 0x76u, 0x00u, 0x00u,
+                                         0x85u, 0x01u, 0x01u};
 
   ASSERT_TRUE(
-      nero_nfc::NeroNfcUtestBuildSelectApdu(0x04u, 0x00u, kAid, capdu, err))
+      nero_nfc::NeroNfcUtestBuildSelectApdu(0x04u, 0x00u, aid, capdu, err))
       << err;
 
-  const std::vector<std::uint8_t> kExpected = {
-      0x00u, 0xA4u, 0x04u, 0x00u, 0x07u, 0xD2u, 0x76u,
-      0x00u, 0x00u, 0x85u, 0x01u, 0x01u, 0x00u};
-  EXPECT_EQ(capdu, kExpected);
+  const std::vector<std::uint8_t> expected = {0x00u, 0xA4u, 0x04u, 0x00u, 0x07u,
+                                              0xD2u, 0x76u, 0x00u, 0x00u, 0x85u,
+                                              0x01u, 0x01u, 0x00u};
+  EXPECT_EQ(capdu, expected);
 }
 
 TEST(UserspacePcsc, RejectsOversizedSelectApduData) {
   std::vector<std::uint8_t> capdu;
   std::string err;
-  std::vector<std::uint8_t> oversized(kTestLit256u, kTestLit0xAAu);
+  std::vector<std::uint8_t> const oversized(kTestLit256u, kTestLit0xAAu);
 
   EXPECT_FALSE(nero_nfc::NeroNfcUtestBuildSelectApdu(0x04u, 0x00u, oversized,
                                                      capdu, err));
@@ -356,13 +356,13 @@ TEST(UserspacePcsc, BoundsType4NdefForShortBinaryAddressing) {
 
 TEST(UserspacePcsc, CapsType2StorageNdefScanUnitsForLargeTags) {
   constexpr std::uint16_t kNtag216DataArea = 1016u;
-  const auto kUncappedUnits =
+  const auto uncapped_units =
       static_cast<std::uint16_t>((4u + kNtag216DataArea + 3u) / 4u);
-  const std::uint16_t kCappedUnits =
+  const std::uint16_t capped_units =
       nero_nfc::NeroNfcUtestStorageType2ReadUnitLimit(3u, 4u, 4u,
                                                       kNtag216DataArea);
-  EXPECT_LT(kCappedUnits, kUncappedUnits);
-  EXPECT_EQ(kCappedUnits, 223u);
+  EXPECT_LT(capped_units, uncapped_units);
+  EXPECT_EQ(capped_units, 223u);
 }
 
 TEST(UserspacePcsc, CapsType2BulkReadToDeclaredDataArea) {
@@ -375,42 +375,42 @@ TEST(UserspacePcsc, CapsType2BulkReadToDeclaredDataArea) {
 
 TEST(UserspacePcsc, ScansExtendedType5StorageNdefArea) {
   constexpr std::uint16_t kLargeDataArea = 2048u;
-  const auto kUncappedBlocks =
+  const auto uncapped_blocks =
       static_cast<std::uint16_t>((8u + kLargeDataArea + 3u) / 4u);
-  const std::uint16_t kBlocks =
+  const std::uint16_t blocks =
       nero_nfc::NeroNfcUtestStorageType5ReadBlockLimit(8u, kLargeDataArea);
-  EXPECT_EQ(kBlocks, kUncappedBlocks);
+  EXPECT_EQ(blocks, uncapped_blocks);
 }
 
 TEST(UserspacePcsc, Type5TransparentFallbackBuildsExtendedBlockCommands) {
-  const std::vector<std::uint8_t> kUidLsb = {0x01u, 0x02u, 0x03u, 0x04u,
+  const std::vector<std::uint8_t> uid_lsb = {0x01u, 0x02u, 0x03u, 0x04u,
                                              0x05u, 0x06u, 0x07u, 0x08u};
 
-  EXPECT_EQ(nero_nfc::NeroNfcUtestType5TransparentBlockCommand(false, kUidLsb,
+  EXPECT_EQ(nero_nfc::NeroNfcUtestType5TransparentBlockCommand(false, uid_lsb,
                                                                0x00FFu),
             (std::vector<std::uint8_t>{0x22u, 0x20u, 0x01u, 0x02u, 0x03u, 0x04u,
                                        0x05u, 0x06u, 0x07u, 0x08u, 0xFFu}));
   EXPECT_EQ(
-      nero_nfc::NeroNfcUtestType5TransparentBlockCommand(false, kUidLsb,
+      nero_nfc::NeroNfcUtestType5TransparentBlockCommand(false, uid_lsb,
                                                          0x0100u),
       (std::vector<std::uint8_t>{0x2Au, 0x30u, 0x01u, 0x02u, 0x03u, 0x04u,
                                  0x05u, 0x06u, 0x07u, 0x08u, 0x00u, 0x01u}));
   EXPECT_EQ(
-      nero_nfc::NeroNfcUtestType5TransparentBlockCommand(true, kUidLsb,
+      nero_nfc::NeroNfcUtestType5TransparentBlockCommand(true, uid_lsb,
                                                          0x0100u),
       (std::vector<std::uint8_t>{0x2Au, 0x31u, 0x01u, 0x02u, 0x03u, 0x04u,
                                  0x05u, 0x06u, 0x07u, 0x08u, 0x00u, 0x01u}));
   EXPECT_EQ(
-      nero_nfc::NeroNfcUtestType5TransparentReadMultipleCommand(kUidLsb,
+      nero_nfc::NeroNfcUtestType5TransparentReadMultipleCommand(uid_lsb,
                                                                 0x0004u, 3u),
       (std::vector<std::uint8_t>{0x22u, 0x23u, 0x01u, 0x02u, 0x03u, 0x04u,
                                  0x05u, 0x06u, 0x07u, 0x08u, 0x04u, 0x02u}));
   EXPECT_EQ(nero_nfc::NeroNfcUtestType5TransparentReadMultipleCommand(
-                kUidLsb, 0x0100u, 3u),
+                uid_lsb, 0x0100u, 3u),
             (std::vector<std::uint8_t>{0x2Au, 0x33u, 0x01u, 0x02u, 0x03u, 0x04u,
                                        0x05u, 0x06u, 0x07u, 0x08u, 0x00u, 0x01u,
                                        0x02u, 0x00u}));
-  EXPECT_EQ(nero_nfc::NeroNfcUtestType5TransparentSystemInfoExtCommand(kUidLsb),
+  EXPECT_EQ(nero_nfc::NeroNfcUtestType5TransparentSystemInfoExtCommand(uid_lsb),
             (std::vector<std::uint8_t>{0x2Au, 0x3Bu, 0x0Fu, 0x01u, 0x02u, 0x03u,
                                        0x04u, 0x05u, 0x06u, 0x07u, 0x08u}));
 }
@@ -424,7 +424,7 @@ class UserspacePcscReaderTest : public ::testing::Test {
 
 TEST_F(UserspacePcscReaderTest,
        ResolvePcscReaderUsesOnlyReaderWhenNeedleEmpty) {
-  std::vector<std::string> readers = {
+  std::vector<std::string> const readers = {
       "HID Global OMNIKEY 5422 Smartcard Reader 00 00"};
   nero_nfc::NeroNfcUtestSetListPcscReadersOverride(&readers);
 
@@ -435,7 +435,7 @@ TEST_F(UserspacePcscReaderTest,
 }
 
 TEST_F(UserspacePcscReaderTest, ResolvePcscReaderAutoSelectsUniqueNeroReader) {
-  std::vector<std::string> readers = {
+  std::vector<std::string> const readers = {
       "ACS ACR1252 Dual Reader SAM 01 00",
       "Nero NFC Arduino UNO R4 WiFi CCID 00 00"};
   nero_nfc::NeroNfcUtestSetListPcscReadersOverride(&readers);
@@ -448,7 +448,7 @@ TEST_F(UserspacePcscReaderTest, ResolvePcscReaderAutoSelectsUniqueNeroReader) {
 
 TEST_F(UserspacePcscReaderTest,
        ResolvePcscReaderKeepsMultipleSelectableReadersAmbiguous) {
-  std::vector<std::string> readers = {
+  std::vector<std::string> const readers = {
       "HID Global OMNIKEY 5422 Smartcard Reader 00 00",
       "Nero NFC Arduino UNO R4 WiFi CCID 00 00"};
   nero_nfc::NeroNfcUtestSetListPcscReadersOverride(&readers);
@@ -464,7 +464,7 @@ TEST_F(UserspacePcscReaderTest,
 }
 
 TEST_F(UserspacePcscReaderTest, ResolvePcscReaderRejectsAmbiguousDefault) {
-  std::vector<std::string> readers = {
+  std::vector<std::string> const readers = {
       "HID Global OMNIKEY 5422 Smartcard Reader 00 00",
       "Yubico YubiKey OTP+FIDO+CCID 00 00"};
   nero_nfc::NeroNfcUtestSetListPcscReadersOverride(&readers);
@@ -492,8 +492,8 @@ TEST_F(UserspacePcscReaderTest,
 
 TEST_F(UserspacePcscReaderTest,
        ResolvePcscReaderPrefersExactMatchOverSubstringAmbiguity) {
-  std::vector<std::string> readers = {"Nero NFC CCID 00 00",
-                                      "Nero NFC CCID 01 00"};
+  std::vector<std::string> const readers = {"Nero NFC CCID 00 00",
+                                            "Nero NFC CCID 01 00"};
   nero_nfc::NeroNfcUtestSetListPcscReadersOverride(&readers);
 
   std::string reader;
@@ -503,8 +503,8 @@ TEST_F(UserspacePcscReaderTest,
 }
 
 TEST_F(UserspacePcscReaderTest, ResolvePcscReaderRejectsAmbiguousSubstring) {
-  std::vector<std::string> readers = {"Nero NFC CCID 00 00",
-                                      "Nero NFC CCID 01 00"};
+  std::vector<std::string> const readers = {"Nero NFC CCID 00 00",
+                                            "Nero NFC CCID 01 00"};
   nero_nfc::NeroNfcUtestSetListPcscReadersOverride(&readers);
 
   std::string reader;
@@ -516,7 +516,7 @@ TEST_F(UserspacePcscReaderTest, ResolvePcscReaderRejectsAmbiguousSubstring) {
 }
 
 TEST_F(UserspacePcscReaderTest, ResolvePcscReaderFailsWhenNoMatch) {
-  std::vector<std::string> readers = {"Nero NFC CCID 00 00"};
+  std::vector<std::string> const readers = {"Nero NFC CCID 00 00"};
   nero_nfc::NeroNfcUtestSetListPcscReadersOverride(&readers);
 
   std::string reader;

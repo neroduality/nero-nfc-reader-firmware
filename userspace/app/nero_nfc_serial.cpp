@@ -76,7 +76,7 @@ int SerialOpen(const std::string& path) {
       path.find('\0') != std::string::npos) {
     return -1;
   }
-  int fd = open(path.c_str(), O_RDWR | O_NOCTTY | O_NONBLOCK | O_CLOEXEC);
+  int const fd = open(path.c_str(), O_RDWR | O_NOCTTY | O_NONBLOCK | O_CLOEXEC);
   if (fd < 0) {
     return -1;
   }

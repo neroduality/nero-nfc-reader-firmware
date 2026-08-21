@@ -90,8 +90,8 @@ bool reader_security_key_ccid_open_iso_session(void) {
     }
     /* Cold ICC_ON sessions on some contactless authenticators are noticeably
      * less stable than the immediate reopen that follows a failed first APDU.
-     * Preemptively do one DESELECT→WUPA→RATS recovery here so the host gets the
-     * stronger second-session behavior on its very first FIDO SELECT. */
+     * Preemptively do one DESELECT->WUPA->RATS recovery here so the host gets
+     * the stronger second-session behavior on its very first FIDO SELECT. */
     if (!reader_security_key_iso_dep_recover_session()) {
       return false;
     }
@@ -125,7 +125,7 @@ static bool relay_select_with_recovery(const uint8_t* apdu, uint16_t apdu_len,
   *rsp_len_out = 0u;
 
   reader_security_key_iso_dep_pre_first_iblock_delay();
-  /* [CTAP2.3] section 11.3.7.2 — host relays GETRESPONSE; do not merge SW61xx
+  /* [CTAP2.3] section 11.3.7.2 -- host relays GETRESPONSE; do not merge SW61xx
    * here. */
   total = reader_security_key_send_apdu_timeout_ex(
       apdu, apdu_len, rsp, rsp_cap, SECURITY_KEY_SHORT_FRAME_MS, false);
@@ -205,7 +205,7 @@ uint16_t reader_security_key_apdu_exchange(const uint8_t* apdu,
                     SECURITY_KEY_SHORT_FRAME_MS)
               : READER_SECURITY_KEY_RELAY_EXCHANGE_TIMEOUT_MS;
   reader_security_key_iso_dep_set_last_error(0u);
-  /* Transparent APDU relay — host owns GET RESPONSE / NFCCTAP_GETRESPONSE
+  /* Transparent APDU relay -- host owns GET RESPONSE / NFCCTAP_GETRESPONSE
    * polling. */
   total = reader_security_key_send_apdu_timeout_ex(apdu, apdu_len, rsp, rsp_cap,
                                                    exchange_timeout_ms, false);
@@ -222,7 +222,7 @@ uint16_t reader_security_key_apdu_exchange(const uint8_t* apdu,
       }
     }
   }
-  /* [CTAP2.3] §11.3.5.2 — relay the token's response (including its ISO7816
+  /* [CTAP2.3] §11.3.5.2 -- relay the token's response (including its ISO7816
    * status word) verbatim; never synthesize or rewrite a status word. Fail
    * closed with a clean ISO7816 error only when the token response is malformed
    * or carries a contradictory/error status word. 61xx/91xx are forwarded so

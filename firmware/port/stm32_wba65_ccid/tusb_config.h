@@ -67,7 +67,7 @@ extern "C" {
 #define CFG_TUD_ENDPOINT0_SIZE 64
 #endif
 
-/* No built-in TinyUSB classes — CCID uses usbd_app_driver_get_cb(). */
+/* No built-in TinyUSB classes -- CCID uses usbd_app_driver_get_cb(). */
 #define CFG_TUD_CDC 0
 #define CFG_TUD_MSC 0
 #define CFG_TUD_HID 0

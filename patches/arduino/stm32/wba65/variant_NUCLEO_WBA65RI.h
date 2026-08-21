@@ -29,7 +29,7 @@
 #pragma once
 
 /*----------------------------------------------------------------------------
- *        STM32 pins number — NUCLEO-WBA65RI Arduino Uno V3 (UM3610)
+ *        STM32 pins number -- NUCLEO-WBA65RI Arduino Uno V3 (UM3610)
  *----------------------------------------------------------------------------*/
 #define PA11                    0
 #define PA12                    1

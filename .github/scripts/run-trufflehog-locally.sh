@@ -84,7 +84,7 @@ if ((${#hog_cmd[@]} == 0)); then
 fi
 
 printf '\n── TruffleHog (%s) ──\n' "${TRUFFLEHOG_IMAGE}"
-printf 'Repo mount: %s → /repo\n\n' "${REPO_ROOT}"
+printf 'Repo mount: %s -> /repo\n\n' "${REPO_ROOT}"
 
 exec "${ENGINE}" run --rm \
   "${PLATFORM_ARGS[@]}" \

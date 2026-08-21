@@ -15,7 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Emit GCC -isystem flags for vendor trees (GCC "system headers" — see gcc Directory Options).
+# Emit GCC -isystem flags for vendor trees (GCC "system headers" -- see gcc Directory Options).
 #
 # Used with Makefile / ci-lint strict Arduino builds (SUPPRESS_ARDUINO_3P_WARNINGS=0,
 # --warnings all, full -W* in compiler.*.extra_flags).
@@ -33,7 +33,7 @@ PROFILE is uno (default) or wba65.
 
 Includes repo third-party/ library trees and installed Board Manager cores under
 the isolated arduino-user data directory (see make/resolve-arduino-user-dir.sh).
-ST25R3916 and NFC-RFAL stay -I on UNO — see ci-lint.sh arduino_vendor_st25_rfal_inc.
+ST25R3916 and NFC-RFAL stay -I on UNO -- see ci-lint.sh arduino_vendor_st25_rfal_inc.
 EOF
   exit 0
 fi

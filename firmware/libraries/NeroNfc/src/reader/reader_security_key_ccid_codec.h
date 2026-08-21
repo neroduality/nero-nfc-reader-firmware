@@ -20,6 +20,7 @@
 #include "nfc_pcsc_contactless.h"
 #include "nero_nfc_mem_util.h"
 #include "nero_nfc_attrs.h"
+#include "reader_iso_dep_ats.h"
 #include "reader_iso_dep_frame.h"
 
 #include <stdbool.h>
@@ -27,6 +28,7 @@
 
 enum {
   READER_SECURITY_KEY_ATR_TD1_OFFSET = 2u,
+  READER_SECURITY_KEY_ATR_TD2_OFFSET = 3u,
   READER_SECURITY_KEY_CTAP_MAKE_CREDENTIAL = NFC_CTAP_CMD_MAKE_CREDENTIAL,
   READER_SECURITY_KEY_CTAP_GET_ASSERTION = NFC_CTAP_CMD_GET_ASSERTION,
   READER_SECURITY_KEY_CTAP_CLIENT_PIN = NFC_CTAP_CMD_CLIENT_PIN,
@@ -44,16 +46,27 @@ static inline uint16_t reader_security_key_ctap_timeout_for_command(
 NERO_NFC_NODISCARD static inline bool reader_security_key_copy_ats_as_pcsc_atr(
     const uint8_t* ats, uint16_t ats_len, uint8_t* dst, uint16_t dst_cap,
     uint16_t* alen_io) {
-  uint16_t hist_len;
+  reader_iso_dep_ats_profile_t ats_profile;
+  const uint8_t* hist = NERO_NFC_NULL;
+  uint16_t hist_len = 0u;
   uint16_t i;
   uint8_t tck;
 
   if ((ats == NERO_NFC_NULL) || (dst == NERO_NFC_NULL) ||
-      (alen_io == NERO_NFC_NULL) || (ats_len == 0u)) {
+      (alen_io == NERO_NFC_NULL) || (ats_len == 0u) ||
+      (ats_len > (uint16_t)(NFC_ISO7816_BYTE_MASK))) {
     return false;
   }
 
-  hist_len = ats_len;
+  /* [PCSC-P3] Part 3 §3.1.3.2.3.1 -- the ATR for an ISO14443-4 card is
+   * 3B 8N 80 01 [T1..Tk] TCK, where T1..Tk are the ATS *historical bytes*
+   * only (not the full ATS). A parse failure yields an empty historical
+   * field, which is still a valid PC/SC contactless ATR (3B 80 80 01 TCK). */
+  if (reader_iso_dep_parse_ats_profile(ats, (uint8_t)(ats_len), &ats_profile) &&
+      (ats_profile.historical_len != 0u)) {
+    hist = &ats[ats_profile.historical_offset];
+    hist_len = ats_profile.historical_len;
+  }
   if (hist_len > NFC_ISO7816_HISTORICAL_BYTES_MAX) {
     hist_len = NFC_ISO7816_HISTORICAL_BYTES_MAX; /* [ISO7816-3] section 8.2
                                                     historical bytes cap */
@@ -62,14 +75,20 @@ NERO_NFC_NODISCARD static inline bool reader_security_key_copy_ats_as_pcsc_atr(
     return false;
   }
 
-  /* TS — direct convention; T0 — historical byte count; TD1 — T=1. */
+  /* TS -- direct convention; T0 -- TD1 present + historical byte count;
+   * TD1 -- TD2 present; TD2 -- T=1. */
   if (!nero_nfc_store_u8(dst, dst_cap, 0u, NFC_ISO7816_ATR_TS) ||
       !nero_nfc_store_u8(
           dst, dst_cap, 1u,
           (uint8_t)(NFC_ISO7816_ATR_T0_TD1_PRESENT | hist_len)) ||
       !nero_nfc_store_u8(dst, dst_cap, READER_SECURITY_KEY_ATR_TD1_OFFSET,
-                         NFC_ISO7816_ATR_TD1_T1) ||
-      !nero_nfc_copy_bytes(dst, dst_cap, NFC_ISO7816_ATR_FIXED_PREFIX_LEN, ats,
+                         NFC_ISO7816_ATR_TD1_TD2_PRESENT) ||
+      !nero_nfc_store_u8(dst, dst_cap, READER_SECURITY_KEY_ATR_TD2_OFFSET,
+                         NFC_ISO7816_ATR_TD2_T1)) {
+    return false;
+  }
+  if ((hist_len != 0u) &&
+      !nero_nfc_copy_bytes(dst, dst_cap, NFC_ISO7816_ATR_FIXED_PREFIX_LEN, hist,
                            hist_len)) {
     return false;
   }

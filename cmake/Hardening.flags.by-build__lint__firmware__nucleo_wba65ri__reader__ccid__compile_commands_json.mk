@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# Generated from kit openssf-hardening-manifest + dials for build/lint/firmware/nucleo_wba65ri/reader/ccid/compile_commands.json — do not hand-edit.
+# Generated from kit openssf-hardening-manifest + dials for build/lint/firmware/nucleo_wba65ri/reader/ccid/compile_commands.json -- do not hand-edit.
 # Arduino / Make consumers: include this file and append to build.extra_flags
 # (or equivalent), e.g. NFC_BUILD_EXTRA_FLAGS += $(NERO_OPENSSF_CFLAGS)
 #

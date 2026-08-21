@@ -163,52 +163,52 @@ TEST(NfcPcscContactless, Type4ApduChunkCapsAreConsistent) {
 }
 
 TEST(NfcPcscContactless, Iso7816ResponseSwOk) {
-  const uint8_t kOk[] = {0x00u, static_cast<uint8_t>(NFC_ISO7816_SW1_SUCCESS),
-                         static_cast<uint8_t>(NFC_ISO7816_SW2_SUCCESS)};
-  const uint8_t kBad[] = {0x00u, 0x63u, 0x00u};
-  const uint8_t kWrongLen[] = {
+  const uint8_t ok[] = {0x00u, static_cast<uint8_t>(NFC_ISO7816_SW1_SUCCESS),
+                        static_cast<uint8_t>(NFC_ISO7816_SW2_SUCCESS)};
+  const uint8_t bad[] = {0x00u, 0x63u, 0x00u};
+  const uint8_t wrong_len[] = {
       0x00u, static_cast<uint8_t>(NFC_ISO7816_SW1_WRONG_LENGTH), 0x0Fu};
-  const uint8_t kMore[] = {
+  const uint8_t more[] = {
       0x00u, static_cast<uint8_t>(NFC_ISO7816_SW1_MORE_DATA), 0x05u};
   uint8_t sw1 = 0u;
   uint8_t sw2 = 0u;
   uint8_t le = 0u;
 
-  EXPECT_TRUE(nfc_iso7816_response_sw_ok(&kOk[0], 3));
-  EXPECT_FALSE(nfc_iso7816_response_sw_ok(&kBad[0], 3));
+  EXPECT_TRUE(nfc_iso7816_response_sw_ok(&ok[0], 3));
+  EXPECT_FALSE(nfc_iso7816_response_sw_ok(&bad[0], 3));
   EXPECT_FALSE(nfc_iso7816_response_sw_ok(NERO_NFC_NULL, 2));
 
-  ASSERT_TRUE(nfc_iso7816_response_sw(&kOk[0], 3, &sw1, &sw2));
+  ASSERT_TRUE(nfc_iso7816_response_sw(&ok[0], 3, &sw1, &sw2));
   EXPECT_EQ(sw1, (uint8_t)NFC_ISO7816_SW1_SUCCESS);
   EXPECT_EQ(sw2, (uint8_t)NFC_ISO7816_SW2_SUCCESS);
 
-  ASSERT_TRUE(nfc_iso7816_response_wrong_length(&kWrongLen[0], 3, &le));
+  ASSERT_TRUE(nfc_iso7816_response_wrong_length(&wrong_len[0], 3, &le));
   EXPECT_EQ(le, 0x0Fu);
-  EXPECT_FALSE(nfc_iso7816_response_wrong_length(&kOk[0], 3, NERO_NFC_NULL));
+  EXPECT_FALSE(nfc_iso7816_response_wrong_length(&ok[0], 3, NERO_NFC_NULL));
 
-  ASSERT_TRUE(nfc_iso7816_response_more_data(&kMore[0], 3, &le));
+  ASSERT_TRUE(nfc_iso7816_response_more_data(&more[0], 3, &le));
   EXPECT_EQ(le, 0x05u);
-  EXPECT_FALSE(nfc_iso7816_response_more_data(&kOk[0], 3, NERO_NFC_NULL));
+  EXPECT_FALSE(nfc_iso7816_response_more_data(&ok[0], 3, NERO_NFC_NULL));
 }
 
 TEST(NfcPcscContactless, ClearsOutputsOnRejectedIso7816Responses) {
-  const uint8_t kOk[] = {0x00u, static_cast<uint8_t>(NFC_ISO7816_SW1_SUCCESS),
-                         static_cast<uint8_t>(NFC_ISO7816_SW2_SUCCESS)};
+  const uint8_t ok[] = {0x00u, static_cast<uint8_t>(NFC_ISO7816_SW1_SUCCESS),
+                        static_cast<uint8_t>(NFC_ISO7816_SW2_SUCCESS)};
   uint8_t sw1 = kTestLit0xA5u;
   uint8_t sw2 = kTestLit0xA5u;
   uint8_t le = kTestLit0xA5u;
   uint16_t rsp_len = kTestLit0xBeeFu;
   uint8_t rsp[1]{};
 
-  EXPECT_FALSE(nfc_iso7816_response_sw(&kOk[0], 1, &sw1, &sw2));
+  EXPECT_FALSE(nfc_iso7816_response_sw(&ok[0], 1, &sw1, &sw2));
   EXPECT_EQ(sw1, 0u);
   EXPECT_EQ(sw2, 0u);
 
-  EXPECT_FALSE(nfc_iso7816_response_wrong_length(&kOk[0], sizeof(kOk), &le));
+  EXPECT_FALSE(nfc_iso7816_response_wrong_length(&ok[0], sizeof(ok), &le));
   EXPECT_EQ(le, 0u);
 
   le = kTestLit0xA5u;
-  EXPECT_FALSE(nfc_iso7816_response_more_data(&kOk[0], sizeof(kOk), &le));
+  EXPECT_FALSE(nfc_iso7816_response_more_data(&ok[0], sizeof(ok), &le));
   EXPECT_EQ(le, 0u);
 
   EXPECT_FALSE(nfc_iso7816_append_sw(&rsp[0], sizeof(rsp), sizeof(rsp), 0x90u,
@@ -217,10 +217,10 @@ TEST(NfcPcscContactless, ClearsOutputsOnRejectedIso7816Responses) {
 }
 
 TEST(NfcPcscContactless, Iso7816ApduHelpers) {
-  const uint8_t kReadApdu[] = {0x00u, 0xB0u, 0x01u, 0x02u, 0x0Fu};
-  const uint8_t kUpdateApdu[] = {0x00u, 0xD6u, 0x00u, 0x00u,
+  const uint8_t read_apdu[] = {0x00u, 0xB0u, 0x01u, 0x02u, 0x0Fu};
+  const uint8_t update_apdu[] = {0x00u, 0xD6u, 0x00u, 0x00u,
                                  0x02u, 0xAAu, 0xBBu};
-  const uint8_t kSelectApdu[] = {0x00u, 0xA4u, 0x04u, 0x00u,
+  const uint8_t select_apdu[] = {0x00u, 0xA4u, 0x04u, 0x00u,
                                  0x02u, 0xE1u, 0x03u, 0x00u};
   uint16_t offset = 0u;
   uint8_t le = 0u;
@@ -232,24 +232,24 @@ TEST(NfcPcscContactless, Iso7816ApduHelpers) {
   EXPECT_TRUE(nfc_iso7816_apdu_min_len(5u, 5u));
   EXPECT_FALSE(nfc_iso7816_apdu_min_len(4u, 5u));
 
-  ASSERT_TRUE(nfc_iso7816_apdu_read_binary(&kReadApdu[0], sizeof(kReadApdu),
+  ASSERT_TRUE(nfc_iso7816_apdu_read_binary(&read_apdu[0], sizeof(read_apdu),
                                            &offset, &le));
   EXPECT_EQ(offset, 0x0102u);
   EXPECT_EQ(le, 0x0Fu);
 
   ASSERT_TRUE(nfc_iso7816_apdu_update_binary(
-      &kUpdateApdu[0], sizeof(kUpdateApdu), &offset, &lc, &data));
+      &update_apdu[0], sizeof(update_apdu), &offset, &lc, &data));
   EXPECT_EQ(offset, 0u);
   EXPECT_EQ(lc, 2u);
   ASSERT_NE(data, NERO_NFC_NULL);
   EXPECT_EQ(nero_nfc_u8_at(data, lc, 0u), 0xAAu);
   EXPECT_EQ(nero_nfc_u8_at(data, lc, 1u), 0xBBu);
 
-  ASSERT_TRUE(nfc_iso7816_apdu_lc(&kSelectApdu[0], sizeof(kSelectApdu), &lc));
+  ASSERT_TRUE(nfc_iso7816_apdu_lc(&select_apdu[0], sizeof(select_apdu), &lc));
   EXPECT_EQ(lc, 2u);
-  EXPECT_TRUE(nfc_iso7816_apdu_lc_body_ok(sizeof(kUpdateApdu), 2u));
-  EXPECT_TRUE(nfc_iso7816_apdu_lc_body_with_le_ok(sizeof(kSelectApdu), lc));
-  data = nfc_iso7816_apdu_data_ptr(&kSelectApdu[0], sizeof(kSelectApdu), lc);
+  EXPECT_TRUE(nfc_iso7816_apdu_lc_body_ok(sizeof(update_apdu), 2u));
+  EXPECT_TRUE(nfc_iso7816_apdu_lc_body_with_le_ok(sizeof(select_apdu), lc));
+  data = nfc_iso7816_apdu_data_ptr(&select_apdu[0], sizeof(select_apdu), lc);
   ASSERT_NE(data, NERO_NFC_NULL);
   EXPECT_EQ(nero_nfc_u8_at(data, lc, 0u), 0xE1u);
 
@@ -261,25 +261,25 @@ TEST(NfcPcscContactless, Iso7816ApduHelpers) {
 }
 
 TEST(NfcPcscContactless, ClearsOutputsOnRejectedIso7816Apdus) {
-  const uint8_t kShortApdu[] = {0x00u, 0xB0u, 0x01u, 0x02u};
-  const uint8_t kUpdateBadLc[] = {0x00u, 0xD6u, 0x00u, 0x00u, 0x02u, 0xAAu};
+  const uint8_t short_apdu[] = {0x00u, 0xB0u, 0x01u, 0x02u};
+  const uint8_t update_bad_lc[] = {0x00u, 0xD6u, 0x00u, 0x00u, 0x02u, 0xAAu};
   uint16_t offset = kTestLit0xBeeFu;
   uint8_t le = kTestLit0xA5u;
   uint8_t lc = kTestLit0xA5u;
-  const uint8_t* data = &kShortApdu[0];
+  const uint8_t* data = &short_apdu[0];
   uint8_t apdu[kTestLit4]{};
   uint8_t apdu_len = kTestLit0xA5u;
 
-  EXPECT_FALSE(nfc_iso7816_apdu_lc(&kShortApdu[0], sizeof(kShortApdu), &lc));
+  EXPECT_FALSE(nfc_iso7816_apdu_lc(&short_apdu[0], sizeof(short_apdu), &lc));
   EXPECT_EQ(lc, 0u);
 
-  EXPECT_FALSE(nfc_iso7816_apdu_read_binary(&kShortApdu[0], sizeof(kShortApdu),
+  EXPECT_FALSE(nfc_iso7816_apdu_read_binary(&short_apdu[0], sizeof(short_apdu),
                                             &offset, &le));
   EXPECT_EQ(offset, 0u);
   EXPECT_EQ(le, 0u);
 
   EXPECT_FALSE(nfc_iso7816_apdu_update_binary(
-      &kUpdateBadLc[0], sizeof(kUpdateBadLc), &offset, &lc, &data));
+      &update_bad_lc[0], sizeof(update_bad_lc), &offset, &lc, &data));
   EXPECT_EQ(offset, 0u);
   EXPECT_EQ(lc, 0u);
   EXPECT_EQ(data, NERO_NFC_NULL);
@@ -299,9 +299,9 @@ TEST(NfcPcscContactless, RecognizesBothNdefApplicationAidVersions) {
                                    NFC_PCSC_NDEF_APP_AID_LEN));
   EXPECT_TRUE(nfc_pcsc_is_ndef_aid(&NFC_PCSC_NDEF_APP_AID_V0[0],
                                    NFC_PCSC_NDEF_APP_AID_LEN));
-  const uint8_t kOther[] = {0xA0u, 0x00u, 0x00u, 0x06u,
-                            0x47u, 0x2Fu, 0x00u, 0x01u};
-  EXPECT_FALSE(nfc_pcsc_is_ndef_aid(&kOther[0], sizeof(kOther)));
+  const uint8_t other[] = {0xA0u, 0x00u, 0x00u, 0x06u,
+                           0x47u, 0x2Fu, 0x00u, 0x01u};
+  EXPECT_FALSE(nfc_pcsc_is_ndef_aid(&other[0], sizeof(other)));
 }
 
 TEST(NfcPcscContactless, RejectsStorageAtrForType4Tag) {
@@ -346,8 +346,8 @@ TEST(NfcPcscContactless, Type2AndType5StorageCodesDiffer) {
 }
 
 TEST(NfcPcscContactless, AidMatchesRequiresExactLength) {
-  const uint8_t kShortAid[] = {0xD2u, 0x76u, 0x00u, 0x00u, 0x85u, 0x01u};
-  EXPECT_FALSE(nfc_pcsc_aid_matches(&kShortAid[0], sizeof(kShortAid),
+  const uint8_t short_aid[] = {0xD2u, 0x76u, 0x00u, 0x00u, 0x85u, 0x01u};
+  EXPECT_FALSE(nfc_pcsc_aid_matches(&short_aid[0], sizeof(short_aid),
                                     &NFC_PCSC_NDEF_APP_AID[0],
                                     NFC_PCSC_NDEF_APP_AID_LEN));
 }
@@ -392,29 +392,29 @@ TEST(NfcPcscContactless, NdefAppSelectVariantsCoverAidP2AndLeMatrix) {
 TEST(NfcPcscContactless, BuildsSelectAidApduWithOptionalLe) {
   uint8_t apdu[kTestLit16]{};
   uint16_t apdu_len = 0u;
-  const uint8_t kAid[] = {0xD2u, 0x76u, 0x00u, 0x00u, 0x85u, 0x01u, 0x01u};
-  const uint8_t kExpected[] = {0x00u, 0xA4u, 0x04u, 0x0Cu, 0x07u, 0xD2u, 0x76u,
-                               0x00u, 0x00u, 0x85u, 0x01u, 0x01u, 0x00u};
+  const uint8_t aid[] = {0xD2u, 0x76u, 0x00u, 0x00u, 0x85u, 0x01u, 0x01u};
+  const uint8_t expected[] = {0x00u, 0xA4u, 0x04u, 0x0Cu, 0x07u, 0xD2u, 0x76u,
+                              0x00u, 0x00u, 0x85u, 0x01u, 0x01u, 0x00u};
 
   ASSERT_TRUE(nfc_pcsc_build_select_aid_apdu(
-      &kAid[0], sizeof(kAid), 0x0Cu, true, &apdu[0], sizeof(apdu), &apdu_len));
-  EXPECT_EQ(apdu_len, sizeof(kExpected));
-  EXPECT_EQ(std::memcmp(&apdu[0], &kExpected[0], sizeof(kExpected)), 0);
+      &aid[0], sizeof(aid), 0x0Cu, true, &apdu[0], sizeof(apdu), &apdu_len));
+  EXPECT_EQ(apdu_len, sizeof(expected));
+  EXPECT_EQ(std::memcmp(&apdu[0], &expected[0], sizeof(expected)), 0);
   EXPECT_FALSE(nfc_pcsc_build_select_aid_apdu(
-      &kAid[0], (uint8_t)(NFC_ISO7816_SELECT_AID_MAX + 1u), 0x00u, false,
+      &aid[0], (uint8_t)(NFC_ISO7816_SELECT_AID_MAX + 1u), 0x00u, false,
       &apdu[0], sizeof(apdu), &apdu_len));
 }
 
 TEST(NfcPcscContactless, BuildsType4SelectFileApdu) {
   uint8_t apdu[NFC_PCSC_T4_SELECT_FILE_APDU_LEN]{};
   uint8_t apdu_len = 0u;
-  const uint8_t kExpected[] = {0x00u, 0xA4u, 0x00u, 0x0Cu, 0x02u, 0xE1u, 0x03u};
+  const uint8_t expected[] = {0x00u, 0xA4u, 0x00u, 0x0Cu, 0x02u, 0xE1u, 0x03u};
 
   ASSERT_TRUE(nfc_pcsc_build_t4_select_file_apdu(
       NFC_PCSC_T4_CC_FILE_ID, &apdu[0], sizeof(apdu), &apdu_len));
 
-  EXPECT_EQ(apdu_len, sizeof(kExpected));
-  EXPECT_EQ(std::memcmp(&apdu[0], &kExpected[0], sizeof(kExpected)), 0);
+  EXPECT_EQ(apdu_len, sizeof(expected));
+  EXPECT_EQ(std::memcmp(&apdu[0], &expected[0], sizeof(expected)), 0);
   EXPECT_FALSE(nfc_pcsc_build_t4_select_file_apdu(NFC_PCSC_T4_CC_FILE_ID,
                                                   &apdu[0], 6u, &apdu_len));
 }
@@ -422,13 +422,13 @@ TEST(NfcPcscContactless, BuildsType4SelectFileApdu) {
 TEST(NfcPcscContactless, BuildsType4ReadBinaryApdu) {
   uint8_t apdu[NFC_PCSC_T4_READ_BINARY_APDU_LEN]{};
   uint8_t apdu_len = 0u;
-  const uint8_t kExpected[] = {0x00u, 0xB0u, 0x01u, 0x02u, 0x0Fu};
+  const uint8_t expected[] = {0x00u, 0xB0u, 0x01u, 0x02u, 0x0Fu};
 
   ASSERT_TRUE(nfc_pcsc_build_t4_read_binary_apdu(
       0x0102u, NFC_PCSC_T4_CC_FILE_LEN, &apdu[0], sizeof(apdu), &apdu_len));
 
-  EXPECT_EQ(apdu_len, sizeof(kExpected));
-  EXPECT_EQ(std::memcmp(&apdu[0], &kExpected[0], sizeof(kExpected)), 0);
+  EXPECT_EQ(apdu_len, sizeof(expected));
+  EXPECT_EQ(std::memcmp(&apdu[0], &expected[0], sizeof(expected)), 0);
   EXPECT_FALSE(nfc_pcsc_build_t4_read_binary_apdu(0x0000u, NFC_PCSC_T4_NLEN_LEN,
                                                   &apdu[0], 4u, &apdu_len));
 }

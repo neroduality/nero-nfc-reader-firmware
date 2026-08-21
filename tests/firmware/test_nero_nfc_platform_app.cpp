@@ -40,19 +40,19 @@ constexpr uint32_t kRuntimeSpiClockHz = 2800000u;
 
 TEST(NeroNfcPlatformApp, RejectsInvalidOpsAndUsesAppOwnedHostFake) {
   nero_nfc_platform_host_fake_reset();
-  nero_nfc_platform_ops_t bad{};
+  nero_nfc_platform_ops_t const bad{};
   EXPECT_FALSE(nero_nfc_platform_ops_validate(&bad));
 
   nero_nfc_app_storage_t storage{};
   nero_nfc_board_config_t board{};
   nero_nfc_board_config_defaults(&board);
-  const nero_nfc_platform_ops_t kOps = nero_nfc_platform_host_fake_ops();
-  EXPECT_TRUE(nero_nfc_platform_ops_validate(&kOps));
-  nero_nfc_app_t* app =
-      nero_nfc_app_init(&storage, &kOps, &board, NERO_NFC_PRODUCT_READER);
+  const nero_nfc_platform_ops_t ops = nero_nfc_platform_host_fake_ops();
+  EXPECT_TRUE(nero_nfc_platform_ops_validate(&ops));
+  const nero_nfc_app_t* app =
+      nero_nfc_app_init(&storage, &ops, &board, NERO_NFC_PRODUCT_READER);
   ASSERT_NE(app, NERO_NFC_NULL);
   ASSERT_NE(nero_nfc_app_platform_ops(app), NERO_NFC_NULL);
-  EXPECT_EQ(nero_nfc_app_platform_ops(app)->context, kOps.context);
+  EXPECT_EQ(nero_nfc_app_platform_ops(app)->context, ops.context);
 
   nero_nfc_platform_host_fake_set_millis(kHostFakeMillis);
   EXPECT_EQ(nero_nfc_platform_millis(), kHostFakeMillis);
@@ -74,10 +74,10 @@ TEST(NeroNfcPlatformApp, CopiesRuntimeBoardConfigurationIntoApp) {
   board.serial_baud = kRuntimeBaud;
   board.spi_clock_hz = kRuntimeSpiClockHz;
   board.host_board_name[0] = 'X';
-  const nero_nfc_platform_ops_t kOps = nero_nfc_platform_host_fake_ops();
+  const nero_nfc_platform_ops_t ops = nero_nfc_platform_host_fake_ops();
 
-  nero_nfc_app_t* app =
-      nero_nfc_app_init(&storage, &kOps, &board, NERO_NFC_PRODUCT_READER);
+  const nero_nfc_app_t* app =
+      nero_nfc_app_init(&storage, &ops, &board, NERO_NFC_PRODUCT_READER);
   ASSERT_NE(app, NERO_NFC_NULL);
   board.cs_pin = 0u;
   board.serial_baud = 0u;
@@ -98,17 +98,17 @@ TEST(NeroNfcPlatformApp, SerialPushbackLivesInAppContext) {
   nero_nfc_app_storage_t storage{};
   nero_nfc_board_config_t board{};
   nero_nfc_board_config_defaults(&board);
-  const nero_nfc_platform_ops_t kOps = nero_nfc_platform_host_fake_ops();
+  const nero_nfc_platform_ops_t ops = nero_nfc_platform_host_fake_ops();
   nero_nfc_app_t* app =
-      nero_nfc_app_init(&storage, &kOps, &board, NERO_NFC_PRODUCT_COMBINED);
+      nero_nfc_app_init(&storage, &ops, &board, NERO_NFC_PRODUCT_COMBINED);
   ASSERT_NE(app, NERO_NFC_NULL);
-  nfc_frontend_t* frontend = nero_nfc_app_frontend(app);
+  nfc_frontend_t const* frontend = nero_nfc_app_frontend(app);
   ASSERT_NE(frontend, NERO_NFC_NULL);
   EXPECT_EQ(nero_nfc_app_reader(app)->frontend, frontend);
   EXPECT_EQ(nero_nfc_app_writer(app)->frontend, frontend);
 
-  const uint8_t kBytes[] = {0x41u, 0x42u, 0x43u};
-  nero_nfc_app_serial_pushback_return(app, &kBytes[0], kPushbackLen);
+  const uint8_t bytes[] = {0x41u, 0x42u, 0x43u};
+  nero_nfc_app_serial_pushback_return(app, &bytes[0], kPushbackLen);
   EXPECT_EQ(nero_nfc_app_serial_pushback_available(app),
             static_cast<int>(kPushbackLen));
   EXPECT_EQ(nero_nfc_app_serial_pushback_read(app), 0x41);
@@ -123,11 +123,11 @@ TEST(NeroNfcPlatformApp, QuiescesOnlyInitializedFrontendOnModeChange) {
   nero_nfc_app_storage_t storage{};
   nero_nfc_board_config_t board{};
   nero_nfc_board_config_defaults(&board);
-  const nero_nfc_platform_ops_t kOps = nero_nfc_platform_host_fake_ops();
+  const nero_nfc_platform_ops_t ops = nero_nfc_platform_host_fake_ops();
   nero_nfc_app_t* app =
-      nero_nfc_app_init(&storage, &kOps, &board, NERO_NFC_PRODUCT_COMBINED);
+      nero_nfc_app_init(&storage, &ops, &board, NERO_NFC_PRODUCT_COMBINED);
   ASSERT_NE(app, NERO_NFC_NULL);
-  nfc_frontend_t* frontend = nero_nfc_app_frontend(app);
+  nfc_frontend_t const* frontend = nero_nfc_app_frontend(app);
   ASSERT_NE(frontend, NERO_NFC_NULL);
   ASSERT_NE(frontend->ops, NERO_NFC_NULL);
   ASSERT_NE(frontend->state, NERO_NFC_NULL);
@@ -153,21 +153,21 @@ TEST(NeroNfcPlatformApp, RejectsSecondActiveInstance) {
   nero_nfc_app_storage_t second_storage{};
   nero_nfc_board_config_t board{};
   nero_nfc_board_config_defaults(&board);
-  const nero_nfc_platform_ops_t kOps = nero_nfc_platform_host_fake_ops();
+  const nero_nfc_platform_ops_t ops = nero_nfc_platform_host_fake_ops();
 
-  nero_nfc_app_t* first =
-      nero_nfc_app_init(&first_storage, &kOps, &board, NERO_NFC_PRODUCT_READER);
+  const nero_nfc_app_t* first =
+      nero_nfc_app_init(&first_storage, &ops, &board, NERO_NFC_PRODUCT_READER);
   ASSERT_NE(first, NERO_NFC_NULL);
-  EXPECT_EQ(nero_nfc_app_init(&second_storage, &kOps, &board,
-                              NERO_NFC_PRODUCT_READER),
-            NERO_NFC_NULL);
+  EXPECT_EQ(
+      nero_nfc_app_init(&second_storage, &ops, &board, NERO_NFC_PRODUCT_READER),
+      NERO_NFC_NULL);
   EXPECT_FALSE(nero_nfc_app_unbind_active(
       reinterpret_cast<nero_nfc_app_t*>(&second_storage)));
   EXPECT_EQ(nero_nfc_app_active(), first);
   EXPECT_TRUE(nero_nfc_app_unbind_active(first));
 
-  nero_nfc_app_t* second = nero_nfc_app_init(&second_storage, &kOps, &board,
-                                             NERO_NFC_PRODUCT_READER);
+  const nero_nfc_app_t* second =
+      nero_nfc_app_init(&second_storage, &ops, &board, NERO_NFC_PRODUCT_READER);
   ASSERT_NE(second, NERO_NFC_NULL);
   EXPECT_EQ(nero_nfc_app_active(), second);
   EXPECT_TRUE(nero_nfc_app_unbind_active(second));

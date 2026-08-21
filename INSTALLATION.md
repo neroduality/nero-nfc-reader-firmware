@@ -40,7 +40,7 @@ Plain `make` builds CCID firmware **and** userspace.
 
 ## Firmware: Serial reader/writer (CDC)
 
-Default `TARGET=arduino_uno_r4wifi`. Alternate: `# TARGET=nucleo_wba65ri …`.
+Default `TARGET=arduino_uno_r4wifi`. Alternate: `# TARGET=nucleo_wba65ri ...`.
 
 Simplest path for tag read/write over the serial shell.
 
@@ -57,7 +57,7 @@ sudo make install-udev
 
 ## Firmware: USB smart-card reader (CCID / PC/SC)
 
-Default `TARGET=arduino_uno_r4wifi`. Alternate: `# TARGET=nucleo_wba65ri …`.
+Default `TARGET=arduino_uno_r4wifi`. Alternate: `# TARGET=nucleo_wba65ri ...`.
 
 PC/SC CCID reader for tag tools over PC/SC and optional WebAuthn. Enable
 **`pcscd.socket`**, not `pcscd.service`.
@@ -100,7 +100,7 @@ See `make help` for command descriptions.
 
 Step-by-step walkthroughs after install:
 
-- [TUTORIAL_TAGS.md](docs/TUTORIAL_TAGS.md) — read and write NDEF on Type 2, Type 4, and
+- [TUTORIAL_TAGS.md](docs/TUTORIAL_TAGS.md) -- read and write NDEF on Type 2, Type 4, and
   Type 5 tags (serial or PC/SC)
-- [TUTORIAL_WEBAUTHN_CCID.md](docs/TUTORIAL_WEBAUTHN_CCID.md) — WebAuthn with CCID
+- [TUTORIAL_WEBAUTHN_CCID.md](docs/TUTORIAL_WEBAUTHN_CCID.md) -- WebAuthn with CCID
   firmware and NFC FIDO security keys/cards

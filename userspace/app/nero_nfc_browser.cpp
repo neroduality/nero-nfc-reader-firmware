@@ -59,15 +59,15 @@ bool UrlSafeForOpener(const std::string& url) {
   if (url.empty() || url.size() > kMaxUrlBytes) {
     return false;
   }
-  const bool kAllowedScheme =
+  const bool allowed_scheme =
       url.starts_with("http://") || url.starts_with("https://") ||
       url.starts_with("mailto:") || url.starts_with("sms:");
-  if (!kAllowedScheme) {
+  if (!allowed_scheme) {
     return false;
   }
   return std::ranges::all_of(url, [](char ch) {
-    const auto kC = static_cast<unsigned char>(ch);
-    return (kC >= kAsciiPrintableMin) && (kC != kAsciiDel);
+    const auto c = static_cast<unsigned char>(ch);
+    return (c >= kAsciiPrintableMin) && (c != kAsciiDel);
   });
 }
 
@@ -79,13 +79,13 @@ void ForkExecUrlOpener(const char* prog, const std::string& url) {
   /* Rebuild a scrubbed C string so execlp does not consume untrusted bytes. */
   char scrubbed[kMaxUrlBytes + 1u];
   auto scrub = AsSpan(scrubbed);
-  const size_t kN = url.size();
-  for (size_t i = 0u; i < kN; ++i) {
+  const size_t n = url.size();
+  for (size_t i = 0u; i < n; ++i) {
     At(scrubbed, i) = static_cast<char>(static_cast<unsigned char>(url[i]));
   }
-  At(scrubbed, kN) = '\0';
+  At(scrubbed, n) = '\0';
 
-  pid_t pid = fork();
+  pid_t const pid = fork();
   if (pid < 0) {
     nero_nfc::NeroNfcStderrLine("fork: {}", std::strerror(errno));
     return;

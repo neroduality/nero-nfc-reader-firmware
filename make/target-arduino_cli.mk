@@ -208,7 +208,7 @@ firmware-compile-db: third-party-host-tools third-party-nfc-libs $(BOARD_NFC_EXT
 	    --repo-root "$(CURDIR)" \
 	    --archive "$(TINYUSB_WBA65_ARCHIVE)" \
 	    --compile-db "$(FIRMWARE_COMPILE_DB_DIR)/compile_commands.json",true)
-	@echo "── firmware compile DB → $(FIRMWARE_COMPILE_DB_DIR)/compile_commands.json ──"
+	@echo "── firmware compile DB -> $(FIRMWARE_COMPILE_DB_DIR)/compile_commands.json ──"
 
 _do-flash-firmware:
 	@$(MAKE) firmware

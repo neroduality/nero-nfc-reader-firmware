@@ -73,14 +73,14 @@ void ApplyStorageAtrHint(PcscTagSnapshot& tag) {
       atr.size() < static_cast<std::size_t>(NFC_ISO7816_HISTORICAL_BYTES_MAX)) {
     return;
   }
-  /* [PCSC-P3] §3.1.3 / [ISO7816-3] §8 — validate the contactless storage ATR
+  /* [PCSC-P3] §3.1.3 / [ISO7816-3] §8 -- validate the contactless storage ATR
    * before trusting its contents: TS must be 0x3B (direct convention), and the
    * trailing TCK must make the XOR of T0..TCK zero. Fail closed (no hint) on a
    * malformed ATR rather than scanning arbitrary bytes for the RID. */
   if (atr[0] != static_cast<std::uint8_t>(NFC_ISO7816_ATR_TS)) {
     return;
   }
-  std::uint8_t tck =
+  std::uint8_t const tck =
       std::accumulate(atr.begin() + 1, atr.end(), static_cast<std::uint8_t>(0u),
                       [](std::uint8_t acc, std::uint8_t b) {
                         return static_cast<std::uint8_t>(acc ^ b);
@@ -92,8 +92,9 @@ void ApplyStorageAtrHint(PcscTagSnapshot& tag) {
   if (match.empty()) {
     return;
   }
-  std::size_t pos = static_cast<std::size_t>(match.begin() - atr.begin()) +
-                    NFC_PCSC_STORAGE_RID_LEN;
+  std::size_t const pos =
+      static_cast<std::size_t>(match.begin() - atr.begin()) +
+      NFC_PCSC_STORAGE_RID_LEN;
   if (pos + kStorageAtrSsAndNameLen >= atr.size()) {
     return;
   }
@@ -339,10 +340,10 @@ void ApplyType5Details(PcscTagSnapshot& tag,
                            static_cast<std::uint8_t>(cc.size()));
   }
   if (!system_info.empty()) {
-    const bool kExtendedSystemInfo =
+    const bool extended_system_info =
         system_info.size() > kType5StandardSystemInfoMaxLen &&
         nfc_tag_type5_cc_signals_mlen_overflow(&info);
-    if (kExtendedSystemInfo) {
+    if (extended_system_info) {
       nfc_tag_type5_apply_system_info_ext(
           &info, system_info.data(),
           static_cast<std::uint8_t>(system_info.size()));
@@ -397,9 +398,9 @@ void ApplyType5Details(PcscTagSnapshot& tag,
   }
   if (info.cc_valid) {
     {
-      const auto kCc = std::span{info.cc}.first(info.cc_len);
+      const auto cc_span = std::span{info.cc}.first(info.cc_len);
       AppendDetailLine(tag, "CC: " + HexBytes(std::vector<std::uint8_t>(
-                                         kCc.begin(), kCc.end())));
+                                         cc_span.begin(), cc_span.end())));
     }
     AppendDetailLine(tag, "Data format: NFC Forum Type 5 Tag / NDEF TLV");
 

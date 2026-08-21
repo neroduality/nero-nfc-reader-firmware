@@ -15,10 +15,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# install-pcsc-driver.sh — Register MCU board CCID VID:PID pairs with pcscd
+# install-pcsc-driver.sh -- Register MCU board CCID VID:PID pairs with pcscd
 # so pcsc_scan and SCard* APIs see the board as a reader.
 #
-# For commercial PC/SC readers (ACS, OMNIKEY, etc.) use upstream libccid instead —
+# For commercial PC/SC readers (ACS, OMNIKEY, etc.) use upstream libccid instead --
 # this script is only needed for MCU board VID:PID pairs not in libccid.
 #
 # Only the system ifd-ccid.bundle Info.plist is patched.  A standalone bundle
@@ -66,7 +66,7 @@ patch_system_bundle() {
   local entries_arg
   local rc
   if [[ ! -f $plist ]]; then
-    echo "  WARNING: system bundle plist not found at ${plist} — skipping." >&2
+    echo "  WARNING: system bundle plist not found at ${plist} -- skipping." >&2
     return
   fi
   # Back up before the first repo-managed modification.
@@ -117,10 +117,10 @@ for vid, pid, name in entries:
 if added:
     with open(plist_path, 'w') as f:
         f.write(content)
-    print(f"  Patched {plist_path} — added " + ", ".join(added))
+    print(f"  Patched {plist_path} -- added " + ", ".join(added))
     sys.exit(0)
 
-print("  System bundle already has MCU board CCID entries — skipping.")
+print("  System bundle already has MCU board CCID entries -- skipping.")
 sys.exit(10)
 PYEOF
   rc=$?
@@ -145,7 +145,7 @@ unpatch_system_bundle() {
     sed -i "/${MARKER}/d" "$plist"
     echo "  System bundle entries removed."
   else
-    echo "  System bundle was not patched — nothing to undo."
+    echo "  System bundle was not patched -- nothing to undo."
   fi
 }
 

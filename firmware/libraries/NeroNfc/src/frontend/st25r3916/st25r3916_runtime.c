@@ -379,8 +379,9 @@ int st25_runtime_transceive_common_diag(
   }
 
   if (poll_rx_until_event) {
-    uint32_t start = ops->millis();
-    while ((ops->millis() - start) <
+    const uint32_t start = ops->millis();
+    uint32_t elapsed_ms = 0u;
+    while (elapsed_ms <
            (uint32_t)(timeout_ms + K_ST25_TRANSCEIVE_TIMEOUT_SLACK_MS)) {
       all_irqs |= ops->read_irq_regs();
       if ((ops->irq_main(all_irqs) & IRQ_MAIN_RXE) != 0u) {
@@ -390,6 +391,7 @@ int st25_runtime_transceive_common_diag(
         break;
       }
       ops->delay_ms(1u);
+      elapsed_ms = st25_runtime_elapsed_ms(ops, start);
     }
   } else {
     ops->delay_ms((uint32_t)(timeout_ms) + K_ST25_TRANSCEIVE_DELAY_SLACK_MS);

@@ -21,7 +21,7 @@
 #include "nero_nfc_null.h"
 
 static const nero_nfc_platform_ops_t* active_ops(void) {
-  nero_nfc_app_t* app = nero_nfc_app_active();
+  const nero_nfc_app_t* app = nero_nfc_app_active();
   if (app == NERO_NFC_NULL) {
     return NERO_NFC_NULL;
   }

@@ -39,7 +39,7 @@ Run actionlint locally against this repository's GitHub workflow and action file
 Uses `actionlint` on PATH when available unless `--container` is set. Otherwise runs the
 official container image (Docker or Podman).
 
-Requires: actionlint — or docker/podman for `--container` / auto fallback.
+Requires: actionlint -- or docker/podman for `--container` / auto fallback.
 
 Usage:
   bash /path/to/repo/.github/scripts/run-actionlint-locally.sh [script-options] [actionlint-args...]

@@ -41,7 +41,7 @@ void reader_ccid_reply_slot_stat(uint8_t* buf10, uint8_t seq8, uint8_t icclvl,
 
 void reader_ccid_reply_data_block_error(uint8_t* buf10, uint8_t seq8,
                                         uint8_t icclvl, uint8_t err_code) {
-  /* [CCID1.10] Rev 1.10 section 6.2.1 — the response to PC_to_RDR_IccPowerOn
+  /* [CCID1.10] Rev 1.10 section 6.2.1 -- the response to PC_to_RDR_IccPowerOn
    * (and other DataBlock-bearing commands) is always RDR_to_PC_DataBlock, even
    * on failure: dwLength=0, bStatus carries bmCommandStatus=failed, bError is
    * set. */

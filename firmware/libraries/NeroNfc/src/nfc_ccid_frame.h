@@ -27,7 +27,7 @@
 extern "C" {
 #endif
 
-/* [CCID1.10] USB CCID Rev 1.10 — bulk header, extended APDU message ceiling,
+/* [CCID1.10] USB CCID Rev 1.10 -- bulk header, extended APDU message ceiling,
  * response chunking, control requests, slot status, and message type values. */
 enum {
   NFC_CCID_BULK_HEADER_LEN = 10u,

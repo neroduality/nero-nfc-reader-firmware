@@ -57,7 +57,7 @@ std::vector<std::string> SplitPipe(std::string_view value) {
   std::vector<std::string> parts;
   std::size_t start = 0;
   while (start <= value.size()) {
-    std::size_t pos = value.find('|', start);
+    std::size_t const pos = value.find('|', start);
     if (pos == std::string_view::npos) {
       parts.emplace_back(value.substr(start));
       break;
@@ -75,7 +75,7 @@ std::vector<std::uint8_t> BytesOf(std::string_view text) {
 bool ParseBtMac(std::string_view value,
                 std::span<std::uint8_t, kWriterBtMacOctetCount> mac) {
   std::string compact;
-  for (char c : value) {
+  for (char const c : value) {
     if (std::isxdigit(static_cast<unsigned char>(c)) != 0) {
       compact.push_back(c);
     } else if (c != ':' && c != '-' &&
@@ -93,7 +93,7 @@ bool ParseBtMac(std::string_view value,
     return false;
   }
   for (std::size_t i = 0; i < parsed.size(); ++i) {
-    mac[i] = parsed[i];  // span subscript — not C-array pro-bounds
+    mac[i] = parsed[i];  // span subscript -- not C-array pro-bounds
   }
   return true;
 }
@@ -114,7 +114,7 @@ void WpsPutAttr(std::vector<std::uint8_t>& out, std::uint16_t attr,
 std::string WriterUrlComponentEncode(std::string_view text) {
   static constexpr char kHex[] = "0123456789ABCDEF";
   std::string out;
-  for (char raw : text) {
+  for (char const raw : text) {
     auto c = static_cast<unsigned char>(raw);
     /* [RFC3986] §2.3 unreserved set is emitted verbatim; everything else
      * (including space) is percent-encoded. Space is %20, not '+' ('+' is only
@@ -138,13 +138,13 @@ std::vector<std::uint8_t> BuildWriterVcardRecord(std::string_view spec) {
   /* [RFC6350] vCard property values are line-folded text; reject embedded
    * control characters (notably CR/LF) so a field value cannot inject extra
    * properties. */
-  const auto kHasControlChar = [](std::string_view value) {
+  const auto has_control_char = [](std::string_view value) {
     return std::ranges::any_of(value, [](char raw) {
       return static_cast<unsigned>(static_cast<unsigned char>(raw)) <
              NFC_RFC6350_ASCII_FIRST_PRINTABLE;
     });
   };
-  if (std::ranges::any_of(parts, kHasControlChar)) {
+  if (std::ranges::any_of(parts, has_control_char)) {
     return {};
   }
   std::ostringstream vcard;
@@ -171,15 +171,15 @@ void NormalizeWriterNdefHexPayload(std::vector<std::uint8_t>& bytes) {
                                 &tlv) != NFC_NDEF_TLV_OK) {
     return;
   }
-  const auto kValueEnd = static_cast<std::size_t>(tlv.value_offset) +
+  const auto value_end = static_cast<std::size_t>(tlv.value_offset) +
                          static_cast<std::size_t>(tlv.value_len);
-  if (kValueEnd >= bytes.size() ||
-      bytes[kValueEnd] != NFC_NDEF_TLV_TERMINATOR ||
-      (kValueEnd + 1u) != bytes.size()) {
+  if (value_end >= bytes.size() ||
+      bytes[value_end] != NFC_NDEF_TLV_TERMINATOR ||
+      (value_end + 1u) != bytes.size()) {
     return;
   }
   bytes.assign(bytes.begin() + static_cast<std::ptrdiff_t>(tlv.value_offset),
-               bytes.begin() + static_cast<std::ptrdiff_t>(kValueEnd));
+               bytes.begin() + static_cast<std::ptrdiff_t>(value_end));
 }
 
 std::vector<std::uint8_t> BuildWriterMailRecord(std::string_view spec) {
@@ -190,7 +190,7 @@ std::vector<std::uint8_t> BuildWriterMailRecord(std::string_view spec) {
   std::string uri = "mailto:" + parts[0];
   bool first_query = true;
   if (parts.size() > 1u && !parts[1].empty()) {
-    uri += first_query ? '?' : '&';
+    uri += '?';
     first_query = false;
     uri += "subject=" + WriterUrlComponentEncode(parts[1]);
   }
@@ -221,7 +221,7 @@ std::vector<std::uint8_t> BuildWriterBluetoothRecord(std::string_view value) {
   }
   /* [BT-OOB] Bluetooth SSP-over-NFC OOB block: 2-byte OOB Data Length (LSB
    * first, total length including itself) then 6-byte BD_ADDR LSB first. */
-  std::vector<std::uint8_t> payload = {
+  std::vector<std::uint8_t> const payload = {
       static_cast<std::uint8_t>(kBtOobDataLength),
       0x00u,
       mac[kWriterBtMacOctetIndex5],

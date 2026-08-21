@@ -43,10 +43,10 @@ enum {
 
 TEST(NfcTagInfoTest, Type2VersionRecognizesNtag213) {
   nfc_tag_type2_info_t info{};
-  const uint8_t kVersion[8] = {0x00u, 0x04u, 0x04u, 0x02u,
-                               0x01u, 0x00u, 0x0Fu, 0x03u};
+  const uint8_t version[8] = {0x00u, 0x04u, 0x04u, 0x02u,
+                              0x01u, 0x00u, 0x0Fu, 0x03u};
 
-  nfc_tag_type2_apply_version(&info, &kVersion[0], sizeof(kVersion));
+  nfc_tag_type2_apply_version(&info, &version[0], sizeof(version));
 
   EXPECT_TRUE(info.version_valid);
   EXPECT_EQ(info.family, NFC_TAG_TYPE2_FAMILY_NTAG21X);
@@ -57,10 +57,10 @@ TEST(NfcTagInfoTest, Type2VersionRecognizesNtag213) {
 
 TEST(NfcTagInfoTest, Type2VersionRecognizesNtag216) {
   nfc_tag_type2_info_t info{};
-  const uint8_t kVersion[8] = {0x00u, 0x04u, 0x04u, 0x02u,
-                               0x01u, 0x00u, 0x13u, 0x03u};
+  const uint8_t version[8] = {0x00u, 0x04u, 0x04u, 0x02u,
+                              0x01u, 0x00u, 0x13u, 0x03u};
 
-  nfc_tag_type2_apply_version(&info, &kVersion[0], sizeof(kVersion));
+  nfc_tag_type2_apply_version(&info, &version[0], sizeof(version));
 
   EXPECT_TRUE(info.version_valid);
   EXPECT_EQ(info.family, NFC_TAG_TYPE2_FAMILY_NTAG21X);
@@ -71,9 +71,9 @@ TEST(NfcTagInfoTest, Type2VersionRecognizesNtag216) {
 
 TEST(NfcTagInfoTest, Type2CcParsesCapabilityContainer) {
   nfc_tag_type2_info_t info{};
-  const uint8_t kCc[4] = {0xE1u, 0x10u, 0x6Du, 0x00u};
+  const uint8_t cc[4] = {0xE1u, 0x10u, 0x6Du, 0x00u};
 
-  nfc_tag_type2_apply_cc(&info, &kCc[0], sizeof(kCc));
+  nfc_tag_type2_apply_cc(&info, &cc[0], sizeof(cc));
 
   EXPECT_TRUE(info.cc_valid);
   EXPECT_EQ(info.mapping_major, 1u);
@@ -85,22 +85,22 @@ TEST(NfcTagInfoTest, Type2CcParsesCapabilityContainer) {
 
 TEST(NfcTagInfoTest, Type2CcRejectsBadMagic) {
   nfc_tag_type2_info_t info{};
-  const uint8_t kCc[4] = {0x00u, 0x10u, 0x6Du, 0x00u};
+  const uint8_t cc[4] = {0x00u, 0x10u, 0x6Du, 0x00u};
 
-  nfc_tag_type2_apply_cc(&info, &kCc[0], sizeof(kCc));
+  nfc_tag_type2_apply_cc(&info, &cc[0], sizeof(cc));
 
   EXPECT_FALSE(info.cc_valid);
 }
 
 TEST(NfcTagInfoTest, Type2CcInvalidInputClearsPreviousValidity) {
   nfc_tag_type2_info_t info{};
-  const uint8_t kValidCc[4] = {0xE1u, 0x10u, 0x12u, 0x00u};
-  const uint8_t kInvalidCc[4] = {0x00u, 0x10u, 0x12u, 0x00u};
+  const uint8_t valid_cc[4] = {0xE1u, 0x10u, 0x12u, 0x00u};
+  const uint8_t invalid_cc[4] = {0x00u, 0x10u, 0x12u, 0x00u};
 
-  nfc_tag_type2_apply_cc(&info, &kValidCc[0], sizeof(kValidCc));
+  nfc_tag_type2_apply_cc(&info, &valid_cc[0], sizeof(valid_cc));
   ASSERT_TRUE(info.cc_valid);
 
-  nfc_tag_type2_apply_cc(&info, &kInvalidCc[0], sizeof(kInvalidCc));
+  nfc_tag_type2_apply_cc(&info, &invalid_cc[0], sizeof(invalid_cc));
   EXPECT_FALSE(info.cc_valid);
   EXPECT_EQ(info.data_area_size_bytes, 0u);
   EXPECT_FALSE(info.read_access_open);
@@ -111,12 +111,12 @@ TEST(NfcTagInfoTest, Type2St25TnFamilyUsesCcDerivedGeometry) {
   nfc_tag_type2_info_t st25tn512{};
   nfc_tag_type2_info_t st25tn01k{};
   nfc_tag_type2_info_t st25tn_unknown{};
-  const uint8_t kSt25tn512Cc[4] = {0xE1u, 0x10u, 0x08u, 0x00u};
-  const uint8_t kSt25tn01kCc[4] = {0xE1u, 0x10u, 0x14u, 0x00u};
+  const uint8_t st25tn512_cc[4] = {0xE1u, 0x10u, 0x08u, 0x00u};
+  const uint8_t st25tn01k_cc[4] = {0xE1u, 0x10u, 0x14u, 0x00u};
 
-  nfc_tag_type2_apply_cc(&st25tn512, &kSt25tn512Cc[0], sizeof(kSt25tn512Cc));
+  nfc_tag_type2_apply_cc(&st25tn512, &st25tn512_cc[0], sizeof(st25tn512_cc));
   nfc_tag_type2_apply_family_hint(&st25tn512, NFC_TAG_TYPE2_FAMILY_ST25TN);
-  nfc_tag_type2_apply_cc(&st25tn01k, &kSt25tn01kCc[0], sizeof(kSt25tn01kCc));
+  nfc_tag_type2_apply_cc(&st25tn01k, &st25tn01k_cc[0], sizeof(st25tn01k_cc));
   nfc_tag_type2_apply_family_hint(&st25tn01k, NFC_TAG_TYPE2_FAMILY_ST25TN);
   nfc_tag_type2_apply_family_hint(&st25tn_unknown, NFC_TAG_TYPE2_FAMILY_ST25TN);
 
@@ -130,12 +130,12 @@ TEST(NfcTagInfoTest, Type2St25TnFamilyUsesCcDerivedGeometry) {
 
 TEST(NfcTagInfoTest, Type4CcParsesStandardFields) {
   nfc_tag_type4_info_t info{};
-  const uint8_t kCc[15] = {
+  const uint8_t cc[15] = {
       0x00u, 0x0Fu, 0x20u, 0x00u, 0x3Bu, 0x00u, 0x34u, 0x04u,
       0x06u, 0xE1u, 0x04u, 0x01u, 0xF4u, 0x00u, 0x00u,
   };
 
-  ASSERT_TRUE(nfc_tag_type4_apply_cc(&info, &kCc[0], sizeof(kCc)));
+  ASSERT_TRUE(nfc_tag_type4_apply_cc(&info, &cc[0], sizeof(cc)));
   EXPECT_EQ(info.mapping_major, 2u);
   EXPECT_EQ(info.mapping_minor, 0u);
   EXPECT_EQ(info.mle, 59u);
@@ -149,12 +149,12 @@ TEST(NfcTagInfoTest, Type4CcParsesStandardFields) {
 
 TEST(NfcTagInfoTest, Type4CcAcceptsLongerControlFile) {
   nfc_tag_type4_info_t info{};
-  const uint8_t kCc[17] = {
+  const uint8_t cc[17] = {
       0x00u, 0x11u, 0x20u, 0x00u, 0x3Bu, 0x00u, 0x34u, 0x04u, 0x06u,
       0xE1u, 0x04u, 0x01u, 0xF4u, 0x00u, 0x00u, 0xAAu, 0x55u,
   };
 
-  ASSERT_TRUE(nfc_tag_type4_apply_cc(&info, &kCc[0], sizeof(kCc)));
+  ASSERT_TRUE(nfc_tag_type4_apply_cc(&info, &cc[0], sizeof(cc)));
   EXPECT_EQ(info.cc_len, 15u);
   EXPECT_EQ(info.ndef_file_id[0], 0xE1u);
   EXPECT_EQ(info.ndef_file_id[1], 0x04u);
@@ -173,7 +173,7 @@ TEST(NfcTagInfoTest, Type4CcParsesNtag424DnaFactoryControlFile) {
   static_assert(NFC_TAG_NT4H424_DEFAULT_MLC == kTestLit0x00FFu,
                 "NT4H424 factory MLc");
   nfc_tag_type4_info_t info{};
-  const uint8_t kCc[23] = {
+  const uint8_t cc[23] = {
       0x00u,
       0x17u,
       0x20u,
@@ -199,7 +199,7 @@ TEST(NfcTagInfoTest, Type4CcParsesNtag424DnaFactoryControlFile) {
       0x83u,
   };
 
-  ASSERT_TRUE(nfc_tag_type4_apply_cc(&info, &kCc[0], sizeof(kCc)));
+  ASSERT_TRUE(nfc_tag_type4_apply_cc(&info, &cc[0], sizeof(cc)));
   EXPECT_EQ(info.cc_len, 15u);
   EXPECT_EQ(info.mapping_major, 2u);
   EXPECT_EQ(info.mapping_minor, 0u);
@@ -214,51 +214,51 @@ TEST(NfcTagInfoTest, Type4CcParsesNtag424DnaFactoryControlFile) {
 
 TEST(NfcTagInfoTest, Type4CcRejectsMalformedControlFile) {
   nfc_tag_type4_info_t info{};
-  const uint8_t kTooShort[8] = {0x00u, 0x08u, 0x20u, 0x00u,
+  const uint8_t too_short[8] = {0x00u, 0x08u, 0x20u, 0x00u,
                                 0x3Bu, 0x00u, 0x34u, 0x04u};
-  const uint8_t kBadLength[15] = {
+  const uint8_t bad_length[15] = {
       0x00u, 0x10u, 0x20u, 0x00u, 0x3Bu, 0x00u, 0x34u, 0x04u,
       0x06u, 0xE1u, 0x04u, 0x01u, 0xF4u, 0x00u, 0x00u,
   };
 
-  EXPECT_FALSE(nfc_tag_type4_apply_cc(&info, &kTooShort[0], sizeof(kTooShort)));
+  EXPECT_FALSE(nfc_tag_type4_apply_cc(&info, &too_short[0], sizeof(too_short)));
   EXPECT_FALSE(
-      nfc_tag_type4_apply_cc(&info, &kBadLength[0], sizeof(kBadLength)));
+      nfc_tag_type4_apply_cc(&info, &bad_length[0], sizeof(bad_length)));
 }
 
 TEST(NfcTagInfoTest, Type4CcRejectsOutOfRangeMleMlc) {
   /* Mapping 2.0 §5.1 Table 5: MLe 000Fh..FFFFh, MLc 0001h..FFFFh (0000h RFU).
    */
   nfc_tag_type4_info_t info{};
-  const uint8_t kMleTooSmall[15] = {
+  const uint8_t mle_too_small[15] = {
       0x00u, 0x0Fu, 0x20u, 0x00u, 0x0Eu, 0x00u, 0x34u, 0x04u,
       0x06u, 0xE1u, 0x04u, 0x01u, 0xF4u, 0x00u, 0x00u,
   };
-  const uint8_t kMlcTooSmall[15] = {
+  const uint8_t mlc_too_small[15] = {
       0x00u, 0x0Fu, 0x20u, 0x00u, 0x3Bu, 0x00u, 0x00u, 0x04u,
       0x06u, 0xE1u, 0x04u, 0x01u, 0xF4u, 0x00u, 0x00u,
   };
 
   EXPECT_FALSE(
-      nfc_tag_type4_apply_cc(&info, &kMleTooSmall[0], sizeof(kMleTooSmall)));
+      nfc_tag_type4_apply_cc(&info, &mle_too_small[0], sizeof(mle_too_small)));
   EXPECT_FALSE(
-      nfc_tag_type4_apply_cc(&info, &kMlcTooSmall[0], sizeof(kMlcTooSmall)));
+      nfc_tag_type4_apply_cc(&info, &mlc_too_small[0], sizeof(mlc_too_small)));
 }
 
 TEST(NfcTagInfoTest, Type4CcInvalidInputClearsPreviousValidity) {
   nfc_tag_type4_info_t info{};
-  const uint8_t kValidCc[15] = {
+  const uint8_t valid_cc[15] = {
       0x00u, 0x0Fu, 0x20u, 0x00u, 0x3Bu, 0x00u, 0x34u, 0x04u,
       0x06u, 0xE1u, 0x04u, 0x01u, 0xF4u, 0x00u, 0x00u,
   };
-  const uint8_t kInvalidCc[8] = {0x00u, 0x08u, 0x20u, 0x00u,
+  const uint8_t invalid_cc[8] = {0x00u, 0x08u, 0x20u, 0x00u,
                                  0x3Bu, 0x00u, 0x34u, 0x04u};
 
-  ASSERT_TRUE(nfc_tag_type4_apply_cc(&info, &kValidCc[0], sizeof(kValidCc)));
+  ASSERT_TRUE(nfc_tag_type4_apply_cc(&info, &valid_cc[0], sizeof(valid_cc)));
   ASSERT_TRUE(info.cc_valid);
 
   EXPECT_FALSE(
-      nfc_tag_type4_apply_cc(&info, &kInvalidCc[0], sizeof(kInvalidCc)));
+      nfc_tag_type4_apply_cc(&info, &invalid_cc[0], sizeof(invalid_cc)));
   EXPECT_FALSE(info.cc_valid);
   EXPECT_EQ(info.max_ndef_size, 0u);
   EXPECT_FALSE(info.read_access_open);
@@ -267,14 +267,14 @@ TEST(NfcTagInfoTest, Type4CcInvalidInputClearsPreviousValidity) {
 
 TEST(NfcTagInfoTest, Type5SystemInfoAndCcParseCommonFields) {
   nfc_tag_type5_info_t info{};
-  const uint8_t kCc[4] = {0xE1u, 0x40u, 0x14u, 0x00u};
-  const uint8_t kRaw[15] = {
+  const uint8_t cc[4] = {0xE1u, 0x40u, 0x14u, 0x00u};
+  const uint8_t raw[15] = {
       0x00u, 0x0Fu, 0xE0u, 0x02u, 0xAAu, 0xBBu, 0xCCu, 0xDDu,
       0xEEu, 0xFFu, 0x12u, 0x34u, 0x4Fu, 0x03u, 0xA1u,
   };
 
-  nfc_tag_type5_apply_cc(&info, &kCc[0], sizeof(kCc));
-  nfc_tag_type5_apply_system_info(&info, &kRaw[0], sizeof(kRaw));
+  nfc_tag_type5_apply_cc(&info, &cc[0], sizeof(cc));
+  nfc_tag_type5_apply_system_info(&info, &raw[0], sizeof(raw));
 
   EXPECT_TRUE(info.cc_valid);
   EXPECT_EQ(info.mapping_major, 1u);
@@ -294,21 +294,21 @@ TEST(NfcTagInfoTest, Type5SystemInfoAndCcParseCommonFields) {
 
 TEST(NfcTagInfoTest, Type5SystemInfoClearsOmittedOptionalFields) {
   nfc_tag_type5_info_t info{};
-  const uint8_t kFullRaw[15] = {
+  const uint8_t full_raw[15] = {
       0x00u, 0x0Fu, 0xE0u, 0x02u, 0xAAu, 0xBBu, 0xCCu, 0xDDu,
       0xEEu, 0xFFu, 0x12u, 0x34u, 0x4Fu, 0x03u, 0xA1u,
   };
-  const uint8_t kMinimalRaw[10] = {
+  const uint8_t minimal_raw[10] = {
       0x00u, 0x00u, 0xE0u, 0x02u, 0xAAu, 0xBBu, 0xCCu, 0xDDu, 0xEEu, 0xFFu,
   };
 
-  nfc_tag_type5_apply_system_info(&info, &kFullRaw[0], sizeof(kFullRaw));
+  nfc_tag_type5_apply_system_info(&info, &full_raw[0], sizeof(full_raw));
   ASSERT_TRUE(info.dsfid_valid);
   ASSERT_TRUE(info.afi_valid);
   ASSERT_NE(info.block_count, 0u);
   ASSERT_TRUE(info.ic_ref_valid);
 
-  nfc_tag_type5_apply_system_info(&info, &kMinimalRaw[0], sizeof(kMinimalRaw));
+  nfc_tag_type5_apply_system_info(&info, &minimal_raw[0], sizeof(minimal_raw));
   EXPECT_FALSE(info.dsfid_valid);
   EXPECT_FALSE(info.afi_valid);
   EXPECT_EQ(info.block_count, 0u);
@@ -318,23 +318,23 @@ TEST(NfcTagInfoTest, Type5SystemInfoClearsOmittedOptionalFields) {
 
 TEST(NfcTagInfoTest, Type5ExtendedCcUsesExtendedMlenBytes) {
   nfc_tag_type5_info_t info{};
-  const uint8_t kCc[8] = {0xE2u, 0x40u, 0x00u, 0x00u,
-                          0x00u, 0x00u, 0x01u, 0x00u};
+  const uint8_t cc[8] = {0xE2u, 0x40u, 0x00u, 0x00u,
+                         0x00u, 0x00u, 0x01u, 0x00u};
 
-  nfc_tag_type5_apply_cc(&info, &kCc[0], sizeof(kCc));
+  nfc_tag_type5_apply_cc(&info, &cc[0], sizeof(cc));
 
   EXPECT_TRUE(info.cc_valid);
-  EXPECT_EQ(info.cc_len, sizeof(kCc));
+  EXPECT_EQ(info.cc_len, sizeof(cc));
   EXPECT_EQ(info.data_area_size_bytes, 2048u);
 }
 
 TEST(NfcTagInfoTest, Type5ExtendedCcTriggeredByZeroMlenWithE1Magic) {
   /* T5T 1.0 §4.3.1.17: MLEN==0 selects the 8-byte CC regardless of magic. */
   nfc_tag_type5_info_t info{};
-  const uint8_t kCc[8] = {0xE1u, 0x40u, 0x00u, 0x00u,
-                          0x00u, 0x00u, 0x00u, 0x40u};
+  const uint8_t cc[8] = {0xE1u, 0x40u, 0x00u, 0x00u,
+                         0x00u, 0x00u, 0x00u, 0x40u};
 
-  nfc_tag_type5_apply_cc(&info, &kCc[0], sizeof(kCc));
+  nfc_tag_type5_apply_cc(&info, &cc[0], sizeof(cc));
 
   EXPECT_TRUE(info.cc_valid);
   EXPECT_EQ(info.cc_len, 8u);
@@ -344,9 +344,9 @@ TEST(NfcTagInfoTest, Type5ExtendedCcTriggeredByZeroMlenWithE1Magic) {
 TEST(NfcTagInfoTest, Type5FourByteCcWithE2MagicUsesByteTwo) {
   /* T5T 1.0 §4.3.1.17: a non-zero MLEN is always a 4-byte CC, even for E2h. */
   nfc_tag_type5_info_t info{};
-  const uint8_t kCc[4] = {0xE2u, 0x40u, 0x20u, 0x00u};
+  const uint8_t cc[4] = {0xE2u, 0x40u, 0x20u, 0x00u};
 
-  nfc_tag_type5_apply_cc(&info, &kCc[0], sizeof(kCc));
+  nfc_tag_type5_apply_cc(&info, &cc[0], sizeof(cc));
 
   EXPECT_TRUE(info.cc_valid);
   EXPECT_EQ(info.cc_len, 4u);
@@ -360,21 +360,21 @@ TEST(NfcTagInfoTest, Type5MlenOverflowUsesSystemInfoSize) {
    * 2048 blocks x 4 bytes; minus the 4 CC bytes = 8188 bytes of T5T_Area.
    */
   nfc_tag_type5_info_t info{};
-  const uint8_t kCc[4] = {0xE1u, 0x40u, 0xFFu, 0x04u};
+  const uint8_t cc[4] = {0xE1u, 0x40u, 0xFFu, 0x04u};
   /* Extended GetSystemInfo: flags, info=0F, UID(8), DSFID, AFI, NB_lsb, NB_msb,
    * block_size, IC ref. NB = 0x07FF -> 2048 blocks; block_size byte 0x03 -> 4.
    */
-  const uint8_t kExt[16] = {
+  const uint8_t ext[16] = {
       0x00u, 0x0Fu, 0xE0u, 0x02u, 0xAAu, 0xBBu, 0xCCu, 0xDDu,
       0xEEu, 0xFFu, 0xFFu, 0x03u, 0xFFu, 0x07u, 0x03u, 0x24u,
   };
 
-  nfc_tag_type5_apply_cc(&info, &kCc[0], sizeof(kCc));
+  nfc_tag_type5_apply_cc(&info, &cc[0], sizeof(cc));
   ASSERT_TRUE(info.cc_valid);
   ASSERT_EQ(info.data_area_size_bytes, 2040u);
   EXPECT_TRUE(nfc_tag_type5_cc_signals_mlen_overflow(&info));
 
-  nfc_tag_type5_apply_system_info_ext(&info, &kExt[0], sizeof(kExt));
+  nfc_tag_type5_apply_system_info_ext(&info, &ext[0], sizeof(ext));
   ASSERT_EQ(info.block_count, 2048u);
   ASSERT_EQ(info.block_size, 4u);
 
@@ -384,14 +384,14 @@ TEST(NfcTagInfoTest, Type5MlenOverflowUsesSystemInfoSize) {
 
 TEST(NfcTagInfoTest, Type5MlenOverflowIgnoredWithoutFlag) {
   nfc_tag_type5_info_t info{};
-  const uint8_t kCc[4] = {0xE1u, 0x40u, 0xFFu, 0x00u};
-  const uint8_t kExt[16] = {
+  const uint8_t cc[4] = {0xE1u, 0x40u, 0xFFu, 0x00u};
+  const uint8_t ext[16] = {
       0x00u, 0x0Fu, 0xE0u, 0x02u, 0xAAu, 0xBBu, 0xCCu, 0xDDu,
       0xEEu, 0xFFu, 0xFFu, 0x03u, 0xFFu, 0x07u, 0x03u, 0x24u,
   };
 
-  nfc_tag_type5_apply_cc(&info, &kCc[0], sizeof(kCc));
-  nfc_tag_type5_apply_system_info_ext(&info, &kExt[0], sizeof(kExt));
+  nfc_tag_type5_apply_cc(&info, &cc[0], sizeof(cc));
+  nfc_tag_type5_apply_system_info_ext(&info, &ext[0], sizeof(ext));
   EXPECT_FALSE(nfc_tag_type5_cc_signals_mlen_overflow(&info));
   nfc_tag_type5_resolve_mlen_overflow(&info);
   EXPECT_EQ(info.data_area_size_bytes, 2040u);
@@ -399,15 +399,15 @@ TEST(NfcTagInfoTest, Type5MlenOverflowIgnoredWithoutFlag) {
 
 TEST(NfcTagInfoTest, Type5CcInvalidInputClearsPreviousValidity) {
   nfc_tag_type5_info_t info{};
-  const uint8_t kValidCc[4] = {0xE1u, 0x40u, 0x14u, 0x00u};
-  const uint8_t kInvalidZeroCc[4] = {0xE1u, 0x40u, 0x00u, 0x00u};
+  const uint8_t valid_cc[4] = {0xE1u, 0x40u, 0x14u, 0x00u};
+  const uint8_t invalid_zero_cc[4] = {0xE1u, 0x40u, 0x00u, 0x00u};
 
-  nfc_tag_type5_apply_cc(&info, &kValidCc[0], sizeof(kValidCc));
+  nfc_tag_type5_apply_cc(&info, &valid_cc[0], sizeof(valid_cc));
   ASSERT_TRUE(info.cc_valid);
   ASSERT_EQ(info.data_area_size_bytes, 160u);
 
   /* MLEN==0 but only 4 bytes available: the 8-byte CC cannot be completed. */
-  nfc_tag_type5_apply_cc(&info, &kInvalidZeroCc[0], sizeof(kInvalidZeroCc));
+  nfc_tag_type5_apply_cc(&info, &invalid_zero_cc[0], sizeof(invalid_zero_cc));
   EXPECT_FALSE(info.cc_valid);
   EXPECT_EQ(info.cc_len, 0u);
   EXPECT_EQ(info.data_area_size_bytes, 0u);
@@ -419,18 +419,18 @@ TEST(NfcTagInfoTest, Type5CcRejectsBadMagicAndIncompleteExtendedCc) {
   nfc_tag_type5_info_t bad_magic{};
   nfc_tag_type5_info_t short_extended{};
   nfc_tag_type5_info_t zero_size_extended{};
-  const uint8_t kBadMagicCc[4] = {0x00u, 0x40u, 0x14u, 0x00u};
+  const uint8_t bad_magic_cc[4] = {0x00u, 0x40u, 0x14u, 0x00u};
   /* MLEN==0 marks an 8-byte CC, but only 4 bytes are supplied. */
-  const uint8_t kShortExtendedCc[4] = {0xE2u, 0x40u, 0x00u, 0x00u};
+  const uint8_t short_extended_cc[4] = {0xE2u, 0x40u, 0x00u, 0x00u};
   /* 8-byte CC present but bytes 6..7 encode a zero T5T_Area size. */
-  const uint8_t kZeroSizeExtendedCc[8] = {0xE1u, 0x40u, 0x00u, 0x00u,
-                                          0x00u, 0x00u, 0x00u, 0x00u};
+  const uint8_t zero_size_extended_cc[8] = {0xE1u, 0x40u, 0x00u, 0x00u,
+                                            0x00u, 0x00u, 0x00u, 0x00u};
 
-  nfc_tag_type5_apply_cc(&bad_magic, &kBadMagicCc[0], sizeof(kBadMagicCc));
-  nfc_tag_type5_apply_cc(&short_extended, &kShortExtendedCc[0],
-                         sizeof(kShortExtendedCc));
-  nfc_tag_type5_apply_cc(&zero_size_extended, &kZeroSizeExtendedCc[0],
-                         sizeof(kZeroSizeExtendedCc));
+  nfc_tag_type5_apply_cc(&bad_magic, &bad_magic_cc[0], sizeof(bad_magic_cc));
+  nfc_tag_type5_apply_cc(&short_extended, &short_extended_cc[0],
+                         sizeof(short_extended_cc));
+  nfc_tag_type5_apply_cc(&zero_size_extended, &zero_size_extended_cc[0],
+                         sizeof(zero_size_extended_cc));
 
   EXPECT_FALSE(bad_magic.cc_valid);
   EXPECT_FALSE(short_extended.cc_valid);
@@ -439,44 +439,44 @@ TEST(NfcTagInfoTest, Type5CcRejectsBadMagicAndIncompleteExtendedCc) {
 
 TEST(NfcTagInfoTest, Type5St25TvFamilyAttribution) {
   nfc_tag_type5_info_t info{};
-  const uint8_t kUid[8] = {0xE0u, 0x02u, 0x24u, 0x00u,
-                           0x00u, 0x00u, 0x00u, 0x01u};
-  const uint8_t kRaw[15] = {
+  const uint8_t uid[8] = {0xE0u, 0x02u, 0x24u, 0x00u,
+                          0x00u, 0x00u, 0x00u, 0x01u};
+  const uint8_t raw[15] = {
       0x00u, 0x0Cu, 0xE0u, 0x02u, 0x24u, 0x00u, 0x00u, 0x00u,
       0x00u, 0x01u, 0x4Fu, 0x03u, 0x00u, 0x00u, 0x00u,
   };
 
-  nfc_tag_type5_apply_system_info(&info, &kRaw[0], sizeof(kRaw));
+  nfc_tag_type5_apply_system_info(&info, &raw[0], sizeof(raw));
 
-  EXPECT_STREQ(nfc_tag_type5_family_name(&kUid[0], sizeof(kUid), &info),
+  EXPECT_STREQ(nfc_tag_type5_family_name(&uid[0], sizeof(uid), &info),
                "ST25TV-class");
 }
 
 TEST(NfcTagInfoTest, Type5St25DvFamilyAttributionFromIcRef) {
   nfc_tag_type5_info_t info{};
-  const uint8_t kUid[8] = {0xE0u, 0x02u, 0x51u, 0x67u,
-                           0x65u, 0xE0u, 0xCAu, 0x13u};
-  const uint8_t kRaw[13] = {
+  const uint8_t uid[8] = {0xE0u, 0x02u, 0x51u, 0x67u,
+                          0x65u, 0xE0u, 0xCAu, 0x13u};
+  const uint8_t raw[13] = {
       0x00u, 0x0Bu, 0x13u, 0xCAu, 0xE0u, 0x65u, 0x67u,
       0x51u, 0x02u, 0xE0u, 0x00u, 0x00u, 0x51u,
   };
 
-  nfc_tag_type5_apply_system_info(&info, &kRaw[0], sizeof(kRaw));
+  nfc_tag_type5_apply_system_info(&info, &raw[0], sizeof(raw));
 
   ASSERT_TRUE(info.ic_ref_valid);
   EXPECT_EQ(info.ic_ref, 0x51u);
-  EXPECT_STREQ(nfc_tag_type5_family_name(&kUid[0], sizeof(kUid), &info),
+  EXPECT_STREQ(nfc_tag_type5_family_name(&uid[0], sizeof(uid), &info),
                "ST25DV-class");
 }
 
 TEST(NfcTagInfoTest, NdefTlvFindsMessageAfterNullAndUnknownTlvs) {
-  const uint8_t kArea[] = {
+  const uint8_t area[] = {
       0x00u, 0xFDu, 0x02u, 0xAAu, 0xBBu, 0x03u,
       0x03u, 0xD1u, 0x01u, 0x00u, 0xFEu,
   };
   nfc_ndef_tlv_t tlv{};
 
-  ASSERT_EQ(nfc_ndef_find_message_tlv(&kArea[0], sizeof(kArea), 0u, &tlv),
+  ASSERT_EQ(nfc_ndef_find_message_tlv(&area[0], sizeof(area), 0u, &tlv),
             NFC_NDEF_TLV_OK);
   EXPECT_EQ(tlv.type, NFC_NDEF_TLV_MESSAGE);
   EXPECT_EQ(tlv.header_offset, 5u);
@@ -509,9 +509,9 @@ TEST(NfcTagInfoTest, NdefTlvSupportsExtendedLengthRoundTrip) {
 }
 
 TEST(NfcTagInfoTest, NdefTlvReportsTruncatedValue) {
-  const uint8_t kArea[] = {0x03u, 0x05u, 0xD1u};
+  const uint8_t area[] = {0x03u, 0x05u, 0xD1u};
   nfc_ndef_tlv_t tlv{};
 
-  EXPECT_EQ(nfc_ndef_find_message_tlv(&kArea[0], sizeof(kArea), 0u, &tlv),
+  EXPECT_EQ(nfc_ndef_find_message_tlv(&area[0], sizeof(area), 0u, &tlv),
             NFC_NDEF_TLV_TRUNCATED);
 }

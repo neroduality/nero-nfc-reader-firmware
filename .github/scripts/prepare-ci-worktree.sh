@@ -56,7 +56,7 @@ printf '── ci-worktree: seeding isolated tree (excluding source build/third-
 printf '   source: %s\n' "${source_root}" >&2
 printf '   work:   %s\n' "${work_root}" >&2
 
-# --delete refreshes tracked sources. Excluded paths (build/, third-party/, …) are
+# --delete refreshes tracked sources. Excluded paths (build/, third-party/, ...) are
 # not deleted in dest, so a prior work-tree third-party cache can remain.
 rsync -a --delete \
   --exclude '/build/' \

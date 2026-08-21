@@ -17,7 +17,7 @@
 #pragma once
 
 /*
- * Thin glue on top of vendored ST reader headers for this sketch’s raw SPI HAL:
+ * Thin glue on top of vendored ST reader headers for this sketch's raw SPI HAL:
  * - SPI framing bytes (same encoding as STMicroelectronics ST25R3916 Arduino
  * driver).
  * - IRQ masks folded into single-register-byte form used by
@@ -78,7 +78,7 @@
 
 #define IRQ_TARGET_APON ((uint8_t)((ST25R3916_IRQ_MASK_APON >> 24) & 0xFFu))
 
-/* [ISO14443-3] section 6.5.4 — cascade level 3 SELECT (10-byte UID tags). */
+/* [ISO14443-3] section 6.5.4 -- cascade level 3 SELECT (10-byte UID tags). */
 #define ISO14443_CMD_SEL_CL3 0x97u
 #define ISO14443_CMD_RATS 0xE0u
 

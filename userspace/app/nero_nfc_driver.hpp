@@ -26,7 +26,7 @@
 namespace nero_nfc {
 
 struct DriverOptions {
-  std::string port_;      // serial path; empty → $PORT if set, else auto-detect
+  std::string port_;  // serial path; empty -> $PORT if set, else auto-detect
   bool open_urls_{true};  // open BROWSER_OPEN: URLs in browser
 };
 

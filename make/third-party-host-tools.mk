@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# make/third-party-host-tools.mk — pinned host Arduino toolchain under third-party/.
+# make/third-party-host-tools.mk -- pinned host Arduino toolchain under third-party/.
 #
 # arduino-cli binary: third-party/arduino-cli/arduino-cli (+ .arduino-cli-version stamp)
 # Board Manager cores: third-party/arduino-user/ via ARDUINO_DIRECTORIES_DATA

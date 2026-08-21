@@ -47,11 +47,11 @@ std::string PcscBridgeHint() {
 }  // namespace
 
 std::optional<HostBridge> ParseHostBridge(std::string_view value) {
-  const auto kNormalized = LowerCopy(value);
-  if (kNormalized == "cdc") {
+  const auto normalized = LowerCopy(value);
+  if (normalized == "cdc") {
     return HostBridge::kCdc;
   }
-  if (kNormalized == "pcsc") {
+  if (normalized == "pcsc") {
     return HostBridge::kPcsc;
   }
   return std::nullopt;
@@ -87,11 +87,11 @@ bool ChooseHostBridge(const std::optional<HostBridge>& requested_bridge,
     return false;
   }
 
-  const auto kSerialCandidate = DetectSerialPortCandidate(serial_port_arg);
-  const auto kEnvPcscReader =
+  const auto serial_candidate = DetectSerialPortCandidate(serial_port_arg);
+  const auto env_pcsc_reader =
       pcsc_reader_arg.empty() ? PcscReaderSubstringFromEnv() : "";
   const std::string& pcsc_reader =
-      pcsc_reader_arg.empty() ? kEnvPcscReader : pcsc_reader_arg;
+      pcsc_reader_arg.empty() ? env_pcsc_reader : pcsc_reader_arg;
   std::string resolved_pcsc_reader;
   std::string pcsc_err;
   bool have_pcsc_reader = false;
@@ -107,15 +107,15 @@ bool ChooseHostBridge(const std::optional<HostBridge>& requested_bridge,
     }
   }
 
-  const bool kPreferCdc =
+  const bool prefer_cdc =
       (requested_bridge == HostBridge::kCdc) || !serial_port_arg.empty();
-  const bool kPreferPcsc = (requested_bridge == HostBridge::kPcsc) ||
+  const bool prefer_pcsc = (requested_bridge == HostBridge::kPcsc) ||
                            !pcsc_reader.empty() || pcsc_share_specified;
 
-  if (kPreferCdc) {
-    if (!kSerialCandidate.empty()) {
+  if (prefer_cdc) {
+    if (!serial_candidate.empty()) {
       out.bridge_ = HostBridge::kCdc;
-      out.serial_port_ = kSerialCandidate;
+      out.serial_port_ = serial_candidate;
       out.pcsc_reader_.clear();
       err.clear();
       return true;
@@ -125,7 +125,7 @@ bool ChooseHostBridge(const std::optional<HostBridge>& requested_bridge,
     return false;
   }
 
-  if (kPreferPcsc) {
+  if (prefer_pcsc) {
     if (have_pcsc_reader) {
       out.bridge_ = HostBridge::kPcsc;
       out.serial_port_.clear();
@@ -145,9 +145,9 @@ bool ChooseHostBridge(const std::optional<HostBridge>& requested_bridge,
     return true;
   }
 
-  if (!kSerialCandidate.empty()) {
+  if (!serial_candidate.empty()) {
     out.bridge_ = HostBridge::kCdc;
-    out.serial_port_ = kSerialCandidate;
+    out.serial_port_ = serial_candidate;
     out.pcsc_reader_.clear();
     err.clear();
     return true;

@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# Generated from kit openssf-hardening-manifest + dials for build/lint/firmware/nucleo_wba65ri/nfc/cdc/compile_commands.json — do not hand-edit.
+# Generated from kit openssf-hardening-manifest + dials for build/lint/firmware/nucleo_wba65ri/nfc/cdc/compile_commands.json -- do not hand-edit.
 #
 include(${CMAKE_CURRENT_LIST_DIR}/CompilerHardeningProbes.cmake)
 include(CMakeParseArguments)
@@ -33,12 +33,12 @@ function(define_hardening)
   set(_hardening_relwithdebinfo_cfg $<CONFIG:RelWithDebInfo>)
   set(_hardening_debug_cfg $<CONFIG:Debug>)
   target_compile_options("${HARDENING_TARGET}" INTERFACE
+    $<$<COMPILE_LANGUAGE:C>:$<$<AND:$<BOOL:${HAVE_C_WHARDENED}>,$<NOT:$<BOOL:${HAVE_INSTRUMENTED_SANITIZER}>>>:-Whardened>>
     $<$<COMPILE_LANGUAGE:C>:$<$<BOOL:${HAVE_C_TRIVIAL_AUTO_VAR_INIT_ZERO}>:-ftrivial-auto-var-init=zero>>
     $<$<COMPILE_LANGUAGE:C>:$<$<BOOL:${HAVE_C_WERROR_IMPLICIT}>:-Werror=implicit>>
     $<$<COMPILE_LANGUAGE:C>:$<$<BOOL:${HAVE_C_WERROR_INCOMPATIBLE_POINTER_TYPES}>:-Werror=incompatible-pointer-types>>
     $<$<COMPILE_LANGUAGE:C>:$<$<BOOL:${HAVE_C_WERROR_INT_CONVERSION}>:-Werror=int-conversion>>
     $<$<COMPILE_LANGUAGE:C>:$<$<BOOL:${HAVE_C_WERROR_TRAMPOLINES}>:-Werror=trampolines>>
-    $<$<COMPILE_LANGUAGE:C>:$<$<BOOL:${HAVE_C_WHARDENED}>:-Whardened>>
     $<$<COMPILE_LANGUAGE:C>:$<$<BOOL:${HAVE_C_WTRAMPOLINES}>:-Wtrampolines>>
     $<$<COMPILE_LANGUAGE:C>:-Wall>
     $<$<COMPILE_LANGUAGE:C>:-Wconversion>
@@ -53,9 +53,9 @@ function(define_hardening)
     $<$<COMPILE_LANGUAGE:C>:-fstack-protector-strong>
   )
   target_compile_options("${HARDENING_TARGET}" INTERFACE
+    $<$<COMPILE_LANGUAGE:CXX>:$<$<AND:$<BOOL:${HAVE_CXX_WHARDENED}>,$<NOT:$<BOOL:${HAVE_INSTRUMENTED_SANITIZER}>>>:-Whardened>>
     $<$<COMPILE_LANGUAGE:CXX>:$<$<BOOL:${HAVE_CXX_TRIVIAL_AUTO_VAR_INIT_ZERO}>:-ftrivial-auto-var-init=zero>>
     $<$<COMPILE_LANGUAGE:CXX>:$<$<BOOL:${HAVE_CXX_WERROR_TRAMPOLINES}>:-Werror=trampolines>>
-    $<$<COMPILE_LANGUAGE:CXX>:$<$<BOOL:${HAVE_CXX_WHARDENED}>:-Whardened>>
     $<$<COMPILE_LANGUAGE:CXX>:$<$<BOOL:${HAVE_CXX_WTRAMPOLINES}>:-Wtrampolines>>
     $<$<COMPILE_LANGUAGE:CXX>:-Wall>
     $<$<COMPILE_LANGUAGE:CXX>:-Wconversion>

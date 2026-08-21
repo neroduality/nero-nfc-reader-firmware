@@ -49,7 +49,7 @@ size_t nero_ccid_copy_interface_descriptor_blob_with_endpoints_cap(
   }
   uint8_t* p = dst;
 
-  /* Standard interface — class 11 smart card CCID — three endpoints. Bulk
+  /* Standard interface -- class 11 smart card CCID -- three endpoints. Bulk
    * IN/OUT share endpoint number 2 (distinct directions); the interrupt IN uses
    * a separate address. */
   *p++ = NERO_USB_DESC_LEN_INTERFACE;

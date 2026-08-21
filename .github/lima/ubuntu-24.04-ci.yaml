@@ -28,7 +28,7 @@
 #
 # After boot: run-ci-locally-lima-guest.sh runs docker run smoke + full Main CI.
 #
-# Repo bind-mount: /src read-only (param repoRoot) — source only.
+# Repo bind-mount: /src read-only (param repoRoot) -- source only.
 # Guest seeds ~/nero-nfc-ci-work on the VM disk (no host build/third-party reuse).
 # Host make ci-local uses ~/.cache/nero-nfc-ci-local/work for the same isolation.
 # Lint kit bind-mount: /opt/lint-kit (param lintKitRoot).
@@ -88,7 +88,7 @@ provision:
       sh /tmp/get-docker.sh > /tmp/nero-docker-install.log 2>&1
       tail -n 3 /tmp/nero-docker-install.log || true
 
-  # mode: system only — Lima boot.sh runs provision.yq before provision.system, so yq
+  # mode: system only -- Lima boot.sh runs provision.yq before provision.system, so yq
   # would create docker.socket.d/override.conf before Docker exists and can hang on chmod.
   - mode: system
     script: |
@@ -131,5 +131,5 @@ message: |
   nero-nfc Main CI Lima VM (ubuntu-24.04).
   Repo mount: /src (read-only source).
   CI work tree: ~/nero-nfc-ci-work on guest disk (fresh third-party/build).
-  Boot: Docker (SocketUser) → seed work tree → CI via run-ci-locally-lima-guest.sh.
+  Boot: Docker (SocketUser) -> seed work tree -> CI via run-ci-locally-lima-guest.sh.
   Each `make lima` / `make ci-local CI_LOCAL_FLAGS=--lima` destroys and recreates this instance.

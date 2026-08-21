@@ -46,13 +46,13 @@ nfc_mode_scan_result_t FeedAll(nfc_mode_scan_state_t* st, const std::string& in,
   if (pushbacks != NERO_NFC_NULL) {
     pushbacks->clear();
   }
-  for (char byte : in) {
+  for (char const byte : in) {
     last = nfc_mode_scan_feed(st, static_cast<uint8_t>(byte), &pb[0], &pblen,
                               sizeof(pb));
     if (last == NFC_MODE_SCAN_PUSHBACK_STOP && pblen > 0 &&
         pushbacks != NERO_NFC_NULL) {
-      const auto kPushback = std::span<uint8_t>{pb}.subspan(0u, pblen);
-      pushbacks->insert(pushbacks->end(), kPushback.begin(), kPushback.end());
+      const auto pushback = std::span<uint8_t>{pb}.subspan(0u, pblen);
+      pushbacks->insert(pushbacks->end(), pushback.begin(), pushback.end());
     }
     if (last == NFC_MODE_SCAN_GOT_READER || last == NFC_MODE_SCAN_GOT_WRITER ||
         last == NFC_MODE_SCAN_PUSHBACK_STOP) {
@@ -185,8 +185,8 @@ TEST(NfcModeLineScan, NewlineFlushExceedsPushbackCap) {
   nfc_mode_scan_reset(&st);
   uint8_t pb[kTestLit64];
   uint16_t pblen = 0;
-  const std::string kPayload("mode xy");
-  for (char byte : kPayload) {
+  const std::string payload("mode xy");
+  for (char const byte : payload) {
     ASSERT_EQ(nfc_mode_scan_feed(&st, static_cast<uint8_t>(byte), &pb[0],
                                  &pblen, /*pushback_cap=*/2),
               NFC_MODE_SCAN_INGESTED);
@@ -203,8 +203,8 @@ TEST(NfcModeLineScan, NewlineFlushCopiesWhenFinalLenEqualsPushbackCap) {
   nfc_mode_scan_reset(&st);
   uint8_t pb[kTestLit64];
   uint16_t pblen = 0;
-  const std::string kPayload("mode x");
-  for (char byte : kPayload) {
+  const std::string payload("mode x");
+  for (char const byte : payload) {
     ASSERT_EQ(nfc_mode_scan_feed(&st, static_cast<uint8_t>(byte), &pb[0],
                                  &pblen, sizeof(pb)),
               NFC_MODE_SCAN_INGESTED);
@@ -222,8 +222,8 @@ TEST(NfcModeLineScan, NewlineFlushDropsWhenFinalLenOnePastPushbackCap) {
   nfc_mode_scan_reset(&st);
   uint8_t pb[kTestLit64];
   uint16_t pblen = 0;
-  const std::string kPayload2("mode x");
-  for (char byte : kPayload2) {
+  const std::string payload2("mode x");
+  for (char const byte : payload2) {
     ASSERT_EQ(nfc_mode_scan_feed(&st, static_cast<uint8_t>(byte), &pb[0],
                                  &pblen, sizeof(pb)),
               NFC_MODE_SCAN_INGESTED);
@@ -243,7 +243,7 @@ TEST(NfcModeLineScan, LongLineCapFlushDropsWhenLenExceedsPushbackCap) {
   uint8_t pb[kTestLit64];
   uint16_t pblen = 0;
   {
-    for (char byte : long_line) {
+    for (char const byte : long_line) {
       ASSERT_EQ(nfc_mode_scan_feed(&st, static_cast<uint8_t>(byte), &pb[0],
                                    &pblen, sizeof(pb)),
                 NFC_MODE_SCAN_INGESTED);
@@ -264,7 +264,7 @@ TEST(NfcModeLineScan, LongLineCapFlushCopiesWhenLenEqualsPushbackCap) {
   uint8_t pb[kTestLit64];
   uint16_t pblen = 0;
   {
-    for (char byte : long_line) {
+    for (char const byte : long_line) {
       ASSERT_EQ(nfc_mode_scan_feed(&st, static_cast<uint8_t>(byte), &pb[0],
                                    &pblen, sizeof(pb)),
                 NFC_MODE_SCAN_INGESTED);
@@ -282,8 +282,8 @@ TEST(NfcModeLineScan, PrefixMismatchMidPrefixCopiesWhenCapIsLargeEnough) {
   nfc_mode_scan_reset(&st);
   uint8_t pb[kTestLit64];
   uint16_t pblen = 0;
-  const std::string kPrefix("mode");
-  for (char byte : kPrefix) {
+  const std::string prefix("mode");
+  for (char const byte : prefix) {
     ASSERT_EQ(nfc_mode_scan_feed(&st, static_cast<uint8_t>(byte), &pb[0],
                                  &pblen, sizeof(pb)),
               NFC_MODE_SCAN_INGESTED);
@@ -300,8 +300,8 @@ TEST(NfcModeLineScan, PrefixMismatchMidPrefixDropsWhenCapTooSmall) {
   nfc_mode_scan_reset(&st);
   uint8_t pb[kTestLit64];
   uint16_t pblen = 0;
-  const std::string kPrefix2("mode");
-  for (char byte : kPrefix2) {
+  const std::string prefix2("mode");
+  for (char const byte : prefix2) {
     ASSERT_EQ(nfc_mode_scan_feed(&st, static_cast<uint8_t>(byte), &pb[0],
                                  &pblen, sizeof(pb)),
               NFC_MODE_SCAN_INGESTED);
@@ -332,7 +332,7 @@ TEST(NfcModeLineScan, LongLineWithoutNewlineTriggersCapsPath) {
   uint8_t pb[kTestLit64];
   uint16_t pblen = 0;
   {
-    for (char byte : long_line) {
+    for (char const byte : long_line) {
       EXPECT_EQ(nfc_mode_scan_feed(&st, static_cast<uint8_t>(byte), &pb[0],
                                    &pblen, sizeof(pb)),
                 NFC_MODE_SCAN_INGESTED);

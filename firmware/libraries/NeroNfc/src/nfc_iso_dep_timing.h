@@ -23,7 +23,7 @@
 
 #define ISO_DEP_PRE_IBLOCK_DELAY_MIN_MS 18u
 #define ISO_DEP_PRE_IBLOCK_DELAY_MAX_MS 200u
-/* [ISO14443-4] section 7.2 — RATS/ATS exchange timeout (FWT headroom). */
+/* [ISO14443-4] section 7.2 -- RATS/ATS exchange timeout (FWT headroom). */
 #define SECURITY_KEY_RATS_TIMEOUT_MS NFC_ISO_DEP_RATS_TIMEOUT_MS
 #define SECURITY_KEY_SHORT_FRAME_MS 1000u
 #define ISO_DEP_US_TO_MS_ROUND_UP 999u
@@ -32,7 +32,7 @@
 #define ISO_DEP_LINK_TIMEOUT_MIN_MS 80u
 #define ISO_DEP_WTX_TIMEOUT_MAX_MS 5000u
 /*
- * [ISO14443-4] section 7.2 — the PCD must wait at least FWT for the PICC
+ * [ISO14443-4] section 7.2 -- the PCD must wait at least FWT for the PICC
  * response. FWT reaches ~4949 ms at FWI=14, so the link-response timeout
  * ceiling must cover the full FWT range (aligned with the WTX wait ceiling)
  * instead of truncating a compliant high-FWI token's allowed response window.

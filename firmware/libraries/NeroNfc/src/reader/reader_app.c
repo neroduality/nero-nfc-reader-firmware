@@ -16,8 +16,8 @@
 
 #include "nero_nfc_null.h"
 /*
- * reader_app.c — Unified NFC reader for the X-NUCLEO-NFC08A1 (ST25R3916B)
- * on supported Arduino-class host boards (UNO R4 WiFi, Nucleo-WBA65RI, …).
+ * reader_app.c -- Unified NFC reader for the X-NUCLEO-NFC08A1 (ST25R3916B)
+ * on supported Arduino-class host boards (UNO R4 WiFi, Nucleo-WBA65RI, ...).
  *
  * One firmware target supports:
  *   - NFC Forum Type 2 tags  (NTAG213/215/216, ST25TN512/ST25TN01K) over
@@ -30,10 +30,10 @@
  *   1. Configure ISO 14443-A and try a WUPA. If a tag answers and SAK bit 6
  *      (0x20, ISO-DEP) is set, the CDC firmware treats it as an NFC Forum
  *      Type 4 NDEF tag.
- *   2. If SAK bit 6 is clear the tag is NFC Forum Type 2 — read pages and
+ *   2. If SAK bit 6 is clear the tag is NFC Forum Type 2 -- read pages and
  * parse NDEF.
  *   3. If 14443-A fails, configure ISO 15693 and try inventory. If a UID
- *      answers, this is a Type 5 tag — read its Capability Container and parse
+ *      answers, this is a Type 5 tag -- read its Capability Container and parse
  *      the NDEF message from user memory.
  *
  * Security boundary: WebAuthn/FIDO is exposed by the CCID firmware path only.
@@ -300,7 +300,7 @@ static void reader_read_type4_ndef_tag(void) {
   if (!reader_security_key_iso_dep_session_open_quiet(
           SECURITY_KEY_RATS_TIMEOUT_MS)) {
     nero_nfc_log_write(
-        "\r\n  [TYPE4] ISO-DEP session failed — cannot read NDEF.\r\n");
+        "\r\n  [TYPE4] ISO-DEP session failed -- cannot read NDEF.\r\n");
     return;
   }
   (void)reader_tags_read_type4_ndef();
@@ -519,7 +519,7 @@ void reader_setup(void) {
       "desktop opener\r\n");
   nero_nfc_log_line("  UART (combined firmware):");
   nero_nfc_log_write(
-      "    mode writer  · tag payloads (help for URL/text/…);  mode "
+      "    mode writer  · tag payloads (help for URL/text/...);  mode "
       "reader  · this "
       "reader\r\n");
 #endif
@@ -704,7 +704,7 @@ void reader_loop(void) {
     runtime->poll_interval_ms = READER_APP_NEAR_POLL_INTERVAL_MS;
     if (!runtime->was_near) {
 #if !defined(NERO_CCID_USB_BUILD)
-      nero_nfc_log_line("\r\n  >> Field change — polling faster");
+      nero_nfc_log_line("\r\n  >> Field change -- polling faster");
 #endif
     }
     runtime->was_near = true;

@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# Generated from kit openssf-hardening-manifest + dials for build/lint/firmware/arduino_uno_r4wifi/nfc/cdc/compile_commands.json — do not hand-edit.
+# Generated from kit openssf-hardening-manifest + dials for build/lint/firmware/arduino_uno_r4wifi/nfc/cdc/compile_commands.json -- do not hand-edit.
 #
 include(${CMAKE_CURRENT_LIST_DIR}/CompilerHardeningProbes.cmake)
 include(CMakeParseArguments)

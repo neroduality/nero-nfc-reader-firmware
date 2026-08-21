@@ -24,7 +24,7 @@
 extern "C" {
 #endif
 
-/* [ISO14443-3] sections 6.5.3.4 and 6.5.4 — Type A UID cascade
+/* [ISO14443-3] sections 6.5.3.4 and 6.5.4 -- Type A UID cascade
  * tag, SAK continuation bit, cascade-level UID CLn width (4 bytes),
  * and assembled UID lengths. SEL_RESP_LEN names the per-level UID CLn
  * buffer, not the SELECT SAK response. */

@@ -45,7 +45,7 @@ void nero_nfc_platform_host_fake_reset(void) {
   g_last_pin = 0u;
   g_last_pin_mode = 0u;
   g_last_pin_value = 0u;
-  nero_nfc_app_t* active = nero_nfc_app_active();
+  const nero_nfc_app_t* active = nero_nfc_app_active();
   if (active != NERO_NFC_NULL) {
     (void)nero_nfc_app_unbind_active(active);
   }

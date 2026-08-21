@@ -89,6 +89,11 @@ st25_field_on_status_t st25_runtime_field_on_common(
 
 uint32_t st25_runtime_tx_wait_budget_us(uint16_t tx_len);
 
+/* Wall-clock delta via ops->millis(); lives in the timing TU so value-flow
+ * analysis does not fold consecutive millis() reads into one value. */
+uint32_t st25_runtime_elapsed_ms(const st25_runtime_ops_t* ops,
+                                 uint32_t start_ms);
+
 int st25_runtime_transceive_common_diag(
     const st25_runtime_ops_t* ops, const uint8_t* tx_data, uint16_t tx_len,
     uint8_t* rx_buffer, uint16_t rx_buffer_len, bool with_crc,

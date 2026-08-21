@@ -502,7 +502,7 @@ NERO_NFC_NODISCARD bool st25_iso15693_ext_write_block(
   }
 
   /*
-   * Programming time: ST25DV / ST25TV datasheets specify ≤5 ms typical.
+   * Programming time: ST25DV / ST25TV datasheets specify <=5 ms typical.
    * 60 ms is generous and forgiving of weak coupling.
    */
   rlen = transceive(context, cmd, n, rx, sizeof(rx), K_ST25_V_WRITE_TIMEOUT_MS);

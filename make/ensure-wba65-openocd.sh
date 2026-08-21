@@ -78,18 +78,18 @@ openocd_spinner_rotate() {
     local elapsed=$((SECONDS - started))
     if [[ ${phase} == "clone" ]]; then
       if ((elapsed < 60)); then
-        cli_spinner_set_message "Processing — cloning OpenOCD source"
+        cli_spinner_set_message "Processing -- cloning OpenOCD source"
       else
-        cli_spinner_set_message "Processing — still cloning OpenOCD (${elapsed}s)"
+        cli_spinner_set_message "Processing -- still cloning OpenOCD (${elapsed}s)"
       fi
     elif ((elapsed < 20)); then
-      cli_spinner_set_message "Processing — initializing jimtcl submodule and applying patches"
+      cli_spinner_set_message "Processing -- initializing jimtcl submodule and applying patches"
     elif ((elapsed < 90)); then
-      cli_spinner_set_message "Processing — bootstrapping and configuring OpenOCD (${elapsed}s)"
+      cli_spinner_set_message "Processing -- bootstrapping and configuring OpenOCD (${elapsed}s)"
     elif ((elapsed < 240)); then
-      cli_spinner_set_message "Processing — compiling OpenOCD (${elapsed}s) — first build may take a few min"
+      cli_spinner_set_message "Processing -- compiling OpenOCD (${elapsed}s) -- first build may take a few min"
     else
-      cli_spinner_set_message "Processing — still compiling OpenOCD (${elapsed}s)"
+      cli_spinner_set_message "Processing -- still compiling OpenOCD (${elapsed}s)"
     fi
   done
 }
@@ -260,13 +260,13 @@ fi
 
 if [[ ! -d "${OPENOCD_SRC}/.git" ]]; then
   echo "── Cloning OpenOCD (${OPENOCD_REV}) for WBA65 flash ──" >&2
-  run_openocd_step_with_spinner "Processing — cloning OpenOCD source" clone clone_openocd_source
+  run_openocd_step_with_spinner "Processing -- cloning OpenOCD source" clone clone_openocd_source
 fi
 checkout_openocd_rev
 
 echo "── Building OpenOCD for NUCLEO-WBA65RI (STM32WBA6x, ${OPENOCD_JOBS} jobs) ──" >&2
 run_openocd_step_with_spinner \
-  "Processing — initializing jimtcl submodule and applying patches" \
+  "Processing -- initializing jimtcl submodule and applying patches" \
   build \
   build_openocd_tree
 

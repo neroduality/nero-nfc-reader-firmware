@@ -16,7 +16,7 @@
 
 #include "nero_nfc_null.h"
 /*
- * reader_tags_type2.c — NFC Forum Type 2 tag read path.
+ * reader_tags_type2.c -- NFC Forum Type 2 tag read path.
  */
 
 #include "reader_tags.h"
@@ -117,7 +117,7 @@ bool reader_tags_ntag_write_page(uint8_t page, const uint8_t* data) {
       NFC_TAG_T2T_WRITE_ACK_TIMEOUT_MS, false, true);
 
   /*
-   * [T2T-ISO14443-A] section 5.2 — WRITE is acknowledged only by the 4-bit ACK
+   * [T2T-ISO14443-A] section 5.2 -- WRITE is acknowledged only by the 4-bit ACK
    * 1010b (0Ah).
    */
   return (rlen >= 1) &&

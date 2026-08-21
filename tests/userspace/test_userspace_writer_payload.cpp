@@ -81,7 +81,8 @@ TEST(UserspaceWriterPayload, BuildsVcardRecordWithOptionalFields) {
       records[0].decoded_,
       std::optional<std::string>(
           "Contact: name=Ada Lovelace tel=+44123 email=ada@example.test"));
-  std::string body(records[0].payload_.begin(), records[0].payload_.end());
+  std::string const body(records[0].payload_.begin(),
+                         records[0].payload_.end());
   EXPECT_NE(body.find("VERSION:4.0"), std::string::npos);
   EXPECT_NE(body.find("FN:Ada Lovelace"), std::string::npos);
   EXPECT_NE(body.find("TEL:+44123"), std::string::npos);

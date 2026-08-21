@@ -21,7 +21,7 @@ Flash firmware on [supported hardware](../README.md#supported-hardware), write N
 
 ## 1. Flash firmware
 
-Default `TARGET=arduino_uno_r4wifi`. Alternate: `# TARGET=nucleo_wba65ri …`.
+Default `TARGET=arduino_uno_r4wifi`. Alternate: `# TARGET=nucleo_wba65ri ...`.
 
 Option 1: Serial reader/writer (simplest):
 
@@ -69,8 +69,8 @@ operation.
 
 On CCID, Type 4 is the quickest tag family: plain ISO-DEP `SELECT`, then
 chunked `READ BINARY` / `UPDATE BINARY` on the NDEF file. Type 2 and Type 5 use
-PC/SC Part 3 storage instead—page- or block-sized `READ`/`UPDATE BINARY` (Type
-5 can fall back to transparent ISO15693)—which means more round trips. Reads
+PC/SC Part 3 storage instead--page- or block-sized `READ`/`UPDATE BINARY` (Type
+5 can fall back to transparent ISO15693)--which means more round trips. Reads
 fetch NDEF first; optional `GET DATA` adds tag metadata but not Type 2 `AUTH0`.
 
 ## 3. Write NDEF
@@ -87,7 +87,7 @@ writer --ndef-hex=0311D1010D55036578616D706C652E74657374FE
 
 **Hold card over or place directly on the antenna until message `*** SUCCESS - Wrote NDEF message ***` appears**.
 
-USB CCID / PC/SC firmware mode: It may take a bit — see
+USB CCID / PC/SC firmware mode: It may take a bit -- see
 [CCID vs CDC performance](#ccid-vs-cdc-performance).
 
 ## 4. Read tags
@@ -98,7 +98,7 @@ reader   # or `reader --no-open-url`
 
 **Hold card over or place directly on the antenna until metadata appears**.
 
-USB CCID / PC/SC firmware mode: It may take a bit — see
+USB CCID / PC/SC firmware mode: It may take a bit -- see
 [CCID vs CDC performance](#ccid-vs-cdc-performance).
 
 ## Capabilities and limitations
@@ -106,27 +106,27 @@ USB CCID / PC/SC firmware mode: It may take a bit — see
 The firmware reads and writes **plain NDEF** on NFC Forum Type 2, Type 4, and
 Type 5 tags. The limits below are intentional.
 
-- **Type 2 — password-protected tags are read-only for writes.** When a tag
+- **Type 2 -- password-protected tags are read-only for writes.** When a tag
   advertises `AUTH0`/`PWD` protection, the firmware detects it. If the data area
   is readable without authentication, NDEF is parsed normally. Writes **fail
   closed** because the firmware does not send `PWD_AUTH`; it will not modify a
   protected tag.
-- **Type 4 — plain NDEF only.** Access uses the standard Type 4 flow in plain
-  communication mode: `SELECT` the NDEF application → `SELECT`/read the
-  Capability Container (CC) → `ReadBinary`/`UpdateBinary` on the NDEF file. A
+- **Type 4 -- plain NDEF only.** Access uses the standard Type 4 flow in plain
+  communication mode: `SELECT` the NDEF application -> `SELECT`/read the
+  Capability Container (CC) -> `ReadBinary`/`UpdateBinary` on the NDEF file. A
   factory-default **NTAG424 DNA** allows plain read and write of its NDEF file
   (mapping version 2.0, 23-byte CC, NDEF file at `E104h`) and is handled like any
-  other Type 4 tag. **Secure Messaging** is not supported—authenticated/encrypted
+  other Type 4 tag. **Secure Messaging** is not supported--authenticated/encrypted
   file access, SDM/SUN mirroring, and LRP. If access conditions require secure
   messaging, reads report restricted access and writes **fail closed**.
   [YubiKey NFC security keys](https://www.yubico.com/us/product/yubikey-5-series/yubikey-5c-nfc/)
   and [Cryptnox NFC FIDO cards](https://cryptnox.com/fido2-security-key-nfc-compatible-passwordless-key/)
   are also Type 4 ISO-DEP devices, but WebAuthn requires CCID firmware and APDU
-  relay rather than plain NDEF read/write—see
+  relay rather than plain NDEF read/write--see
   [Tutorial: WebAuthn with CCID firmware](TUTORIAL_WEBAUTHN_CCID.md).
-- **Type 5 — block addressing.** **Writes** accept NDEF payloads up to 880
+- **Type 5 -- block addressing.** **Writes** accept NDEF payloads up to 880
   bytes, which fit within single-byte ISO/IEC 15693 block addressing (blocks
-  0–255). **Reads** also use extended (two-byte) block addressing when needed
+  0-255). **Reads** also use extended (two-byte) block addressing when needed
   for larger dynamic ST25DV tags.
 
 ## Authoritative sources
@@ -142,9 +142,9 @@ The following external references apply.
 | ISO/IEC 14443-3 (Type A activation / UID) | `[ISO14443-3]` | [ISO/IEC 14443-3:2018](https://www.iso.org/standard/73598.html) |
 | ISO/IEC 14443-4 (ISO-DEP) | `[ISO14443-4]` | [ISO/IEC 14443-4:2018](https://www.iso.org/standard/73599.html) |
 | ISO/IEC 7816-3 (ATR / historical bytes) | `[ISO7816-3]` | [ISO/IEC 7816-3:2006](https://www.iso.org/standard/38770.html) |
-| ISO/IEC 7816-4 (APDU / status words) | `[ISO7816-4]` | [ISO/IEC 7816-4:2020](https://www.iso.org/standard/77180.html) (SELECT / READ BINARY / UPDATE BINARY; Tables 5–6 SW1/SW2) |
+| ISO/IEC 7816-4 (APDU / status words) | `[ISO7816-4]` | [ISO/IEC 7816-4:2020](https://www.iso.org/standard/77180.html) (SELECT / READ BINARY / UPDATE BINARY; Tables 5-6 SW1/SW2) |
 | ISO/IEC 7816-6 (application identifiers / RID) | `[ISO7816-6]` | [ISO/IEC 7816-6:2023](https://www.iso.org/standard/77181.html) |
-| ISO/IEC JTC 1/SC 17 IC manufacturer register | `[SC17-ICM]` | [SC 17 Standing Document 5 — Register of IC Manufacturers](https://www.aimglobal.org/wp-content/uploads/2022/04/ISO_IEC_JTC1_SC17_Standing_Document_5_Register_of_IC_Manufacturers.pdf) (UID manufacturer codes such as ST `02h`, NXP `04h`) |
+| ISO/IEC JTC 1/SC 17 IC manufacturer register | `[SC17-ICM]` | [SC 17 Standing Document 5 -- Register of IC Manufacturers](https://www.aimglobal.org/wp-content/uploads/2022/04/ISO_IEC_JTC1_SC17_Standing_Document_5_Register_of_IC_Manufacturers.pdf) (UID manufacturer codes such as ST `02h`, NXP `04h`) |
 | PC/SC host model (Part 1) | `[PCSC-P1]` | [PC/SC Part 1 v2.01.01](https://pcscworkgroup.com/Download/Specifications/pcsc1_v2.01.01.pdf) (host `SCard*` API; reader selection) |
 | PC/SC contactless storage (Part 3) | `[PCSC-P3]` | [PC/SC Part 3 v2.01.09](https://pcscworkgroup.com/Download/Specifications/pcsc3_v2.01.09.pdf) (storage ATR, GET DATA, Type 2/4/5 tag access over PC/SC) |
 | NFC Forum tag operations | `[NDEF]` | [NFC Forum specifications](https://nfc-forum.org/build/specifications) |

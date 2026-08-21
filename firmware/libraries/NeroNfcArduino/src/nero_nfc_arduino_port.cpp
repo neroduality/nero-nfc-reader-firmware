@@ -140,7 +140,9 @@ void NfcArduinoPort::DelayUsImpl(uint32_t us) { delayMicroseconds(us); }
 
 void NfcArduinoPort::SerialBeginImpl(uint32_t baud) { serial_->begin(baud); }
 
-bool NfcArduinoPort::SerialReadyImpl() { return static_cast<bool>(*serial_); }
+bool NfcArduinoPort::SerialReadyImpl() const {
+  return static_cast<bool>(*serial_);
+}
 
 void NfcArduinoPort::SerialWriteCharImpl(char c) {
   serial_->write(static_cast<uint8_t>(c));

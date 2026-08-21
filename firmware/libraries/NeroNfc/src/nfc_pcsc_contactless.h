@@ -61,7 +61,7 @@ enum {
   NFC_PCSC_ISO_DEP_APDU_RESP_MAX = 256u,
   /* ISO-DEP transceive scratch with small margin above resp + SW. */
   NFC_PCSC_ISO_DEP_APDU_RESP_STACK = 260u,
-  /* NFC Forum Type 4 Tag — 15-byte CC file (mapping v2.0) helper defaults. */
+  /* NFC Forum Type 4 Tag -- 15-byte CC file (mapping v2.0) helper defaults. */
   NFC_PCSC_T4_CC_MAPPING_VERSION = 0x20u,
   NFC_PCSC_T4_CC_DEFAULT_MLE = 0x003Bu,
   NFC_PCSC_T4_CC_DEFAULT_MLC = 0x0034u,
@@ -79,12 +79,12 @@ enum {
   NFC_PCSC_STORAGE_RID_2 = 0x00u,
   NFC_PCSC_STORAGE_RID_3 = 0x03u,
   NFC_PCSC_STORAGE_RID_4 = 0x06u,
-  /* ISO/IEC 7816-4 status words — single source for CCID APDU responses and
+  /* ISO/IEC 7816-4 status words -- single source for CCID APDU responses and
      relay paths. */
   NFC_ISO7816_SW1_SUCCESS = 0x90u,
   NFC_ISO7816_SW2_SUCCESS = 0x00u,
   NFC_ISO7816_SW1_MORE_DATA = 0x61u,
-  /* [CTAP2.3] §11.3.5.2 / §11.3.7.2 — SW1 of 9100h keep-alive/status word. */
+  /* [CTAP2.3] §11.3.5.2 / §11.3.7.2 -- SW1 of 9100h keep-alive/status word. */
   NFC_ISO7816_SW1_MORE_DATA_VENDOR = 0x91u,
   NFC_ISO7816_SW1_WRONG_LENGTH = 0x6Cu,
   NFC_ISO7816_SW1_VERIFICATION_FAILED = 0x63u,
@@ -98,25 +98,29 @@ enum {
   /* [DERIVED] Firmware-local SELECT-by-AID cap, not the ISO7816 short-Lc
      maximum. */
   NFC_ISO7816_SELECT_AID_MAX = 16u,
-  /* ISO/IEC 7816-4 §5.1.1 class bytes — short-form C-APDU CLA.
+  /* ISO/IEC 7816-4 §5.1.1 class bytes -- short-form C-APDU CLA.
    * CLA FFh is invalid in ISO 7816-4; NFC_ISO7816_CLA_PROPRIETARY holds the
-   * PC/SC contactless vendor/escape CLA (e.g. ACR122U FF 00 …). */
+   * PC/SC contactless vendor/escape CLA (e.g. ACR122U FF 00 ...). */
   NFC_ISO7816_CLA_ISO = 0x00u,
   NFC_ISO7816_CLA_PROPRIETARY = 0xFFu,
   NFC_ISO7816_CLA_PROPRIETARY_SHORT = 0x80u,
-  /* ISO/IEC 7816-4 SELECT P1 — select by DF name (AID). */
+  /* ISO/IEC 7816-4 SELECT P1 -- select by DF name (AID). */
   NFC_ISO7816_P1_SELECT_BY_DF_NAME = 0x04u,
   /* ISO/IEC 7816-4 status-word and APDU geometry helpers. */
   NFC_ISO7816_SW_STATUS_WORD_LEN = 2u,
   /* [DERIVED] Byte mask helper; intentionally not a standalone SPEC entry. */
   NFC_ISO7816_BYTE_MASK = 0xFFu,
-  /* ISO/IEC 7816-3 ATR layout for PC/SC ATS-as-ATR synthesis. */
+  /* ISO/IEC 7816-3 ATR layout for the PC/SC Part 3 §3.1.3.2.3.1 contactless
+   * ATR (3B 8N 80 01 [ATS historical bytes] TCK). */
   NFC_ISO7816_ATR_TS = 0x3Bu,
-  /* ISO/IEC 7816-3 §8.2.2 — T0 Y(1) bit for TD1 present (not K length). */
+  /* ISO/IEC 7816-3 §8.2.2 -- T0 Y(1) bit for TD1 present (not K length). */
   NFC_ISO7816_ATR_T0_TD1_PRESENT = 0x80u,
-  NFC_ISO7816_ATR_TD1_T1 = 0x01u,
-  NFC_ISO7816_ATR_FIXED_PREFIX_LEN = 3u,
-  NFC_ISO7816_ATR_TS_TCK_OVERHEAD = 4u,
+  /* ISO/IEC 7816-3 §8.2.3 -- TD1 Y(2) bit 80h: TD2 follows (PC/SC TD1=80h). */
+  NFC_ISO7816_ATR_TD1_TD2_PRESENT = 0x80u,
+  /* ISO/IEC 7816-3 §8.2.3 -- TD2 low nibble 01h: protocol T=1. */
+  NFC_ISO7816_ATR_TD2_T1 = 0x01u,
+  NFC_ISO7816_ATR_FIXED_PREFIX_LEN = 4u,
+  NFC_ISO7816_ATR_TS_TCK_OVERHEAD = 5u,
   /* [DERIVED] Status-classification helpers; SW byte values are traced
      separately. */
   NFC_ISO7816_SW1_HIGH_BYTE_MASK = 0xFF00u,
@@ -139,10 +143,10 @@ enum {
   NFC_ISO7816_MIN_RESPONSE_WITH_BODY_LEN = 3u,
   NFC_ISO7816_MIN_RESPONSE_WITH_STATUS_LEN = 4u,
   NFC_ISO7816_APDU_LE_ONLY_LEN = 5u,
-  /* ISO/IEC 7816-4 SELECT P2 — first or only occurrence vs next occurrence. */
+  /* ISO/IEC 7816-4 SELECT P2 -- first or only occurrence vs next occurrence. */
   NFC_ISO7816_P2_SELECT_FIRST = 0x00u,
   NFC_ISO7816_P2_SELECT_NO_FCI = 0x0Cu,
-  /* ISO/IEC 7816-4 GET DATA — P2 default (no template qualifier). */
+  /* ISO/IEC 7816-4 GET DATA -- P2 default (no template qualifier). */
   NFC_ISO7816_GET_DATA_P2_DEFAULT = 0x00u,
   /* ISO/IEC 7816-4 short C-APDU field indices (CLA=0, INS=1). */
   NFC_ISO7816_APDU_IDX_CLA = 0u,
@@ -156,14 +160,14 @@ enum {
   NFC_ISO7816_APDU_LC_BODY_WITH_LE_PREFIX = 6u,
   /* Contactless reader wrong-length SW1 (distinct from 7816-4 0x6C). */
   NFC_ISO7816_SW1_WRONG_LENGTH_ALT = 0x67u,
-  /* [PCSC-P3] §3.3.3 — Escape command for transparent ISO15693 exchange. */
+  /* [PCSC-P3] §3.3.3 -- Escape command for transparent ISO15693 exchange. */
   NFC_PCSC_ESCAPE_TRANSPARENT_INS = 0xC2u,
-  /* [PCSC-P3] §3.1.3 — contactless storage card standard identifiers. */
+  /* [PCSC-P3] §3.1.3 -- contactless storage card standard identifiers. */
   NFC_PCSC_STORAGE_STANDARD_ISO14443A = 0x03u,
   NFC_PCSC_STORAGE_STANDARD_ISO15693 = 0x0Bu,
   NFC_PCSC_STORAGE_CARD_TYPE2 = 0x03u,
   NFC_PCSC_STORAGE_CARD_TYPE5 = 0x12u,
-  /* [ISO7816-4] Table 5 (SW1) / Table 6 (SW2) — status words for storage-card
+  /* [ISO7816-4] Table 5 (SW1) / Table 6 (SW2) -- status words for storage-card
      APDU responses. */
   NFC_ISO7816_SW1_WRONG_DATA = 0x6Au,
   NFC_ISO7816_SW1_WRONG_P1P2 = 0x6Bu,
@@ -178,17 +182,17 @@ enum {
   /* [DERIVED] Host-defined SW2 when command not allowed (no
      assigned Table 6 code). */
   NFC_ISO7816_SW2_COMMAND_NOT_ALLOWED = 0xFFu,
-  /* [ISO7816-4] Table 39 — SELECT by file identifier (P1). */
+  /* [ISO7816-4] Table 39 -- SELECT by file identifier (P1). */
   NFC_ISO7816_P1_SELECT_BY_FILE_ID = 0x00u,
-  /* [ISO7816-4] §7.4.1 — file identifier is two bytes on the wire. */
+  /* [ISO7816-4] §7.4.1 -- file identifier is two bytes on the wire. */
   NFC_ISO7816_LC_SELECT_FILE_ID = 2u,
-  /* [ISO7816-4] §5.1.3 — SW1-SW2 response trailer width (bytes). */
+  /* [ISO7816-4] §5.1.3 -- SW1-SW2 response trailer width (bytes). */
   NFC_ISO7816_SW_LEN = 2u,
-  /* [ISO7816-4] §7 — APDU encode/decode high-byte shift (host helper). */
+  /* [ISO7816-4] §7 -- APDU encode/decode high-byte shift (host helper). */
   NFC_ISO7816_U16_HIGH_BYTE_SHIFT = 8u,
-  /* [ISO7816-4] §7 — APDU low-byte mask (host helper). */
+  /* [ISO7816-4] §7 -- APDU low-byte mask (host helper). */
   NFC_ISO7816_LOW_BYTE_MASK = 0xFFu,
-  /* [ISO7816-4] READ BINARY — P1=FFh, block number in P2 (Type 5 PC/SC
+  /* [ISO7816-4] READ BINARY -- P1=FFh, block number in P2 (Type 5 PC/SC
      convention). */
   NFC_ISO7816_READ_BINARY_P1_BLOCK_IN_P2 = 0xFFu,
   /* [PCSC-P3] §3.2.2.3.2 GET DATA P1 tag-data identifiers. */
@@ -238,7 +242,7 @@ enum {
   NFC_PN532_FW_VERSION_REV = 0x06u,
   NFC_PN532_FW_VERSION_SUPPORT = 0x07u,
 
-  /* ACR122U API v2.02 §6.3 — Get Firmware Version P1 (APDU FF 00 48 00 00). */
+  /* ACR122U API v2.02 §6.3 -- Get Firmware Version P1 (APDU FF 00 48 00 00). */
   NFC_ACR122U_P1_GET_FIRMWARE_VERSION = 0x48u,
 };
 
@@ -259,7 +263,7 @@ static const uint8_t NFC_PCSC_STORAGE_RID[NFC_PCSC_STORAGE_RID_LEN] = {
     (uint8_t)NFC_PCSC_STORAGE_RID_4,
 };
 
-/* NFC Forum Type 4 Tag — NDEF Application AID (D2 76 00 00 85 01 01). */
+/* NFC Forum Type 4 Tag -- NDEF Application AID (D2 76 00 00 85 01 01). */
 static const uint8_t NFC_PCSC_NDEF_APP_AID[NFC_PCSC_NDEF_APP_AID_LEN] = {
     0xD2u, 0x76u, 0x00u, 0x00u, 0x85u, 0x01u, 0x01u,
 };
@@ -556,7 +560,7 @@ NERO_NFC_NODISCARD static inline bool nfc_pcsc_build_t4_read_binary_apdu(
   return true;
 }
 
-/* NFC Forum Type 4 Tag — build a 15-byte CC file with variable NDEF file size.
+/* NFC Forum Type 4 Tag -- build a 15-byte CC file with variable NDEF file size.
  * [T4T-ISO14443-4] minimum CC length is 15 bytes; NTAG424 delivery CC is 23
  * bytes with proprietary TLV, so this helper emits only the generic Type 4 NDEF
  * File Control TLV template. CC bytes 13/14 are NDEF file read/write access

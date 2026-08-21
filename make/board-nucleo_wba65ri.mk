@@ -81,5 +81,5 @@ BOARD_UPLOAD_HINT := ST-Link OpenOCD upload (project WBA6-capable OpenOCD)
 BOARD_UPLOAD_PREP := echo "   Nucleo-WBA65RI upload:"; echo "   1. USB connected (ST-Link 0483:3753)"; echo "   2. No bootloader button needed"; echo "   3. Uses third-party/openocd-wba65 (project OpenOCD build)"
 BOARD_PORT_DISCOVERY_SECONDS := 15
 
-# X-NUCLEO-NFC08A1 on Arduino Uno V3 header — see WBA65_NFC_PINS above.
+# X-NUCLEO-NFC08A1 on Arduino Uno V3 header -- see WBA65_NFC_PINS above.
 BOARD_CDC_BUILD_EXTRA_FLAGS := $(WBA65_NFC_PINS) -DNFC_HAL_RXBUF_CAP=$(NFC_CDC_SERIAL_LINE_CAP)u

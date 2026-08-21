@@ -28,7 +28,7 @@ userspace binary talks to the reader.
 
 ## 1. Flash USB CCID firmware
 
-Default `TARGET=arduino_uno_r4wifi`. Alternate: `# TARGET=nucleo_wba65ri …`.
+Default `TARGET=arduino_uno_r4wifi`. Alternate: `# TARGET=nucleo_wba65ri ...`.
 
 ```bash
 make flash
@@ -44,7 +44,7 @@ WebAuthn browser bridge, see [CCID.md § WebAuthn middleware](CCID.md#webauthn-m
 1. Open [webauthn.io](https://webauthn.io).
 2. Place the NFC FIDO key or card on the reader before you start registration or sign-in, and keep it there until the ceremony completes (enter a PIN or touch the key if required).
 
-Use a resettable development token for repeated tests — many keys and cards
+Use a resettable development token for repeated tests -- many keys and cards
 limit stored passkeys, so re-registering on sites like webauthn.io eventually
 fills storage.
 
@@ -63,9 +63,9 @@ Remove the card, then tap again by holding it steady against the antenna or
 placing it directly on the reader.
 
 Recheck [§ 2. Linux host](#2-linux-host) for PC/SC and WebAuthn middleware setup.
-You can also retry with a commercial USB CCID NFC reader—for example the
+You can also retry with a commercial USB CCID NFC reader--for example the
 [HID Global OMNIKEY 5022](https://www.hidglobal.com/products/omnikey-5022-reader)
-or [ACS ACR1252U](https://www.acs.com.hk/en/products/342/acr1252u-usb-nfc-reader-iii-nfc-forum-certified-reader/)—to
+or [ACS ACR1252U](https://www.acs.com.hk/en/products/342/acr1252u-usb-nfc-reader-iii-nfc-forum-certified-reader/)--to
 isolate board-specific issues.
 
 ## Authoritative sources
@@ -80,7 +80,7 @@ The following external references apply.
 | FIDO CTAP 2.3 | `[CTAP2.3]` | [FIDO CTAP 2.3 PS 20260226 PDF](https://fidoalliance.org/specs/fido-v2.3-ps-20260226/fido-client-to-authenticator-protocol-v2.3-ps-20260226.pdf) (NFC transport §11.3, including cancel `NFCCTAP_GETRESPONSE` `P1=0x11` and poll timing in §11.3.7.2) |
 | ISO/IEC 14443-4 (ISO-DEP / CTAP transport) | `[ISO14443-4]` | [ISO/IEC 14443-4:2018](https://www.iso.org/standard/73599.html) (RATS/ATS, I/R/S blocks; CTAP over NFC) |
 | ISO/IEC 7816-3 (ATR / historical bytes) | `[ISO7816-3]` | [ISO/IEC 7816-3:2006](https://www.iso.org/standard/38770.html) (PC/SC ATR synthesis) |
-| ISO/IEC 7816-4 (APDU / status words) | `[ISO7816-4]` | [ISO/IEC 7816-4:2020](https://www.iso.org/standard/77180.html) (Tables 5–6 SW1/SW2; CTAP/CCID relay framing) |
+| ISO/IEC 7816-4 (APDU / status words) | `[ISO7816-4]` | [ISO/IEC 7816-4:2020](https://www.iso.org/standard/77180.html) (Tables 5-6 SW1/SW2; CTAP/CCID relay framing) |
 | PC/SC host model (Part 1) | `[PCSC-P1]` | [PC/SC Part 1 v2.01.01](https://pcscworkgroup.com/Download/Specifications/pcsc1_v2.01.01.pdf) |
 | PC/SC contactless storage (Part 3) | `[PCSC-P3]` | [PC/SC Part 3 v2.01.09](https://pcscworkgroup.com/Download/Specifications/pcsc3_v2.01.09.pdf) |
 | NXP PN532 reader command compatibility | `[PN532]` | [PN532 User Manual UM0701-02](https://www.nxp.com/docs/en/user-guide/141520.pdf) (PN53x/ACR122-style direct APDU compatibility path) |

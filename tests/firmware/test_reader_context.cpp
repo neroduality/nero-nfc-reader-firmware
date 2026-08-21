@@ -74,13 +74,13 @@ TEST(ReaderContext, ResetClearsSensitiveIsoDepBuffers) {
 
   reader_context_reset(&ctx);
 
-  for (unsigned char i : ctx.iso_dep.iblock_tx) {
+  for (unsigned char const i : ctx.iso_dep.iblock_tx) {
     EXPECT_EQ(i, 0u);
   }
-  for (unsigned char i : ctx.iso_dep.raw_rx) {
+  for (unsigned char const i : ctx.iso_dep.raw_rx) {
     EXPECT_EQ(i, 0u);
   }
-  for (unsigned char i : ctx.iso_dep.ats_data) {
+  for (unsigned char const i : ctx.iso_dep.ats_data) {
     EXPECT_EQ(i, 0u);
   }
 }
@@ -92,14 +92,14 @@ TEST_F(NeroNfcReaderAppFixture, ActiveResetClearsIsoDepTrace) {
 }
 
 TEST_F(NeroNfcReaderAppFixture, ReaderContextLivesInAppStorage) {
-  reader_context_t* ctx = nero_nfc_app_reader(App());
+  reader_context_t const* ctx = nero_nfc_app_reader(App());
   ASSERT_NE(ctx, NERO_NFC_NULL);
   EXPECT_EQ(ctx, reader_context_active());
   EXPECT_EQ(ctx, &G_READER);
 }
 
 TEST_F(NeroNfcReaderAppFixture, WriterContextLivesInAppStorage) {
-  writer_context_t* ctx = nero_nfc_app_writer(App());
+  writer_context_t const* ctx = nero_nfc_app_writer(App());
   ASSERT_NE(ctx, NERO_NFC_NULL);
   EXPECT_EQ(ctx, writer_context_active());
   WRITER_APP_SAK = NFC_TAG_T4T_SAK_ISO14443_4_BIT;

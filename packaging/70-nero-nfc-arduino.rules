@@ -21,7 +21,7 @@ ACTION=="remove", GOTO="nero_nfc_mm_end"
 
 # UNO R4 WiFi sketch CDC (boards.txt pid.1)
 # MM_DEVICE_IGNORE + ID_MM_DEVICE_IGNORE: Fedora/ModemManager may probe ttyACM
-# before DTR/1200-bps bootloader touch; both tags maximize “leave this port alone”.
+# before DTR/1200-bps bootloader touch; both tags maximize "leave this port alone".
 SUBSYSTEM=="tty", KERNEL=="ttyACM*", ATTRS{idVendor}=="2341", ATTRS{idProduct}=="006d", MODE="0600", TAG+="uaccess", ENV{MM_DEVICE_IGNORE}="1", ENV{ID_MM_DEVICE_IGNORE}="1"
 
 # UNO R4 Minima

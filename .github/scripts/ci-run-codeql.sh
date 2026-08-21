@@ -17,7 +17,7 @@
 
 # CodeQL job container entry. Mirrors .github/workflows/codeql.yml on debian:sid-slim
 # (same pattern as ci-run-lint.sh / ci-run-test-container.sh):
-#   root → install-linux-deps (INSTALL_LINT_DEPS=0) → drop to HOST_UID → CodeQL CLI
+#   root -> install-linux-deps (INSTALL_LINT_DEPS=0) -> drop to HOST_UID -> CodeQL CLI
 #
 # Invoked by run-codeql-locally.sh (make codeql-local).
 set -euo pipefail
@@ -41,10 +41,12 @@ if [[ $(id -u) -eq 0 && -n ${HOST_UID:-} && ${NERO_NFC_CI_AS_USER:-0} != 1 ]]; t
     bash "${repo_root}/make/install-linux-deps.sh"
   nero_nfc_prepare_bind_mount_paths "${repo_root}"
   ci_home="${NERO_NFC_CI_HOME:-/tmp/nero-nfc-ci}"
-  # Ephemeral CodeQL CLI + pack dirs inside the container only (no host mounts).
-  codeql_cache="${CODEQL_CACHE:-/tmp/nero-nfc-codeql-cli}"
-  mkdir -p "${ci_home}" "${codeql_cache}"
-  chown -R "${HOST_UID}:${HOST_GID:-${HOST_UID}}" "${ci_home}" "${codeql_cache}"
+  # CLI under the bind-mounted work tree (build/codeql-cli); packs stay in $HOME
+  # inside the container (ephemeral). make clean on the live repo clears build/.
+  codeql_cache="${CODEQL_CACHE:-${repo_root}/build/codeql-cli}"
+  mkdir -p "${ci_home}" "${codeql_cache}" "${repo_root}/build/codeql"
+  chown -R "${HOST_UID}:${HOST_GID:-${HOST_UID}}" "${ci_home}" "${codeql_cache}" \
+    "${repo_root}/build/codeql"
   export CODEQL_CACHE="${codeql_cache}"
   nero_nfc_require_drop_to_host_user \
     bash "${repo_root}/.github/scripts/ci-run-codeql.sh" "$@"
@@ -111,9 +113,13 @@ while [[ $# -gt 0 ]]; do
   shift
 done
 
-CODEQL_CLI_VERSION="${CODEQL_CLI_VERSION:-v2.26.0}"
-# Always ephemeral inside the container (launcher must not mount host caches).
-CODEQL_CACHE="${CODEQL_CACHE:-/tmp/nero-nfc-codeql-cli}"
+# Must track registry packs: cpp-queries@1.8.1 advertises CLI 2.26.3 and uses
+# OCI manifest fields (e.g. layer digest) that 2.26.0 rejects.
+CODEQL_CLI_VERSION="${CODEQL_CLI_VERSION:-v2.26.3}"
+# Sibling of build/codeql (DB/SARIF) and of tests/build-codeql + build/userspace-codeql
+# (traced CMake wipe dirs). Kept under the work tree so make clean removes it —
+# never under a path codeql-build.sh rm -rf's, never outside the repo.
+CODEQL_CACHE="${CODEQL_CACHE:-${FIRMWARE_ROOT}/build/codeql-cli}"
 # Matches .github/codeql/codeql-config.yml queries: security-extended
 CODEQL_SUITE_FILE="${CODEQL_SUITE_FILE:-cpp-security-extended.qls}"
 CODEQL_PACK_SCOPE="${CODEQL_PACK_SCOPE:-codeql/cpp-queries}"
@@ -121,14 +127,14 @@ DB_PATH="${CODEQL_DB_PATH:-${FIRMWARE_ROOT}/build/codeql/cpp-db}"
 SARIF_PATH="${CODEQL_SARIF_PATH:-${FIRMWARE_ROOT}/build/codeql/results.sarif}"
 
 resolve_codeql() {
-  # Refuse host-injected CODEQL_DIST — local must download like a cold GHA runner.
+  # Refuse host-injected CLI — local must download like a cold GHA runner.
   if [[ -n ${CODEQL_DIST:-} ]]; then
     printf 'error: CODEQL_DIST is not allowed in ci-run-codeql (cold container only)\n' >&2
     exit 1
   fi
   if command -v codeql >/dev/null 2>&1; then
-    command -v codeql
-    return 0
+    printf 'error: host/path codeql is not allowed in ci-run-codeql (cold container only)\n' >&2
+    exit 1
   fi
 
   local os arch asset extract_root zip_path expected_hash actual_hash
@@ -199,7 +205,7 @@ resolve_query_suite() {
   printf '%s\n' "${hit}"
 }
 
-# Fail closed if OpenOCD deps (incl. patch) were not installed — same gate as ensure-wba65.
+# Fail closed if OpenOCD deps (incl. patch) were not installed -- same gate as ensure-wba65.
 if [[ " ${CODEQL_FIRMWARE_TARGETS:-arduino_uno_r4wifi nucleo_wba65ri} " == *" nucleo_wba65ri "* ]] &&
   [[ ${CODEQL_INCLUDE_FIRMWARE:-1} == "1" ]]; then
   command -v patch >/dev/null 2>&1 || {
@@ -213,7 +219,7 @@ mkdir -p "$(dirname "${DB_PATH}")" "$(dirname "${SARIF_PATH}")"
 
 build_cmd="env FIRMWARE_ROOT=${FIRMWARE_ROOT} CODEQL_INSTALL_LINUX_DEPS=0 CODEQL_INCLUDE_FIRMWARE=${CODEQL_INCLUDE_FIRMWARE:-1} bash ${SCRIPT_DIR}/codeql-build.sh"
 
-printf '\n── CodeQL database create → %s ──\n' "${DB_PATH}"
+printf '\n── CodeQL database create -> %s ──\n' "${DB_PATH}"
 "${CODEQL_BIN}" database create "${DB_PATH}" \
   --language=cpp \
   --overwrite \
@@ -228,7 +234,7 @@ fi
 ensure_cpp_query_packs
 QUERY_SUITE_PATH="$(resolve_query_suite)"
 
-printf '\n── CodeQL analyze → %s ──\n' "${SARIF_PATH}"
+printf '\n── CodeQL analyze -> %s ──\n' "${SARIF_PATH}"
 "${CODEQL_BIN}" database analyze "${DB_PATH}" \
   --threads=0 \
   --sarif-category=cpp \

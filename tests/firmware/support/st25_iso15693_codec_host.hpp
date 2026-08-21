@@ -147,14 +147,14 @@ NERO_NFC_NODISCARD static inline bool St25Iso15693StreamEncode(
 }
 
 static inline uint32_t St25RuntimeTxWaitBudgetUs(uint16_t tx_len) {
-  const uint32_t kTxBits =
+  const uint32_t tx_bits =
       (static_cast<uint32_t>(tx_len) * kSt25RuntimeTxBitsPerByte) +
       kSt25RuntimeTxOverheadBits;
-  const uint32_t kTxUs =
-      (kTxBits * kSt25RuntimeUsPerSec + kSt25RuntimeIso15693BitRateRound) /
+  const uint32_t tx_us =
+      (tx_bits * kSt25RuntimeUsPerSec + kSt25RuntimeIso15693BitRateRound) /
       kSt25RuntimeIso15693BitRateHz;
-  const uint32_t kBudget = kTxUs + kSt25RuntimeTxWaitSlackUs;
+  const uint32_t budget = tx_us + kSt25RuntimeTxWaitSlackUs;
 
-  const auto kMinUs = static_cast<uint32_t>(kSt25RuntimeTxWaitMinUs);
-  return (kBudget < kMinUs) ? kMinUs : kBudget;
+  const auto min_us = static_cast<uint32_t>(kSt25RuntimeTxWaitMinUs);
+  return (budget < min_us) ? min_us : budget;
 }

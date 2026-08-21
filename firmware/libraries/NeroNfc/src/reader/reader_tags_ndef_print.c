@@ -16,7 +16,7 @@
 
 #include "nero_nfc_null.h"
 /*
- * reader_tags_ndef_print.c — NDEF record decode/print helpers for tag reads.
+ * reader_tags_ndef_print.c -- NDEF record decode/print helpers for tag reads.
  */
 
 #include "reader_tags.h"
@@ -514,7 +514,7 @@ void reader_tags_print_ndef_records(const uint8_t* data, uint16_t len) {
       continue;
     }
     if (status == NFC_NDEF_RECORD_UNSUPPORTED) {
-      nero_nfc_log_line("  (chunked NDEF record — unsupported)");
+      nero_nfc_log_line("  (chunked NDEF record -- unsupported)");
       return;
     }
     if (status != NFC_NDEF_RECORD_OK) {

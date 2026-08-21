@@ -16,8 +16,8 @@
 # limitations under the License.
 
 # Verify rootful Docker for the current user (lima): daemon reachable and optionally run a container.
-# LIMA_DOCKER_SMOKE_MODE=full   — docker info + docker run (provision, first boot)
-# LIMA_DOCKER_SMOKE_MODE=quick  — docker info only (guest CI entry after provision)
+# LIMA_DOCKER_SMOKE_MODE=full   -- docker info + docker run (provision, first boot)
+# LIMA_DOCKER_SMOKE_MODE=quick  -- docker info only (guest CI entry after provision)
 set -euo pipefail
 
 DOCKER_SMOKE_IMAGE="${DOCKER_SMOKE_IMAGE:-docker.io/library/alpine:3.21@sha256:48b0309ca019d89d40f670aa1bc06e426dc0931948452e8491e3d65087abc07d}"

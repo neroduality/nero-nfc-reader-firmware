@@ -29,7 +29,7 @@
 #if defined(ARDUINO_NUCLEO_WBA65RI)
 #include "pins_arduino.h"
 
-// Digital PinName array — NUCLEO-WBA65RI Arduino Uno V3 (UM3610 / Zephyr
+// Digital PinName array -- NUCLEO-WBA65RI Arduino Uno V3 (UM3610 / Zephyr
 // arduino_r3_connector.dtsi). Not the NUCLEO-WBA55CG map.
 const PinName digitalPin[] = {
   PA_11,  // D0
@@ -39,16 +39,16 @@ const PinName digitalPin[] = {
   PA_3,   // D4
   PB_14,  // D5
   PB_0,   // D6
-  PD_14,  // D7 — X-NUCLEO-NFC08A1 LED106 / MCU_LED6 (UM3007)
+  PD_14,  // D7 -- X-NUCLEO-NFC08A1 LED106 / MCU_LED6 (UM3007)
   PA_10,  // D8
   PB_11,  // D9
-  PB_9,   // D10 — shield CS / SPI2_NSS
-  PC_3,   // D11 — SPI2_MOSI
-  PA_9,   // D12 — SPI2_MISO
-  PB_10,  // D13 — SPI2_SCK
+  PB_9,   // D10 -- shield CS / SPI2_NSS
+  PC_3,   // D11 -- SPI2_MOSI
+  PA_9,   // D12 -- SPI2_MISO
+  PB_10,  // D13 -- SPI2_SCK
   PB_1,   // D14
   PB_2,   // D15
-  PA_4,   // A0 — shield IRQ (UM3007)
+  PA_4,   // A0 -- shield IRQ (UM3007)
   PA_6,   // A1
   PA_2,   // A2
   PA_1,   // A3
@@ -108,7 +108,7 @@ WEAK void SystemClock_Config(void)
   HAL_PWR_EnableBkUpAccess();
   __HAL_RCC_LSEDRIVE_CONFIG(RCC_LSEDRIVE_MEDIUMLOW);
 
-  /** Initializes the CPU, AHB and APB buses clocks — PLL matches TinyUSB BSP
+  /** Initializes the CPU, AHB and APB buses clocks -- PLL matches TinyUSB BSP
    *  board_system_clock_config() in hw/bsp/stm32wba/boards/stm32wba_nucleo/board.h
    *  (64 MHz SYSCLK, 32 MHz AHB5/HSE path for USB PHY). ICACHE: hw_config_init(). */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI | RCC_OSCILLATORTYPE_HSE
@@ -154,7 +154,7 @@ WEAK void SystemClock_Config(void)
   }
 
   /* ICACHE is enabled by hw_config_init() after SystemClock_Config(); do not
-   * configure it here — a second HAL_ICACHE_ConfigAssociativityMode() fails
+   * configure it here -- a second HAL_ICACHE_ConfigAssociativityMode() fails
    * and hw_config_init spins forever at 0x0800d7f8, so USB never starts. */
 }
 

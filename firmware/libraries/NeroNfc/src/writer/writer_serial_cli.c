@@ -46,8 +46,10 @@ enum {
 #endif
 
 static char* writer_serial_cli_line_buf(void) {
-  writer_context_t* ctx = writer_context_active();
-  return (ctx == NERO_NFC_NULL) ? NERO_NFC_NULL : ctx->cli_line;
+  if (writer_context_active() == NERO_NFC_NULL) {
+    return NERO_NFC_NULL;
+  }
+  return writer_context_active()->cli_line;
 }
 
 static bool writer_serial_cli_snprintf_buf(char* dst, size_t dst_cap,
@@ -548,7 +550,7 @@ static bool handle_line(writer_payload_config_t* cfg, char* line) {
     }
   }
 
-  /* Host `reader` / `writer` launchers probe combined mode over UART — ignore
+  /* Host `reader` / `writer` launchers probe combined mode over UART -- ignore
    * on standalone. */
   if (line_eq_ci(line, "mode reader") || line_eq_ci(line, "mode writer")) {
     return false;
@@ -632,11 +634,12 @@ bool writer_serial_cli_poll(writer_payload_config_t* cfg) {
     return changed;
   }
   /*
-   * One byte per call: combined firmware (`nfc.ino`) runs `nfc_app_loop()` →
+   * One byte per call: combined firmware (`nfc.ino`) runs `nfc_app_loop()` ->
    * preload + `scan_mode_switch()` before this. If we drain the whole RX ring
    * in one pass, we can swallow a "mode reader" / "mode writer" line that
    * follows stray bytes the scanner returned to the buffer (prefix mismatch) in
-   * the same iteration — a standalone `mode …` send then appears to do nothing.
+   * the same iteration -- a standalone `mode ...` send then appears to do
+   * nothing.
    */
   if (!writer_hal_serial_available()) {
     return changed;
@@ -656,7 +659,7 @@ bool writer_serial_cli_poll(writer_payload_config_t* cfg) {
     if (ctx->cli_line_len > 0u) {
       line[ctx->cli_line_len] = '\0';
       if (handle_line(cfg, line)) {
-        nero_nfc_log_write("  OK — payload updated; tap tag to write.\r\n");
+        nero_nfc_log_write("  OK -- payload updated; tap tag to write.\r\n");
         print_show(cfg);
         changed = true;
       }

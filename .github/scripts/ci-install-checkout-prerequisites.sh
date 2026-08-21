@@ -17,7 +17,7 @@
 
 # Minimal packages for actions/checkout inside a job container (ci-local /
 # post-checkout helpers). Workflows that run *before* checkout must inline the
-# same apt/dnf install — the repo script is not on disk yet.
+# same apt/dnf install -- the repo script is not on disk yet.
 set -euo pipefail
 
 if command -v apt-get >/dev/null 2>&1; then

@@ -66,7 +66,7 @@ def main() -> int:
     args.out.parent.mkdir(parents=True, exist_ok=True)
     merged = [by_file[path][2] for path in order]
     args.out.write_text(json.dumps(merged, indent=2) + "\n", encoding="utf-8")
-    print(f"── merged compile DB ({len(merged)} entries) → {args.out} ──")
+    print(f"── merged compile DB ({len(merged)} entries) -> {args.out} ──")
     return 0
 
 

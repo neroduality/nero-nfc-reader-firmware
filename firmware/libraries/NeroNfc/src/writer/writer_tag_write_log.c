@@ -15,7 +15,7 @@
 // limitations under the License.
 
 /*
- * writer_tag_write_log.c — shared Type 4 session helpers for tag writes.
+ * writer_tag_write_log.c -- shared Type 4 session helpers for tag writes.
  */
 
 #include <stdbool.h>

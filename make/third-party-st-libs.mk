@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# make/third-party-st-libs.mk — NFC-RFAL and ST25R3916 archive dependencies (ST SLA0052).
+# make/third-party-st-libs.mk -- NFC-RFAL and ST25R3916 archive dependencies (ST SLA0052).
 #
 # Included by the top-level Makefile. NFC_FRONTEND= must be listed in make/st25r-nfc-frontends.mk
 # (ST25R family only). Provides the third-party-st-libs phony target that writer/reader depend on.
@@ -23,7 +23,7 @@ _ST25R_MKDIR := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 include $(_ST25R_MKDIR)/st25r-nfc-frontends.mk
 
 ifneq ($(NFC_FRONTEND),st25r3916)
-$(error third_party fetch is only implemented for NFC_FRONTEND=st25r3916 — extend make/third-party-st-libs.mk after adding another ST25R part to VALID_ST25R_NFC_FRONTENDS.)
+$(error third_party fetch is only implemented for NFC_FRONTEND=st25r3916 -- extend make/third-party-st-libs.mk after adding another ST25R part to VALID_ST25R_NFC_FRONTENDS.)
 endif
 
 _EXTST_ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST)))/..)

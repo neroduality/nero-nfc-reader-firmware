@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# make/board-<TARGET>.mk — board SKU + toolchain identity (MCU / Arduino FQBN / HAL subtree).
+# make/board-<TARGET>.mk -- board SKU + toolchain identity (MCU / Arduino FQBN / HAL subtree).
 #
 # Included from the top Makefile when TARGET matches the filename suffix.
 
@@ -30,12 +30,12 @@ BOARD_UPLOAD_HINT := Arduino bootloader upload
 BOARD_UPLOAD_PREP := echo "   Arduino UNO R4 WiFi upload sequence:"; echo "   1. Connect the UNO R4 WiFi over USB"; echo "   2. Double-click RESET now to enter the Arduino bootloader"; echo "   3. make will show a spinner while waiting for the bootloader upload port (up to 30s)"; echo "   4. Leave the bootloader USB port connected while arduino-cli uploads"
 BOARD_PORT_DISCOVERY_SECONDS := 30
 BOARD_UPLOAD_READY_BANNER := Arduino bootloader upload ready
-BOARD_UPLOAD_WAIT_MESSAGE := User Action required (read above) — waiting for bootloader port
+BOARD_UPLOAD_WAIT_MESSAGE := User Action required (read above) -- waiting for bootloader port
 BOARD_CDC_BUILD_EXTRA_FLAGS := -UNO_USB -UBACKTRACE_SUPPORT -DNERO_RAM_CONSTRAINED=1
 BOARD_CCID_BUILD_EXTRA_FLAGS := -DNERO_CCID_USB_BUILD=1 -DNERO_CCID_ONLY_BUILD=1 -UNO_USB -UBACKTRACE_SUPPORT
 BOARD_CCID_USB_SYNC_REQUIRED := 1
 
-# arduino-cli "core list" primary column — used by host bootstrap.
+# arduino-cli "core list" primary column -- used by host bootstrap.
 ARDUINO_CORE_PACKAGE := arduino:renesas_uno
 
 # Pinned Arduino core semver for `arduino-cli core install`; UNO R4 WiFi inherits Renesas default.

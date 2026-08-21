@@ -51,7 +51,7 @@ def main() -> int:
         )
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(entries, indent=2) + "\n", encoding="utf-8")
-    print(f"── TinyUSB WBA65 compile DB → {args.out} ──")
+    print(f"── TinyUSB WBA65 compile DB -> {args.out} ──")
     return 0
 
 

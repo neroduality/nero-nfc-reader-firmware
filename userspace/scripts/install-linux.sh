@@ -15,7 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# install-linux.sh — build the ISO C++23 userspace and install binaries + udev rules.
+# install-linux.sh -- build the ISO C++23 userspace and install binaries + udev rules.
 #
 # Usage:
 #   bash userspace/scripts/install-linux.sh [--prefix DIR]
@@ -77,19 +77,19 @@ cmake --build "$build_dir" -- -j"${jobs}"
 
 printf '\n== Installing binaries to %s ==\n' "$install_bin"
 mkdir -p "$install_bin"
-# Copy binaries — no symlinks.
+# Copy binaries -- no symlinks.
 cp "$bin_dir/nero_nfc_uart" "$install_bin/nero_nfc_uart"
 cp "$bin_dir/reader" "$install_bin/reader"
 cp "$bin_dir/writer" "$install_bin/writer"
 chmod 755 "$install_bin/nero_nfc_uart" "$install_bin/reader" "$install_bin/writer"
 
-printf 'Installed: nero_nfc_uart reader writer → %s\n' "$install_bin"
+printf 'Installed: nero_nfc_uart reader writer -> %s\n' "$install_bin"
 
 printf '\n== udev rules ==\n'
 if command -v sudo >/dev/null 2>&1; then
   sudo bash "${repo_root}/scripts/install-udev.sh"
 else
-  printf 'skip: sudo not available — install udev rules manually:\n'
+  printf 'skip: sudo not available -- install udev rules manually:\n'
   printf '  sudo bash %q\n' "${repo_root}/scripts/install-udev.sh"
 fi
 

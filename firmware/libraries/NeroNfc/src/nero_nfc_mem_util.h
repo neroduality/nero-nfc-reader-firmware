@@ -166,7 +166,7 @@ NERO_NFC_NODISCARD static inline bool nero_nfc_copy_bytes(void* dst,
   return true;
 }
 
-/* Bounded byte load/store — keep pointer math in this .h so host cxx tidy
+/* Bounded byte load/store -- keep pointer math in this .h so host cxx tidy
  * (HeaderFilterRegex: *.hpp only) does not flag call sites in .hpp / .cpp. */
 NERO_NFC_NODISCARD static inline bool nero_nfc_copy_from(
     void* dst, size_t dst_cap, size_t dst_off, const uint8_t* src,

@@ -111,7 +111,7 @@ int st25_iso15693_stream_decode(const uint8_t* in, uint16_t in_len,
  * The previous version of this helper wrote MODE_OM_ISO15693 = 0x20 which is
  * actually NFC-Forum Type 1 (Topaz) initiator on the ST25R3916, NOT ISO
  * 15693. Tags such as ST25TV02KC silently ignore the request in that mode
- * and the writer would never detect them. The corrected value is OM=1110 →
+ * and the writer would never detect them. The corrected value is OM=1110 ->
  * 0x70, which the datasheet labels "subcarrier-stream initiator" and is
  * what the official ST RFAL library uses for NFC-V.
  *
@@ -122,9 +122,10 @@ int st25_iso15693_stream_decode(const uint8_t* in, uint16_t in_len,
  *   2. Set MODE = OM=ISO15693, TR_AM=0 (OOK, ISO 15693 is OOK from reader to
  *      tag and Manchester-coded subcarrier from tag to reader).
  *   3. Set BIT_RATE = BR_TX_26 | BR_RX_26 (TX and RX subcarrier-rate code 0x2
- * in each nibble → register value 0x22; see [ST25R3916] DS12484 section 4.5.5).
+ * in each nibble -> register value 0x22; see [ST25R3916] DS12484
+ * section 4.5.5).
  *   4. Set STREAM_MODE = scf_sc424 | scp_8pulses | stx_106 (sub-carrier fc/32,
- *      8 pulses per bit period) — required when MODE.OM = subcarrier-stream so
+ *      8 pulses per bit period) -- required when MODE.OM = subcarrier-stream so
  *      the reader's TX modulator generates
  *      ISO 15693-compatible 1-of-256 / 1-of-4 envelopes.
  *   5. Reset RX_CONF1..4 back to the chip defaults (the 14443-A configure

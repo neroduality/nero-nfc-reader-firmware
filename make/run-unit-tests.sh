@@ -115,7 +115,7 @@ Usage: make/run-unit-tests.sh
 
 Environment (optional):
   COVERAGE=1              Build with --coverage and write lcov HTML when lcov is available.
-                          Uses --ignore-errors mismatch on lcov ≥ 2.0 only (GCC 15 / gtest .gcda quirks).
+                          Uses --ignore-errors mismatch on lcov >= 2.0 only (GCC 15 / gtest .gcda quirks).
   COVERAGE_STRICT=1       Fail if COVERAGE=1 but lcov/genhtml are missing.
   COVERAGE_MIN_LINES=90   With COVERAGE=1, fail if total line coverage is below this percent.
   NERO_TESTS_ENABLE_PCSC=0 Force PC/SC stub (default: auto ON when pkg-config finds libpcsclite).
