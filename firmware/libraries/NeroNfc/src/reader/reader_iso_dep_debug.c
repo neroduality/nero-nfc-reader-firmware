@@ -23,12 +23,10 @@
 #include <stdint.h>
 #include "nero_nfc_format.h"
 
-enum {
-  READER_ISO_DEP_IRQ_BYTE_MASK = 0xFFu,
-  READER_ISO_DEP_IRQ_SHIFT_TIMER = 8u,
-  READER_ISO_DEP_IRQ_SHIFT_ERR = 16u,
-  READER_ISO_DEP_IRQ_SHIFT_TARGET = 24u,
-};
+#define READER_ISO_DEP_IRQ_BYTE_MASK 0xFFu
+#define READER_ISO_DEP_IRQ_SHIFT_TIMER 8u
+#define READER_ISO_DEP_IRQ_SHIFT_ERR 16u
+#define READER_ISO_DEP_IRQ_SHIFT_TARGET 24u
 
 void reader_iso_dep_debug_dump(const char* label, const uint8_t* buf,
                                uint16_t len, uint16_t max_show) {
@@ -133,14 +131,14 @@ void reader_iso_dep_debug_dump_xcvr_diag(uint16_t tx_len, uint16_t timeout_ms,
   {
     char ndc[NERO_NFC_FORMAT_SNPRINTF_DEC_CAP];
     (void)nero_nfc_snprintf(ndc, sizeof ndc, "%u",
-                            (unsigned)((uint32_t)(tx_len)));
+                            (unsigned)((uint32_t)tx_len));
     nero_nfc_log_write(ndc);
   }
   nero_nfc_log_write(" timeout_ms=");
   {
     char ndc[NERO_NFC_FORMAT_SNPRINTF_DEC_CAP];
     (void)nero_nfc_snprintf(ndc, sizeof ndc, "%u",
-                            (unsigned)((uint32_t)(timeout_ms)));
+                            (unsigned)((uint32_t)timeout_ms));
     nero_nfc_log_write(ndc);
   }
   nero_nfc_log_write(" txe=");
@@ -152,7 +150,7 @@ void reader_iso_dep_debug_dump_xcvr_diag(uint16_t tx_len, uint16_t timeout_ms,
   nero_nfc_log_write(" rlen=");
   {
     char ndc[NERO_NFC_FORMAT_SNPRINTF_DEC_CAP];
-    (void)nero_nfc_snprintf(ndc, sizeof ndc, "%d", (int)((int32_t)(rlen)));
+    (void)nero_nfc_snprintf(ndc, sizeof ndc, "%d", (int)((int32_t)rlen));
     nero_nfc_log_write(ndc);
   }
   nero_nfc_log_write("\r\n");

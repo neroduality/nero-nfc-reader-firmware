@@ -19,7 +19,7 @@
 #   isolated work tree + debian:sid-slim + ci-run-codeql.sh
 #
 # Mirrors .github/workflows/codeql.yml (install-linux-deps INSTALL_LINT_DEPS=0,
-# traced CMake + make nfc on both boards, then analyze).
+# traced CMake build, then analyze).
 #
 # Usage:
 #   bash .github/scripts/run-codeql-locally.sh
@@ -30,11 +30,11 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 
+# shellcheck source=helper-codeql-pins.sh
+source "${SCRIPT_DIR}/helper-codeql-pins.sh"
 # shellcheck source=helper-container-engine.sh
-# shellcheck disable=SC1091
 source "${SCRIPT_DIR}/helper-container-engine.sh"
 # shellcheck source=helper-container-bind-mount.sh
-# shellcheck disable=SC1091
 source "${SCRIPT_DIR}/helper-container-bind-mount.sh"
 
 usage() {
@@ -61,12 +61,14 @@ Options:
 
 Environment:
   CONTAINER_ENGINE         docker (default) or podman
-  CODEQL_IMAGE             Container image (default: digest-pinned debian:sid-slim)
+  CODEQL_IMAGE             Container image (default: helper-codeql-pins.sh)
   CI_PLATFORM              Container platform (default: linux/amd64)
-  CODEQL_INCLUDE_FIRMWARE  Set to 0 to skip traced make nfc (default: 1)
   NERO_CI_LOCAL_WORK_ROOT  Isolated work tree (default: build/codeql-local-work)
   NERO_CI_LOCAL_KEEP_WORK  Set to 1 to keep the work tree after exit
-  CODEQL_CLI_VERSION       CodeQL CLI version (default: v2.26.3)
+  CODEQL_CLI_VERSION       CodeQL CLI version (default: helper-codeql-pins.sh)
+  CODEQL_CLI_SHA256        Pinned codeql-linux64.zip SHA256 (default:
+                           helper-codeql-pins.sh; required when
+                           CODEQL_CLI_VERSION is not the default)
 
 Layout under the work tree (cleared by make clean):
   build/codeql-cli/       CodeQL CLI zip + extract
@@ -121,6 +123,11 @@ if [[ ! -f "${SOURCE_ROOT}/tests/CMakeLists.txt" ]]; then
   exit 1
 fi
 
+# Fail before the work tree / container when CODEQL_CLI_VERSION is overridden
+# without CODEQL_CLI_SHA256, and when codeql.yml has drifted from the pin file.
+codeql_pins_resolve_cli || exit 1
+codeql_pins_check_workflow "${SOURCE_ROOT}/.github/workflows/codeql.yml" || exit 1
+
 if ! nero_require_container_engine >/dev/null; then
   exit 1
 fi
@@ -158,13 +165,12 @@ trap '_codeql_local_cleanup_worktree' EXIT
 printf '── codeql-local: fresh isolated work tree %s (live repo %s untouched) ──\n' \
   "${FIRMWARE_ROOT}" "${SOURCE_ROOT}"
 
-CODEQL_IMAGE="${CODEQL_IMAGE:-debian:sid-slim@sha256:54f7a23f03be1e9fe2849c61a7455588ea29b84c1659440f8ece2aea4c9871af}"
+CODEQL_IMAGE="${CODEQL_IMAGE:-${CODEQL_IMAGE_DEFAULT}}"
 mkdir -p "${SOURCE_ROOT}/build/codeql"
 
 printf '\n── CodeQL: container %s (cold; CLI under work-tree build/codeql-cli) ──\n' "${CODEQL_IMAGE}"
 # Only the isolated work tree is bind-mounted. CLI lands in /src/build/codeql-cli;
 # packs stay in container $HOME (ephemeral), matching a clean GHA runner.
-# shellcheck disable=SC2016
 nero_nfc_run_bind_mount_container \
   -- \
   "${PLATFORM_ARGS[@]}" \
@@ -173,9 +179,8 @@ nero_nfc_run_bind_mount_container \
   -e "FIRMWARE_ROOT=/src" \
   -e "HOST_UID=$(id -u)" \
   -e "HOST_GID=$(id -g)" \
-  -e "CODEQL_INCLUDE_FIRMWARE=${CODEQL_INCLUDE_FIRMWARE:-1}" \
-  -e "CODEQL_FIRMWARE_TARGETS=${CODEQL_FIRMWARE_TARGETS:-}" \
-  -e "CODEQL_CLI_VERSION=${CODEQL_CLI_VERSION:-v2.26.3}" \
+  -e "CODEQL_CLI_VERSION=${CODEQL_CLI_VERSION}" \
+  -e "CODEQL_CLI_SHA256=${CODEQL_CLI_SHA256}" \
   -e "CODEQL_SUITE_FILE=${CODEQL_SUITE_FILE:-}" \
   -e "CODEQL_PACK_SCOPE=${CODEQL_PACK_SCOPE:-}" \
   -e "CODEQL_SUMMARIZE_SARIF=${SUMMARIZE_SARIF}" \

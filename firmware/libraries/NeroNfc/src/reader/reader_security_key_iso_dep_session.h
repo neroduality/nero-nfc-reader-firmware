@@ -38,10 +38,9 @@ reader_security_key_iso_dep_commit_rats_rx(int rlen, const uint8_t* rx,
    * including itself. Bound storage by TL (not the raw RF receive length, which
    * may carry trailing CRC), and fail closed on a truncated or oversized ATS
    * rather than relaying a partial ATS as success. */
-  tl = nero_nfc_u8_at(rx, (size_t)(rlen), 0u);
-  if ((tl < READER_ISO_DEP_ATS_MIN_LEN) ||
-      ((uint16_t)(tl) > (uint16_t)(rlen)) ||
-      ((size_t)(tl) > sizeof(G_ATS_DATA))) {
+  tl = nero_nfc_u8_at(rx, (size_t)rlen, 0u);
+  if ((tl < READER_ISO_DEP_ATS_MIN_LEN) || ((uint16_t)tl > (uint16_t)rlen) ||
+      ((size_t)tl > sizeof(G_ATS_DATA))) {
     return false;
   }
   G_ATS_LEN = tl;
@@ -82,9 +81,9 @@ static inline void reader_security_key_iso_dep_snap_raw_rx(const uint8_t* rx,
     return;
   }
   n = NERO_NFC_MIN(n, (int)(ISO_DEP_RAW_RX_CAP));
-  G_ISO_DEP_RAW_RX_LEN = (uint8_t)(n);
+  G_ISO_DEP_RAW_RX_LEN = (uint8_t)n;
   (void)nero_nfc_copy_bytes(G_ISO_DEP_RAW_RX, ISO_DEP_RAW_RX_CAP, 0u, rx,
-                            (size_t)(n));
+                            (size_t)n);
 }
 
 static inline uint8_t reader_security_key_iso_dep_pick_inf_offset(
@@ -111,7 +110,7 @@ NERO_NFC_NODISCARD static inline bool reader_security_key_iso_dep_tx_add_nad(
   }
   if ((apdu != NERO_NFC_NULL) && (full_apdu_len >= 1u) &&
       (nero_nfc_u8_at(apdu, full_apdu_len, 0u) ==
-       (uint8_t)(NFC_ISO7816_CLA_PROPRIETARY_SHORT))) {
+       (uint8_t)NFC_ISO7816_CLA_PROPRIETARY_SHORT)) {
     return false;
   }
   hw = reader_security_key_iso_dep_tx_hdr_len(true);

@@ -23,13 +23,16 @@
 
 #include <string.h>
 
+/* ID Length present -- decode-only; not needed by encode callers */
+#define NFC_NDEF_HDR_IL 0x08u
+/* Chunk Flag -- decode-only; chunked records are rejected here */
+#define NFC_NDEF_HDR_CF 0x20u
+#define NFC_NDEF_TEXT_STATUS_LANG_LEN_MASK 0x3Fu
+#define NFC_NDEF_TEXT_STATUS_UTF16 0x80u
+#define NFC_NDEF_RECORD_LONG_PAYLOAD_LEN_SHIFT_MSB 24u
+#define NFC_NDEF_RECORD_LONG_PAYLOAD_LEN_SHIFT_MID 16u
+
 enum {
-  NFC_NDEF_HDR_IL = 0x08u, /* ID Length present -- decode-only; not needed by
-                              encode callers */
-  NFC_NDEF_HDR_CF =
-      0x20u, /* Chunk Flag -- decode-only; chunked records are rejected here */
-  NFC_NDEF_TEXT_STATUS_LANG_LEN_MASK = 0x3Fu,
-  NFC_NDEF_TEXT_STATUS_UTF16 = 0x80u,
   NFC_NDEF_RECORD_MIN_HDR_LEN = 3u,
   NFC_NDEF_RECORD_LONG_MIN_HDR_LEN = 6u,
   NFC_NDEF_RECORD_TYPE_LEN_OFFSET = 1u,
@@ -41,8 +44,6 @@ enum {
   NFC_NDEF_RECORD_LONG_PAYLOAD_LEN_BYTE1_REL = 1u,
   NFC_NDEF_RECORD_LONG_PAYLOAD_LEN_BYTE2_REL = 2u,
   NFC_NDEF_RECORD_LONG_PAYLOAD_LEN_BYTE3_REL = 3u,
-  NFC_NDEF_RECORD_LONG_PAYLOAD_LEN_SHIFT_MSB = 24u,
-  NFC_NDEF_RECORD_LONG_PAYLOAD_LEN_SHIFT_MID = 16u,
   NFC_NDEF_RECORD_LONG_TYPE_OFFSET = 6u,
   NFC_NDEF_RECORD_LONG_TYPE_OFFSET_IL = 7u,
   NFC_NDEF_URI_MIN_OUT_CAP = 2u,
@@ -144,14 +145,14 @@ bool nfc_ndef_decode_uri_payload(const uint8_t* payload, uint32_t len,
     }
     /* [RFC3986] §2.1 -- a percent sign must introduce a "%" HEXDIG HEXDIG
      * triplet. */
-    if (payload[i] == (uint8_t)'%') {
-      if (((i + NFC_NDEF_URI_PCT_LO_OFFSET) >= len) ||
-          !nfc_ndef_is_hex_digit(payload[i + NFC_NDEF_URI_PCT_HI_OFFSET]) ||
-          !nfc_ndef_is_hex_digit(payload[i + NFC_NDEF_URI_PCT_LO_OFFSET])) {
-        out[0] = '\0';
-        return false;
-      }
+    if ((payload[i] == (uint8_t)'%') &&
+        (((i + NFC_NDEF_URI_PCT_LO_OFFSET) >= len) ||
+         !nfc_ndef_is_hex_digit(payload[i + NFC_NDEF_URI_PCT_HI_OFFSET]) ||
+         !nfc_ndef_is_hex_digit(payload[i + NFC_NDEF_URI_PCT_LO_OFFSET]))) {
+      out[0] = '\0';
+      return false;
     }
+
     out[pos++] = (char)payload[i];
   }
   out[pos] = '\0';

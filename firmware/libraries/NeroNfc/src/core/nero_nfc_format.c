@@ -22,7 +22,6 @@
 
 int nero_nfc_vsnprintf(char* buf, size_t cap, const char* fmt, va_list args) {
   int n;
-  va_list args_copy;
 
   if (buf == NERO_NFC_NULL || cap == 0u || fmt == NERO_NFC_NULL) {
     if (buf != NERO_NFC_NULL && cap > 0u) {
@@ -30,18 +29,7 @@ int nero_nfc_vsnprintf(char* buf, size_t cap, const char* fmt, va_list args) {
     }
     return -1;
   }
-  va_copy(args_copy, args);
-  /* Bounded printf wrapper: fmt is validated by the printf format attribute on
-   * the public API; the libc call still requires a non-literal format. */
-#if defined(__clang__)
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wformat-nonliteral"
-#endif
-  n = vsnprintf(buf, cap, fmt, args_copy);
-#if defined(__clang__)
-#pragma clang diagnostic pop
-#endif
-  va_end(args_copy);
+  n = vsnprintf(buf, cap, fmt, args);
   if (!nero_nfc_snprintf_ok(n, cap)) {
     buf[0] = '\0';
     return -1;

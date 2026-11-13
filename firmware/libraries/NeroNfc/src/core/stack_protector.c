@@ -14,6 +14,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "nero_nfc_stack_protector.h"
+
 #include <stdint.h>
 
 /*

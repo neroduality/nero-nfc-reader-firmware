@@ -39,6 +39,10 @@ namespace {
 constexpr std::size_t kReadBufBytes = 512u;
 constexpr int kPollTimeoutMs = 200;
 
+[[nodiscard]] bool PollEventSet(short revents, int mask) {
+  return (static_cast<unsigned>(revents) & static_cast<unsigned>(mask)) != 0u;
+}
+
 void DispatchSerialLine(const std::string& line,
                         const nero_nfc::DriverOptions& opts) {
   if (!opts.open_urls_ && nero_nfc::IsBrowserLine(line)) {
@@ -51,7 +55,7 @@ void DispatchSerialLine(const std::string& line,
 }
 
 void RunReaderLoop(int fd, const nero_nfc::DriverOptions& opts,
-                   std::atomic<bool>* stop) {
+                   const std::atomic<bool>* stop) {
   nero_nfc::LinePump pump(
       [&](const std::string& line) { DispatchSerialLine(line, opts); });
   std::array<char, kReadBufBytes> buf{};
@@ -67,7 +71,7 @@ void RunReaderLoop(int fd, const nero_nfc::DriverOptions& opts,
     if (r == 0) {
       continue;
     }
-    if ((pfd.revents & (POLLERR | POLLHUP | POLLNVAL)) != 0) {
+    if (PollEventSet(pfd.revents, POLLERR | POLLHUP | POLLNVAL)) {
       break;
     }
     ssize_t const n = read(fd, buf.data(), buf.size());
@@ -92,9 +96,8 @@ std::string ResolvePort(const nero_nfc::DriverOptions& opts) {
 
 int SendLine(int fd, const std::string& command) {
   if (fd < 0 || command.size() > nero_nfc::LinePump::kMaxBufBytes ||
-      command.find('\0') != std::string::npos ||
-      command.find('\r') != std::string::npos ||
-      command.find('\n') != std::string::npos) {
+      command.contains('\0') || command.contains('\r') ||
+      command.contains('\n')) {
     nero_nfc::NeroNfcStderrLine(
         "error: command is invalid or exceeds {} byte cap",
         nero_nfc::LinePump::kMaxBufBytes);
@@ -112,7 +115,7 @@ int SendLine(int fd, const std::string& command) {
       if (errno == EAGAIN || errno == EWOULDBLOCK) {
         struct pollfd pfd{.fd = fd, .events = POLLOUT, .revents = 0};
         const int poll_rc = poll(&pfd, 1, kPollTimeoutMs);
-        if (poll_rc > 0 && (pfd.revents & POLLOUT) != 0) {
+        if (poll_rc > 0 && PollEventSet(pfd.revents, POLLOUT)) {
           continue;
         }
       }
@@ -138,7 +141,7 @@ void DriverDispatchLineForTest(const std::string& line,
 }
 
 void ReaderThreadForTest(int fd, const DriverOptions& opts,
-                         std::atomic<bool>* stop) {
+                         std::atomic<bool> const* stop) {
   RunReaderLoop(fd, opts, stop);
 }
 #endif
@@ -268,7 +271,7 @@ int RunSendThenInteractive(const DriverOptions& opts,
   }
   std::string full_cmd = command;
   for (const auto& arg : extra_args) {
-    full_cmd += " ";
+    full_cmd += ' ';
     full_cmd += arg;
   }
   size_t start = 0u;

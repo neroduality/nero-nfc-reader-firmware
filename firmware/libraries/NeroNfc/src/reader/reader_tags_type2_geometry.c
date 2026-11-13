@@ -52,7 +52,7 @@ uint16_t reader_tags_type2_needed_pages(const uint8_t* data, uint16_t len,
         return 0u;
       }
       value_len =
-          (uint16_t)(((uint16_t)data[pos + NFC_NDEF_TLV_EXTENDED_LEN_MSB_OFFSET]
+          (uint16_t)(((uint32_t)data[pos + NFC_NDEF_TLV_EXTENDED_LEN_MSB_OFFSET]
                       << NFC_NDEF_TLV_LEN_SHIFT) |
                      data[pos + NFC_NDEF_TLV_EXTENDED_LEN_LSB_OFFSET]);
       pos = (uint16_t)(pos + NFC_NDEF_TLV_EXTENDED_LEN_FIELD_BYTES);

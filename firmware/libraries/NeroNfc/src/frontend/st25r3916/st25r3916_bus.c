@@ -111,7 +111,7 @@ uint16_t st25_bus_read_fifo(const st25_spi_ops_t* spi, uint8_t* buffer,
   uint8_t fs2 = st25_bus_read_reg(spi, ST25R3916_REG_FIFO_STATUS2);
 
   fifo_len =
-      (uint16_t)((uint16_t)(fs1) |
+      (uint16_t)((uint16_t)fs1 |
                  (uint16_t)(((uint16_t)((fs2 &
                                          ST25R3916_REG_FIFO_STATUS2_fifo_b_mask) >>
                                         ST25R3916_REG_FIFO_STATUS2_fifo_b_shift))
@@ -147,7 +147,7 @@ uint32_t st25_bus_read_irq_regs(const st25_spi_ops_t* spi) {
   tg = spi->spi_xfer(0x00u);
   spi->cs_high();
   spi->bus_end();
-  return (uint32_t)(m) | ((uint32_t)(t) << NFC_BYTE_SHIFT_8) |
-         ((uint32_t)(e) << NFC_BYTE_SHIFT_16) |
-         ((uint32_t)(tg) << NFC_BYTE_SHIFT_24);
+  return (uint32_t)m | ((uint32_t)t << NFC_BYTE_SHIFT_8) |
+         ((uint32_t)e << NFC_BYTE_SHIFT_16) |
+         ((uint32_t)tg << NFC_BYTE_SHIFT_24);
 }

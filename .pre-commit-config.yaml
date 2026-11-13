@@ -26,7 +26,7 @@
 # path substrings so hooks behave in standalone clones and monorepos alike.
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: trailing-whitespace
         exclude: (third-party/|nero-nfc-st25r-examples/)
@@ -38,14 +38,14 @@ repos:
         exclude: (third-party/|nero-nfc-st25r-examples/)
 
   - repo: https://github.com/pre-commit/mirrors-clang-format
-    rev: v18.1.8
+    rev: v23.1.5
     hooks:
       - id: clang-format
         types_or: [c++, c]
         exclude: (third-party/|nero-nfc-st25r-examples/)
 
   - repo: https://github.com/shellcheck-py/shellcheck-py
-    rev: v0.10.0.1
+    rev: v0.11.0.1
     hooks:
       - id: shellcheck
         exclude: (third-party/|nero-nfc-st25r-examples/)

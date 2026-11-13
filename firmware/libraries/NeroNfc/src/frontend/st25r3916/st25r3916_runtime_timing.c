@@ -32,11 +32,11 @@ uint32_t st25_runtime_elapsed_ms(const st25_runtime_ops_t* ops,
 }
 
 uint32_t st25_runtime_tx_wait_budget_us(uint16_t tx_len) {
-  uint32_t tx_bits = ((uint32_t)(tx_len)*K_ST25_TX_BITS_PER_BYTE_PARITY) +
+  uint32_t tx_bits = ((uint32_t)tx_len * K_ST25_TX_BITS_PER_BYTE_PARITY) +
                      K_ST25_TX_BIT_OVERHEAD;
-  uint32_t tx_us = (tx_bits * K_ST25_US_PER_SEC + K_ST25_TX_BIT_RATE_ROUND) /
+  uint32_t tx_us = ((tx_bits * K_ST25_US_PER_SEC) + K_ST25_TX_BIT_RATE_ROUND) /
                    K_ST25_TX_BIT_RATE_HZ;
   uint32_t budget = tx_us + K_ST25_TX_GUARD_US;
-  const uint32_t k_floor_us = (uint32_t)(K_ST25_TX_WAIT_FLOOR_US);
+  const uint32_t k_floor_us = (uint32_t)K_ST25_TX_WAIT_FLOOR_US;
   return (budget < k_floor_us) ? k_floor_us : budget;
 }

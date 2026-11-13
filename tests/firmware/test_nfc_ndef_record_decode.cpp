@@ -115,13 +115,13 @@ TEST(NfcNdefRecordDecode, WalksNormalRecordLength) {
   nfc_ndef_record_t rec{};
   uint16_t next = 0u;
 
-  k_msg[0] = kTestLit0xC1u; /* MB | ME | TNF=well-known, SR=0 */
-  k_msg[1] = 0x01u;
-  k_msg[kTestLit2] = 0x00u;
-  k_msg[kTestLit3] = 0x00u;
-  k_msg[kTestLit4] = 0x01u;
-  k_msg[kTestLit5] = 0x00u;
-  k_msg[kTestLit6] = 'U';
+  k_msg.at(0) = kTestLit0xC1u; /* MB | ME | TNF=well-known, SR=0 */
+  k_msg.at(1) = 0x01u;
+  k_msg.at(kTestLit2) = 0x00u;
+  k_msg.at(kTestLit3) = 0x00u;
+  k_msg.at(kTestLit4) = 0x01u;
+  k_msg.at(kTestLit5) = 0x00u;
+  k_msg.at(kTestLit6) = 'U';
 
   ASSERT_EQ(nfc_ndef_record_next(k_msg.data(), (uint16_t)k_msg.size(), 0u, &rec,
                                  &next),
@@ -156,9 +156,9 @@ TEST(NfcNdefRecordDecode, RejectsWrappedIdLengthOffset) {
   uint16_t next = 0u;
   constexpr uint16_t kPos = UINT16_MAX - 3u;
 
-  k_msg[kPos] = kTestLit0xD9u; /* MB | ME | SR | IL | TNF=well-known */
-  k_msg[kPos + 1u] = 0x01u;
-  k_msg[kPos + kTestLit2u] = 0x00u;
+  k_msg.at(kPos) = kTestLit0xD9u; /* MB | ME | SR | IL | TNF=well-known */
+  k_msg.at(kPos + 1u) = 0x01u;
+  k_msg.at(kPos + kTestLit2u) = 0x00u;
 
   EXPECT_EQ(nfc_ndef_record_next(k_msg.data(), (uint16_t)k_msg.size(), kPos,
                                  &rec, &next),

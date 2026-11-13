@@ -35,7 +35,7 @@ $(shell mkdir -p "$(TINYUSB_WBA65_VENDOR_DIR)" && \
 		mv -f "$(TINYUSB_WBA65_ROOT_PATH).new" "$(TINYUSB_WBA65_ROOT_PATH)") && \
 	rm -f "$(TINYUSB_WBA65_ROOT_PATH).new")
 
-STM32_CORE_ROOT := $(_VTUSB_ROOT)/third-party/arduino-user/packages/STMicroelectronics/hardware/stm32/2.12.0
+STM32_CORE_ROOT := $(_VTUSB_ROOT)/third-party/arduino-user/packages/STMicroelectronics/hardware/stm32/3.1.0
 STM32_TOOLS := $(_VTUSB_ROOT)/third-party/arduino-user/packages/STMicroelectronics/tools
 WBA65_ARM_GCC := $(STM32_TOOLS)/xpack-arm-none-eabi-gcc/14.2.1-1.1/bin/arm-none-eabi-gcc
 WBA65_ARM_AR := $(STM32_TOOLS)/xpack-arm-none-eabi-gcc/14.2.1-1.1/bin/arm-none-eabi-ar
@@ -44,7 +44,6 @@ TINYUSB_WBA65_SOURCES := \
   $(TINYUSB_WBA65_SRC)/tusb.c \
   $(TINYUSB_WBA65_SRC)/common/tusb_fifo.c \
   $(TINYUSB_WBA65_SRC)/device/usbd.c \
-  $(TINYUSB_WBA65_SRC)/device/usbd_control.c \
   $(TINYUSB_WBA65_SRC)/portable/synopsys/dwc2/dwc2_common.c \
   $(TINYUSB_WBA65_SRC)/portable/synopsys/dwc2/dcd_dwc2.c
 
@@ -56,7 +55,6 @@ TINYUSB_WBA65_OBJECTS := \
   $(TINYUSB_WBA65_VENDOR_DIR)/tusb.o \
   $(TINYUSB_WBA65_VENDOR_DIR)/tusb_fifo.o \
   $(TINYUSB_WBA65_VENDOR_DIR)/usbd.o \
-  $(TINYUSB_WBA65_VENDOR_DIR)/usbd_control.o \
   $(TINYUSB_WBA65_VENDOR_DIR)/dwc2_common.o \
   $(TINYUSB_WBA65_VENDOR_DIR)/dcd_dwc2.o
 
@@ -88,7 +86,7 @@ TINYUSB_WBA65_CFLAGS := \
   -I$(STM32_CORE_ROOT)/system/Drivers/STM32WBAxx_HAL_Driver/Inc \
   -I$(STM32_CORE_ROOT)/system/STM32WBAxx \
   -I$(STM32_CORE_ROOT)/system/Drivers/CMSIS/Device/ST/STM32WBAxx/Include \
-  -I$(STM32_TOOLS)/CMSIS/6.2.0/CMSIS/Core/Include \
+  -I$(STM32_TOOLS)/CMSIS/6.3.0/CMSIS/Core/Include \
   -I$(TINYUSB_WBA65_VARIANT_LINK) \
   -DVARIANT_H=\"variant_NUCLEO_WBA65RI.h\" \
   -DARDUINO_NUCLEO_WBA65RI \
@@ -122,12 +120,12 @@ endef
 $(eval $(call TINYUSB_WBA65_CC_RULE,tusb,$(TINYUSB_WBA65_SRC)/tusb.c))
 $(eval $(call TINYUSB_WBA65_CC_RULE,tusb_fifo,$(TINYUSB_WBA65_SRC)/common/tusb_fifo.c))
 $(eval $(call TINYUSB_WBA65_CC_RULE,usbd,$(TINYUSB_WBA65_SRC)/device/usbd.c))
-$(eval $(call TINYUSB_WBA65_CC_RULE,usbd_control,$(TINYUSB_WBA65_SRC)/device/usbd_control.c))
 $(eval $(call TINYUSB_WBA65_CC_RULE,dwc2_common,$(TINYUSB_WBA65_SRC)/portable/synopsys/dwc2/dwc2_common.c))
 $(eval $(call TINYUSB_WBA65_CC_RULE,dcd_dwc2,$(TINYUSB_WBA65_SRC)/portable/synopsys/dwc2/dcd_dwc2.c))
 
 $(TINYUSB_WBA65_ARCHIVE): $(TINYUSB_WBA65_OBJECTS)
 	@echo "── TinyUSB WBA65 archive $@ ──"
+	@rm -f "$@"
 	@"$(WBA65_ARM_AR)" rcs "$@" $^
 
 $(TINYUSB_WBA65_COMPILE_DB): $(TINYUSB_WBA65_OBJECTS) \

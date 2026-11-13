@@ -38,6 +38,11 @@ add_library(
   nero_nfc_pcsc_type4.cpp
   nero_nfc_pcsc.cpp
   nero_nfc_io.cpp
+  nero_nfc_cbor.cpp
+  nero_nfc_ctap.cpp
+  nero_nfc_ctap_pin.cpp
+  nero_nfc_fido_token.cpp
+  "${NERO_FIRMWARE_ROOT}/firmware/libraries/NeroNfc/src/protocol/nfc_ctap_codec.c"
   "${NERO_FIRMWARE_ROOT}/firmware/libraries/NeroNfc/src/protocol/nfc_ndef_record_decode.c"
   "${NERO_FIRMWARE_ROOT}/firmware/libraries/NeroNfc/src/core/nero_nfc_format.c")
 
@@ -78,6 +83,13 @@ if(_nero_pcsc_found)
   target_compile_definitions(nero_nfc_app PUBLIC NERO_USERSPACE_HAVE_PCSC=1)
   target_link_libraries(nero_nfc_app PUBLIC ${_nero_pcsc_target})
 endif()
+# fido_token PIN protocol (P-256 ECDH, AES-256-CBC, HMAC/HKDF-SHA-256).
+find_package(OpenSSL 3.0 QUIET COMPONENTS Crypto)
+if(NOT OpenSSL_FOUND)
+  message(FATAL_ERROR
+    "OpenSSL 3 (libcrypto) is required. Install libssl-dev (Debian/Ubuntu) or openssl-devel (Fedora), or run make deps.")
+endif()
+target_link_libraries(nero_nfc_app PUBLIC OpenSSL::Crypto)
 target_compile_definitions(
   nero_nfc_app
   PUBLIC

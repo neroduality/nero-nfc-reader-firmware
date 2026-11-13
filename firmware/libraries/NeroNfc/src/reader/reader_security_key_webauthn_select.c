@@ -34,7 +34,7 @@ bool reader_security_key_select_fido_for_host_webauthn(
   }
   reader_security_key_iso_dep_pre_first_iblock_delay();
   for (uint8_t step = 0u;
-       step < (uint8_t)(NFC_CTAP_FIDO_WEBAUTHN_SELECT_STEP_COUNT); ++step) {
+       step < (uint8_t)NFC_CTAP_FIDO_WEBAUTHN_SELECT_STEP_COUNT; ++step) {
     nfc_ctap_fido_webauthn_select_step_t step_info;
     nfc_ctap_fido_app_select_variant_t variant;
 

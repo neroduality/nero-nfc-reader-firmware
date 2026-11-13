@@ -18,6 +18,12 @@
 #
 include(${CMAKE_CURRENT_LIST_DIR}/CompilerHardeningProbes.cmake)
 include(CMakeParseArguments)
+# Blanket -Werror is for development builds. Source packages set
+# -DHARDENING_WERROR=OFF so a newer compiler's new warnings do not
+# fail a rebuild (OpenSSF: do not ship blanket -Werror).
+if(NOT DEFINED HARDENING_WERROR)
+  set(HARDENING_WERROR ON)
+endif()
 function(define_hardening)
   cmake_parse_arguments(HARDENING "" "TARGET;C_STANDARD;CXX_STANDARD" "" ${ARGN})
   if(NOT HARDENING_TARGET)
@@ -29,15 +35,24 @@ function(define_hardening)
   add_library("${HARDENING_TARGET}" INTERFACE)
   set(_hardening_host $<NOT:$<BOOL:${CMAKE_CROSSCOMPILING}>>)
   set(_hardening_fortify_cfg $<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>,$<CONFIG:MinSizeRel>>)
+  set(_hardening_speed_cfg $<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>>)
   set(_hardening_production_cfg $<OR:$<CONFIG:Release>,$<CONFIG:MinSizeRel>>)
   set(_hardening_relwithdebinfo_cfg $<CONFIG:RelWithDebInfo>)
   set(_hardening_debug_cfg $<CONFIG:Debug>)
   target_compile_options("${HARDENING_TARGET}" INTERFACE
+    $<$<COMPILE_LANGUAGE:C>:$<$<BOOL:${HAVE_C_DATA_SECTIONS}>:-fdata-sections>>
+    $<$<COMPILE_LANGUAGE:C>:$<$<BOOL:${HAVE_C_FUNCTION_SECTIONS}>:-ffunction-sections>>
+    $<$<COMPILE_LANGUAGE:C>:$<$<BOOL:${HAVE_C_WALLOCA}>:-Walloca>>
     $<$<COMPILE_LANGUAGE:C>:$<$<BOOL:${HAVE_C_WERROR_IMPLICIT}>:-Werror=implicit>>
     $<$<COMPILE_LANGUAGE:C>:$<$<BOOL:${HAVE_C_WERROR_INCOMPATIBLE_POINTER_TYPES}>:-Werror=incompatible-pointer-types>>
     $<$<COMPILE_LANGUAGE:C>:$<$<BOOL:${HAVE_C_WERROR_INT_CONVERSION}>:-Werror=int-conversion>>
     $<$<COMPILE_LANGUAGE:C>:$<$<BOOL:${HAVE_C_WERROR_TRAMPOLINES}>:-Werror=trampolines>>
+    $<$<COMPILE_LANGUAGE:C>:$<$<BOOL:${HAVE_C_WFORMAT_SIGNEDNESS}>:-Wformat-signedness>>
+    $<$<COMPILE_LANGUAGE:C>:$<$<BOOL:${HAVE_C_WOLD_STYLE_DEFINITION}>:-Wold-style-definition>>
+    $<$<COMPILE_LANGUAGE:C>:$<$<BOOL:${HAVE_C_WSHADOW}>:-Wshadow>>
+    $<$<COMPILE_LANGUAGE:C>:$<$<BOOL:${HAVE_C_WSTRICT_PROTOTYPES}>:-Wstrict-prototypes>>
     $<$<COMPILE_LANGUAGE:C>:$<$<BOOL:${HAVE_C_WTRAMPOLINES}>:-Wtrampolines>>
+    $<$<COMPILE_LANGUAGE:C>:$<$<BOOL:${HAVE_C_WUNDEF}>:-Wundef>>
     $<$<COMPILE_LANGUAGE:C>:-Wall>
     $<$<COMPILE_LANGUAGE:C>:-Wconversion>
     $<$<COMPILE_LANGUAGE:C>:-Wextra>
@@ -51,8 +66,14 @@ function(define_hardening)
     $<$<COMPILE_LANGUAGE:C>:-fstack-protector-strong>
   )
   target_compile_options("${HARDENING_TARGET}" INTERFACE
+    $<$<COMPILE_LANGUAGE:CXX>:$<$<BOOL:${HAVE_CXX_DATA_SECTIONS}>:-fdata-sections>>
+    $<$<COMPILE_LANGUAGE:CXX>:$<$<BOOL:${HAVE_CXX_FUNCTION_SECTIONS}>:-ffunction-sections>>
+    $<$<COMPILE_LANGUAGE:CXX>:$<$<BOOL:${HAVE_CXX_WALLOCA}>:-Walloca>>
     $<$<COMPILE_LANGUAGE:CXX>:$<$<BOOL:${HAVE_CXX_WERROR_TRAMPOLINES}>:-Werror=trampolines>>
+    $<$<COMPILE_LANGUAGE:CXX>:$<$<BOOL:${HAVE_CXX_WFORMAT_SIGNEDNESS}>:-Wformat-signedness>>
+    $<$<COMPILE_LANGUAGE:CXX>:$<$<BOOL:${HAVE_CXX_WSHADOW}>:-Wshadow>>
     $<$<COMPILE_LANGUAGE:CXX>:$<$<BOOL:${HAVE_CXX_WTRAMPOLINES}>:-Wtrampolines>>
+    $<$<COMPILE_LANGUAGE:CXX>:$<$<BOOL:${HAVE_CXX_WUNDEF}>:-Wundef>>
     $<$<COMPILE_LANGUAGE:CXX>:-Wall>
     $<$<COMPILE_LANGUAGE:CXX>:-Wconversion>
     $<$<COMPILE_LANGUAGE:CXX>:-Wextra>
@@ -64,5 +85,10 @@ function(define_hardening)
     $<$<COMPILE_LANGUAGE:CXX>:-fno-strict-aliasing>
     $<$<COMPILE_LANGUAGE:CXX>:-fno-strict-overflow>
     $<$<COMPILE_LANGUAGE:CXX>:-fstack-protector-strong>
+  )
+  target_link_options("${HARDENING_TARGET}" INTERFACE
+    $<$<AND:$<BOOL:${HAVE_LINK_ERROR_EXECSTACK}>,$<NOT:$<BOOL:${CMAKE_CROSSCOMPILING}>>>:LINKER:--error-execstack>
+    $<$<AND:$<BOOL:${HAVE_LINK_ERROR_RWX_SEGMENTS}>,$<NOT:$<BOOL:${CMAKE_CROSSCOMPILING}>>>:LINKER:--error-rwx-segments>
+    $<$<AND:$<BOOL:${HAVE_LINK_Z_TEXT}>,$<NOT:$<BOOL:${CMAKE_CROSSCOMPILING}>>>:LINKER:-z,text>
   )
 endfunction()

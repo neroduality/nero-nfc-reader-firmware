@@ -94,15 +94,15 @@ TEST(ReaderCcIdProtocol, EncodesT1ParametersResponse) {
   ASSERT_TRUE(reader_ccid_encode_params_response(
       buf.data(), buf.size(), 0x82u, 0x44u, 0x00u, 0x00u, 0x01u, 0x01u));
 
-  EXPECT_EQ(buf[0], 0x82u);
-  EXPECT_EQ(buf[1], 7u);
-  EXPECT_EQ(buf[6], 0x44u);
-  EXPECT_EQ(buf[7], 0x00u);
-  EXPECT_EQ(buf[8], 0x00u);
-  EXPECT_EQ(buf[9], 0x01u);
-  EXPECT_EQ(buf[10], 0x11u);
-  EXPECT_EQ(buf[13], 0x4Du);
-  EXPECT_EQ(buf[15], 0xFEu);
+  EXPECT_EQ(buf.at(0), 0x82u);
+  EXPECT_EQ(buf.at(1), 7u);
+  EXPECT_EQ(buf.at(6), 0x44u);
+  EXPECT_EQ(buf.at(7), 0x00u);
+  EXPECT_EQ(buf.at(8), 0x00u);
+  EXPECT_EQ(buf.at(9), 0x01u);
+  EXPECT_EQ(buf.at(10), 0x11u);
+  EXPECT_EQ(buf.at(13), 0x4Du);
+  EXPECT_EQ(buf.at(15), 0xFEu);
 }
 
 TEST(ReaderCcIdProtocol, RejectsUndersizedParametersResponseBuffer) {
@@ -114,12 +114,12 @@ TEST(ReaderCcIdProtocol, RejectsUndersizedParametersResponseBuffer) {
 
 TEST(ReaderCcIdProtocol, RejectsNonT1SetParameters) {
   std::array<std::uint8_t, kTestLit10> frame{};
-  frame[0] = kTestLit0x61u;
+  frame.at(0) = kTestLit0x61u;
 
   /* [CCID1.10] §6.2.6 -- bError is the byte offset of the first offending
    * field. A wrong dwLength (bytes 1..4) reports offset 0x01, regardless of
    * bProtocolNum. */
-  frame[kTestLit7] = 0x01u; /* bProtocolNum = T1 (correct) */
+  frame.at(kTestLit7) = 0x01u; /* bProtocolNum = T1 (correct) */
   EXPECT_EQ(reader_ccid_param_error_for_request(frame.data(), frame.size(),
                                                 0x61u, 0x01u),
             0x01u);
@@ -129,14 +129,14 @@ TEST(ReaderCcIdProtocol, RejectsNonT1SetParameters) {
 
   /* dwLength correct, bProtocolNum wrong: bError = offset of bProtocolNum
    * (0x07). */
-  nfc_ccid_u32_store_le(&frame[1], kTestLit7u);
-  frame[kTestLit7] = 0x00u;
+  nfc_ccid_u32_store_le(&frame.at(1), kTestLit7u);
+  frame.at(kTestLit7) = 0x00u;
   EXPECT_EQ(reader_ccid_param_error_for_request(frame.data(), frame.size(),
                                                 0x61u, 0x01u),
             0x07u);
 
   /* All fields valid: no error. */
-  frame[kTestLit7] = 0x01u;
+  frame.at(kTestLit7) = 0x01u;
   EXPECT_EQ(reader_ccid_param_error_for_request(frame.data(), frame.size(),
                                                 0x61u, 0x01u),
             0u);
@@ -145,14 +145,14 @@ TEST(ReaderCcIdProtocol, RejectsNonT1SetParameters) {
             0x00u);
 
   /* abRFU[0] non-zero: bError = offset 0x08. */
-  frame[kTestLit8] = 0x01u;
+  frame.at(kTestLit8) = 0x01u;
   EXPECT_EQ(reader_ccid_param_error_for_request(frame.data(), frame.size(),
                                                 0x61u, 0x01u),
             0x08u);
 
   /* abRFU[1] non-zero: bError = offset 0x09. */
-  frame[kTestLit8] = 0x00u;
-  frame[kTestLit9] = 0x01u;
+  frame.at(kTestLit8) = 0x00u;
+  frame.at(kTestLit9) = 0x01u;
   EXPECT_EQ(reader_ccid_param_error_for_request(frame.data(), frame.size(),
                                                 0x61u, 0x01u),
             0x09u);
@@ -163,12 +163,13 @@ TEST(ReaderCcIdProtocol, EncodesDataRateClockResponse) {
   ASSERT_TRUE(reader_ccid_encode_data_rate_clock_response(
       buf.data(), buf.size(), 0x84u, 0x22u, 0x01u, 0u));
 
-  EXPECT_EQ(buf[0], 0x84u);
-  EXPECT_EQ(nfc_ccid_u32_load_le(&buf[1]), 8u);
-  EXPECT_EQ(buf[6], 0x22u);
-  EXPECT_EQ(buf[7], 0x01u);
-  EXPECT_EQ(nfc_ccid_u32_load_le(&buf[10]), NERO_CCID_DESC_DEFAULT_CLOCK_KHZ);
-  EXPECT_EQ(nfc_ccid_u32_load_le(&buf[14]),
+  EXPECT_EQ(buf.at(0), 0x84u);
+  EXPECT_EQ(nfc_ccid_u32_load_le(&buf.at(1)), 8u);
+  EXPECT_EQ(buf.at(6), 0x22u);
+  EXPECT_EQ(buf.at(7), 0x01u);
+  EXPECT_EQ(nfc_ccid_u32_load_le(&buf.at(10)),
+            NERO_CCID_DESC_DEFAULT_CLOCK_KHZ);
+  EXPECT_EQ(nfc_ccid_u32_load_le(&buf.at(14)),
             NERO_CCID_DESC_DEFAULT_DATA_RATE_BPS);
 }
 
@@ -281,18 +282,18 @@ TEST(ReaderCcIdBulkCodec, EncodesCommandFailedAndSlotAbsentResponses) {
       static_cast<uint8_t>(NFC_CCID_MSG_PC_TO_RDR_XFR), 0x03u,
       static_cast<uint8_t>(NFC_CCID_ICC_ACTIVE), 0x01u);
   ASSERT_EQ(failed_len, NFC_CCID_BULK_HEADER_LEN);
-  EXPECT_EQ(work[0], (uint8_t)NFC_CCID_MSG_RDR_TO_PC_DATABLOCK);
-  EXPECT_EQ(work[6], 0x03u);
-  EXPECT_EQ(work[8], 0x01u);
+  EXPECT_EQ(work.at(0), (uint8_t)NFC_CCID_MSG_RDR_TO_PC_DATABLOCK);
+  EXPECT_EQ(work.at(6), 0x03u);
+  EXPECT_EQ(work.at(8), 0x01u);
 
   const uint16_t absent_len = reader_ccid_encode_slot_absent_response(
       work.data(), work.size(),
       static_cast<uint8_t>(NFC_CCID_MSG_PC_TO_RDR_SLOTSTATUS), 0x00u, 0x04u,
       kSlotMissing);
   ASSERT_EQ(absent_len, NFC_CCID_BULK_HEADER_LEN);
-  EXPECT_EQ(work[0], (uint8_t)NFC_CCID_MSG_RDR_TO_PC_SLOTSTATUS);
-  EXPECT_EQ(work[5], 0x00u);
-  EXPECT_EQ(work[8], kSlotMissing);
+  EXPECT_EQ(work.at(0), (uint8_t)NFC_CCID_MSG_RDR_TO_PC_SLOTSTATUS);
+  EXPECT_EQ(work.at(5), 0x00u);
+  EXPECT_EQ(work.at(8), kSlotMissing);
 }
 
 TEST(ReaderSecurityKeyCcidCodec, CopiesAtsAsPcscAtrAndSelectsCtapTimeouts) {
@@ -306,16 +307,19 @@ TEST(ReaderSecurityKeyCcidCodec, CopiesAtsAsPcscAtrAndSelectsCtapTimeouts) {
   ASSERT_TRUE(reader_security_key_copy_ats_as_pcsc_atr(
       &ats[0], sizeof(ats), atr.data(), atr.size(), &atr_len));
   ASSERT_EQ(atr_len, 6u);
-  EXPECT_EQ(atr[0], 0x3Bu);
-  EXPECT_EQ(atr[1], 0x81u);
-  EXPECT_EQ(atr[2], 0x80u);
-  EXPECT_EQ(atr[3], 0x01u);
-  EXPECT_EQ(atr[4], 0x80u);
+  EXPECT_EQ(atr.at(0), 0x3Bu);
+  EXPECT_EQ(atr.at(1), 0x81u);
+  EXPECT_EQ(atr.at(2), 0x80u);
+  EXPECT_EQ(atr.at(3), 0x01u);
+  EXPECT_EQ(atr.at(4), 0x80u);
   /* TCK = XOR of bytes T0..Tk = 0x81 ^ 0x80 ^ 0x01 ^ 0x80. */
-  EXPECT_EQ(atr[5], 0x80u);
+  EXPECT_EQ(atr.at(5), 0x80u);
 
   EXPECT_EQ(reader_security_key_ctap_timeout_for_command(
                 NFC_CTAP_CMD_GET_ASSERTION, 5000u, 500u),
+            5000u);
+  EXPECT_EQ(reader_security_key_ctap_timeout_for_command(NFC_CTAP_CMD_RESET,
+                                                         5000u, 500u),
             5000u);
   EXPECT_EQ(reader_security_key_ctap_timeout_for_command(NFC_CTAP_CMD_GET_INFO,
                                                          5000u, 500u),
@@ -324,8 +328,8 @@ TEST(ReaderSecurityKeyCcidCodec, CopiesAtsAsPcscAtrAndSelectsCtapTimeouts) {
   std::array<uint8_t, kTestLit4> rsp{};
   EXPECT_EQ(reader_security_key_relay_failure_response(rsp.data(), rsp.size()),
             2u);
-  EXPECT_EQ(rsp[0], 0x6Fu);
-  EXPECT_EQ(rsp[1], 0x00u);
+  EXPECT_EQ(rsp.at(0), 0x6Fu);
+  EXPECT_EQ(rsp.at(1), 0x00u);
 }
 
 TEST(ReaderIsoDepTiming, ComputesBoundedTimingValues) {
@@ -505,10 +509,10 @@ TEST(ReaderIsoDepFrame, ReadsNadByteWhenPresent) {
   constexpr std::uint8_t kDefaultNad = 0x00u;
 
   EXPECT_EQ(reader_iso_dep_rx_nad_byte(cid_nad.data(), cid_nad.size(),
-                                       cid_nad[0], kDefaultNad),
+                                       cid_nad.at(0), kDefaultNad),
             0x7Fu);
   EXPECT_EQ(
-      reader_iso_dep_rx_nad_byte(cid_nad.data(), 2, cid_nad[0], kDefaultNad),
+      reader_iso_dep_rx_nad_byte(cid_nad.data(), 2, cid_nad.at(0), kDefaultNad),
       kDefaultNad);
 }
 
@@ -600,7 +604,7 @@ TEST(ReaderIsoDepFrame, ExtractsFinalIBlockInfWithoutTrimmingStatusTail) {
   std::uint8_t crc_tail_len = kTestLit0xFFu;
 
   ASSERT_TRUE(reader_iso_dep_i_block_inf_len(
-      frame.data(), frame.size(), 1u, frame[0], &inf_len, &crc_tail_len));
+      frame.data(), frame.size(), 1u, frame.at(0), &inf_len, &crc_tail_len));
   EXPECT_EQ(inf_len, 3u);
   EXPECT_EQ(crc_tail_len, 0u);
 }
@@ -612,11 +616,11 @@ TEST(ReaderIsoDepFrame, ExtractsChainedIBlockInfAndTrimsRfCrcTail) {
   std::uint16_t inf_len = 0u;
   std::uint8_t crc_tail_len = 0u;
 
-  frame[kTestLit3] = static_cast<std::uint8_t>(crc & kTestLit0x00FFu);
-  frame[kTestLit4] = static_cast<std::uint8_t>(crc >> kTestLit8u);
+  frame.at(kTestLit3) = static_cast<std::uint8_t>(crc & kTestLit0x00FFu);
+  frame.at(kTestLit4) = static_cast<std::uint8_t>(crc >> kTestLit8u);
 
   ASSERT_TRUE(reader_iso_dep_i_block_inf_len(
-      frame.data(), frame.size(), 1u, frame[0], &inf_len, &crc_tail_len));
+      frame.data(), frame.size(), 1u, frame.at(0), &inf_len, &crc_tail_len));
   EXPECT_EQ(inf_len, 2u);
   EXPECT_EQ(crc_tail_len, 2u);
 }
@@ -626,7 +630,7 @@ TEST(ReaderIsoDepFrame, RejectsShortIBlockInfFrame) {
   std::uint16_t inf_len = kTestLit0xFffFu;
 
   EXPECT_FALSE(reader_iso_dep_i_block_inf_len(
-      frame.data(), frame.size(), 1u, frame[0], &inf_len, NERO_NFC_NULL));
+      frame.data(), frame.size(), 1u, frame.at(0), &inf_len, NERO_NFC_NULL));
   EXPECT_EQ(inf_len, 0u);
 }
 
@@ -639,13 +643,13 @@ TEST(ReaderIsoDepFrame, BuildsChainedAckWithOptionalCidAndNeverNad) {
   EXPECT_EQ(ack_len, 2u);
   /* [ISO14443-4] R-blocks may carry CID, but have no NAD field. Bit 3 is RFU
    * and must remain zero even when the acknowledged I-block carried NAD. */
-  EXPECT_EQ(ack[0], 0xABu);
-  EXPECT_EQ(ack[1], 0x05u);
+  EXPECT_EQ(ack.at(0), 0xABu);
+  EXPECT_EQ(ack.at(1), 0x05u);
 
   ASSERT_TRUE(reader_iso_dep_build_chained_ack(ack.data(), ack.size(), 0u,
                                                false, 0u, &ack_len));
   EXPECT_EQ(ack_len, 1u);
-  EXPECT_EQ(ack[0], 0xA2u);
+  EXPECT_EQ(ack.at(0), 0xA2u);
 }
 
 TEST(ReaderIsoDepFrame, RejectsUndersizedChainedAckBuffer) {
@@ -674,11 +678,11 @@ TEST(ReaderIsoDepApduRelay, BuildsIBlockTxWithCidNadAndChaining) {
   EXPECT_EQ(tx_info.frag_len, 2u);
   EXPECT_EQ(tx_info.wire_len, 5u);
   EXPECT_TRUE(tx_info.chain_more);
-  EXPECT_EQ(tx[0], 0x1Fu);
-  EXPECT_EQ(tx[1], 0x05u);
-  EXPECT_EQ(tx[2], 0x01u);
-  EXPECT_EQ(tx[3], 0x80u);
-  EXPECT_EQ(tx[4], 0x10u);
+  EXPECT_EQ(tx.at(0), 0x1Fu);
+  EXPECT_EQ(tx.at(1), 0x05u);
+  EXPECT_EQ(tx.at(2), 0x01u);
+  EXPECT_EQ(tx.at(3), 0x80u);
+  EXPECT_EQ(tx.at(4), 0x10u);
 }
 
 TEST(ReaderIsoDepApduRelay, RejectsUndersizedIBlockTxBuffer) {
@@ -700,9 +704,9 @@ TEST(ReaderIsoDepApduRelay, BuildsWtxEchoPrefix) {
   ASSERT_TRUE(reader_iso_dep_build_wtx_echo(wtx.data(), wtx.size(), rx.data(),
                                             rx.size(), 2u, &wtx_len));
   EXPECT_EQ(wtx_len, 3u);
-  EXPECT_EQ(wtx[0], 0xFAu);
-  EXPECT_EQ(wtx[1], 0x05u);
-  EXPECT_EQ(wtx[2], 0x02u);
+  EXPECT_EQ(wtx.at(0), 0xFAu);
+  EXPECT_EQ(wtx.at(1), 0x05u);
+  EXPECT_EQ(wtx.at(2), 0x02u);
   EXPECT_FALSE(reader_iso_dep_build_wtx_echo(wtx.data(), 2u, rx.data(),
                                              rx.size(), 2u, &wtx_len));
   EXPECT_EQ(wtx_len, 0u);
@@ -733,14 +737,14 @@ TEST(ReaderIsoDepApduRelay, AppendsInfOrDropsOnCapacity) {
   std::uint16_t total = 1u;
   bool appended = false;
 
-  resp[0] = kTestLit0x7Fu;
+  resp.at(0) = kTestLit0x7Fu;
   ASSERT_TRUE(reader_iso_dep_append_inf(resp.data(), resp.size(), &total,
                                         inf_bytes.data(), 2u, &appended));
   EXPECT_TRUE(appended);
   EXPECT_EQ(total, 3u);
-  EXPECT_EQ(resp[0], 0x7Fu);
-  EXPECT_EQ(resp[1], 0xA1u);
-  EXPECT_EQ(resp[2], 0x90u);
+  EXPECT_EQ(resp.at(0), 0x7Fu);
+  EXPECT_EQ(resp.at(1), 0xA1u);
+  EXPECT_EQ(resp.at(2), 0x90u);
 
   ASSERT_TRUE(reader_iso_dep_append_inf(resp.data(), resp.size(), &total,
                                         inf_bytes.data(), 3u, &appended));

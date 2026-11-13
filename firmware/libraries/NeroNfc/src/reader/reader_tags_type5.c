@@ -85,7 +85,7 @@ int reader_tags_iso15693_user_read(uint16_t block, uint8_t* buf,
   if (block <= NFC_TAG_T5T_ISO15693_BLOCK_ADDR_1BYTE_MAX) {
     int r = nfc_frontend_iso15693_read_block(reader_type5_transceive,
                                              READER_FRONTEND, G_UID15,
-                                             (uint8_t)(block), buf, buf_len);
+                                             (uint8_t)block, buf, buf_len);
     if (r >= 0) {
       return r;
     }
@@ -152,15 +152,15 @@ int reader_tags_iso15693_user_read_multiple(uint16_t first_block,
         (uint8_t)(count_field >> NFC_ISO7816_U16_HIGH_BYTE_SHIFT);
     if (!reader_tags_type5_cmd_append(
             cmd, sizeof(cmd), &n, block_fields,
-            (uint16_t)(READER_TYPE5_READ_MULTIPLE_EXT_FIELD_LEN))) {
+            (uint16_t)READER_TYPE5_READ_MULTIPLE_EXT_FIELD_LEN)) {
       return -1;
     }
   } else {
-    block_fields[0] = (uint8_t)(first_block);
-    block_fields[1] = (uint8_t)(count_field);
+    block_fields[0] = (uint8_t)first_block;
+    block_fields[1] = (uint8_t)count_field;
     if (!reader_tags_type5_cmd_append(
             cmd, sizeof(cmd), &n, block_fields,
-            (uint16_t)(READER_TYPE5_READ_MULTIPLE_SHORT_FIELD_LEN))) {
+            (uint16_t)READER_TYPE5_READ_MULTIPLE_SHORT_FIELD_LEN)) {
       return -1;
     }
   }
@@ -175,15 +175,15 @@ int reader_tags_iso15693_user_read_multiple(uint16_t first_block,
   if (!nero_nfc_copy_bytes(buf, buf_cap, 0u, &rx[1], want)) {
     return -1;
   }
-  return (int)(want);
+  return (int)want;
 }
 
 bool reader_tags_iso15693_user_write(uint16_t block, const uint8_t* data,
                                      uint8_t data_len) {
   if (block <= NFC_TAG_T5T_ISO15693_BLOCK_ADDR_1BYTE_MAX) {
-    bool ok = nfc_frontend_iso15693_write_block(
-        reader_type5_transceive, READER_FRONTEND, G_UID15, (uint8_t)(block),
-        data, data_len);
+    bool ok = nfc_frontend_iso15693_write_block(reader_type5_transceive,
+                                                READER_FRONTEND, G_UID15,
+                                                (uint8_t)block, data, data_len);
     if (ok) {
       return true;
     }
@@ -224,7 +224,7 @@ static bool read_type5_tlv_area(const reader_tag_type5_info_t* type5,
                             &bytes_to_read)) {
     return false;
   }
-  bytes_to_read = ((bytes_to_read) < (buf_size) ? (bytes_to_read) : (buf_size));
+  bytes_to_read = (bytes_to_read < buf_size ? bytes_to_read : buf_size);
   blocks_needed = (uint16_t)((bytes_to_read + (ST25_T5_USER_BLOCK_SIZE - 1u)) /
                              ST25_T5_USER_BLOCK_SIZE);
 
@@ -243,7 +243,7 @@ static bool read_type5_tlv_area(const reader_tag_type5_info_t* type5,
         (uint16_t)(blocks * (uint16_t)(ST25_T5_USER_BLOCK_SIZE));
     int r = reader_tags_type5_read_binary(block, tmp, chunk_len);
 
-    if (r < (int)(chunk_len)) {
+    if (r < (int)chunk_len) {
       return false;
     }
     if (!nero_nfc_copy_bytes(buf, buf_size, total, tmp, chunk_len)) {
@@ -302,7 +302,7 @@ void reader_tags_read_dynamic_or_static_type5(void) {
       }
     }
     nfc_tutorial_t5t_cc(nero_nfc_log_putc, READER_TAGS_NDEF_BUF,
-                        (uint8_t)(start_offset));
+                        (uint8_t)start_offset);
     nfc_tutorial_ndef_tlv(nero_nfc_log_putc,
                           &READER_TAGS_NDEF_BUF[start_offset],
                           (uint16_t)(total - start_offset));

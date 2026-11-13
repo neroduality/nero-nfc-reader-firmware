@@ -44,12 +44,7 @@
 #endif
 
 #include "nero_nfc_platform.h"
-
-void nfc_hal_preload_serial(void);
-int nfc_hal_pushback_available(void);
-int nfc_hal_pushback_read(void);
-void nfc_hal_pushback_return(const uint8_t* bytes, uint16_t len);
-void nfc_hal_usb_begin(void);
+#include "nfc_hal_board.h"
 
 #if !defined(NERO_CCID_ONLY_BUILD)
 enum {
@@ -104,7 +99,7 @@ static bool scan_mode_switch(void) {
     if (b < 0) {
       break;
     }
-    const uint8_t k_ch = (uint8_t)(b);
+    const uint8_t k_ch = (uint8_t)b;
     nfc_mode_scan_result_t r =
         nfc_mode_scan_feed(scan, k_ch, pb, &pblen, (uint16_t)(sizeof(pb)));
     switch (r) {

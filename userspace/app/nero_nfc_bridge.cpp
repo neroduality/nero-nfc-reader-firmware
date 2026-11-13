@@ -18,13 +18,19 @@
 
 #include <algorithm>
 #include <cctype>
+#include <chrono>
+#include <thread>
 #include <vector>
 
 #include "nero_nfc_detect.hpp"
+#include "nero_nfc_io.hpp"
 #include "nero_nfc_pcsc.hpp"
+#include "nero_nfc_pcsc_internal.hpp"
 
 namespace nero_nfc {
 namespace {
+
+constexpr auto kHostBridgePollInterval = std::chrono::milliseconds(500);
 
 std::string LowerCopy(std::string_view in) {
   std::string out(in);
@@ -34,14 +40,35 @@ std::string LowerCopy(std::string_view in) {
   return out;
 }
 
-std::string CdcBridgeHint() {
+std::string_view CdcBridgeHint() {
   return "If the board is running the default PC/SC firmware, omit --bridge or "
          "use --bridge=pcsc.";
 }
 
-std::string PcscBridgeHint() {
+std::string_view PcscBridgeHint() {
   return "If the board is running the CDC serial firmware (make flash-cdc), "
          "use --bridge=cdc.";
+}
+
+bool ValidateBridgeOptions(const std::optional<HostBridge>& requested_bridge,
+                           const std::string& serial_port_arg,
+                           const std::string& pcsc_reader_arg,
+                           bool pcsc_share_specified, std::string& err) {
+  if (requested_bridge == HostBridge::kPcsc && !serial_port_arg.empty()) {
+    err = "--port is only valid with the CDC bridge";
+    return false;
+  }
+  if (requested_bridge == HostBridge::kCdc &&
+      (!pcsc_reader_arg.empty() || pcsc_share_specified)) {
+    err = "PC/SC options are only valid with the PC/SC bridge";
+    return false;
+  }
+  if (!requested_bridge.has_value() && !serial_port_arg.empty() &&
+      (!pcsc_reader_arg.empty() || pcsc_share_specified)) {
+    err = "choose either --port (CDC) or PC/SC options, not both";
+    return false;
+  }
+  return true;
 }
 
 }  // namespace
@@ -72,18 +99,8 @@ bool ChooseHostBridge(const std::optional<HostBridge>& requested_bridge,
                       const std::string& pcsc_reader_arg,
                       HostBridgeSelection& out, std::string& err,
                       bool pcsc_share_specified) {
-  if (requested_bridge == HostBridge::kPcsc && !serial_port_arg.empty()) {
-    err = "--port is only valid with the CDC bridge";
-    return false;
-  }
-  if (requested_bridge == HostBridge::kCdc &&
-      (!pcsc_reader_arg.empty() || pcsc_share_specified)) {
-    err = "PC/SC options are only valid with the PC/SC bridge";
-    return false;
-  }
-  if (!requested_bridge.has_value() && !serial_port_arg.empty() &&
-      (!pcsc_reader_arg.empty() || pcsc_share_specified)) {
-    err = "choose either --port (CDC) or PC/SC options, not both";
+  if (!ValidateBridgeOptions(requested_bridge, serial_port_arg, pcsc_reader_arg,
+                             pcsc_share_specified, err)) {
     return false;
   }
 
@@ -95,15 +112,19 @@ bool ChooseHostBridge(const std::optional<HostBridge>& requested_bridge,
   std::string resolved_pcsc_reader;
   std::string pcsc_err;
   bool have_pcsc_reader = false;
+  bool have_nero_pcsc_reader = false;
   if (!pcsc_reader.empty()) {
     have_pcsc_reader =
         ResolvePcscReader(pcsc_reader, resolved_pcsc_reader, pcsc_err);
+    have_nero_pcsc_reader = have_pcsc_reader;
   } else {
     std::vector<std::string> pcsc_readers;
     have_pcsc_reader = ListPcscReaders(pcsc_readers, pcsc_err);
     if (have_pcsc_reader) {
       resolved_pcsc_reader.clear();
       pcsc_err.clear();
+      have_nero_pcsc_reader = std::ranges::any_of(
+          pcsc_readers, pcsc_internal::IsPreferredNeroReader);
     }
   }
 
@@ -120,8 +141,8 @@ bool ChooseHostBridge(const std::optional<HostBridge>& requested_bridge,
       err.clear();
       return true;
     }
-    err = "CDC bridge requested, but no serial port was detected. " +
-          CdcBridgeHint();
+    err = "CDC bridge requested, but no serial port was detected. ";
+    err += CdcBridgeHint();
     return false;
   }
 
@@ -133,11 +154,12 @@ bool ChooseHostBridge(const std::optional<HostBridge>& requested_bridge,
       err.clear();
       return true;
     }
-    err = "PC/SC bridge requested, but " + pcsc_err + ". " + PcscBridgeHint();
+    err = "PC/SC bridge requested, but " + pcsc_err + ". ";
+    err += PcscBridgeHint();
     return false;
   }
 
-  if (have_pcsc_reader) {
+  if (have_nero_pcsc_reader || (have_pcsc_reader && serial_candidate.empty())) {
     out.bridge_ = HostBridge::kPcsc;
     out.serial_port_.clear();
     out.pcsc_reader_ = resolved_pcsc_reader;
@@ -164,6 +186,37 @@ bool ChooseHostBridge(const std::optional<HostBridge>& requested_bridge,
       "`reader` or `reader --bridge=pcsc`. For serial shell use `make "
       "flash-cdc`.";
   return false;
+}
+
+bool WaitForHostBridge(const std::optional<HostBridge>& requested_bridge,
+                       const std::string& serial_port_arg,
+                       const std::string& pcsc_reader_arg,
+                       HostBridgeSelection& out, std::string& err,
+                       bool pcsc_share_specified, std::string_view tool) {
+  if (!ValidateBridgeOptions(requested_bridge, serial_port_arg, pcsc_reader_arg,
+                             pcsc_share_specified, err)) {
+    return false;
+  }
+  bool announced = false;
+  for (;;) {
+    if (ChooseHostBridge(requested_bridge, serial_port_arg, pcsc_reader_arg,
+                         out, err, pcsc_share_specified)) {
+      if (announced) {
+        NeroNfcStderrLine("{}: {} bridge detected", tool,
+                          HostBridgeName(out.bridge_));
+      }
+      return true;
+    }
+    if (!announced) {
+      NeroNfcStderrLine("{}: {}", tool, err);
+      NeroNfcStderrLine(
+          "{}: waiting for the board to appear (plug in or reset it; Ctrl+C "
+          "to stop)",
+          tool);
+      announced = true;
+    }
+    std::this_thread::sleep_for(kHostBridgePollInterval);
+  }
 }
 
 }  // namespace nero_nfc

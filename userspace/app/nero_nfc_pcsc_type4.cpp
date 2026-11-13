@@ -23,6 +23,7 @@
 #include "nfc_tag_info.h"
 
 #include <algorithm>
+#include <cstddef>
 #include <iterator>
 #include <limits>
 #include <string_view>
@@ -113,8 +114,8 @@ bool ReadNdefFile(PcscCard& card, PcscTagSnapshot& tag,
     return false;
   }
   auto cc_len = static_cast<std::uint16_t>(
-      (static_cast<unsigned>(cc[0]) << NFC_TAG_T2T_AREA_SIZE_UNIT_BYTES) |
-      cc[1]);
+      (static_cast<unsigned>(cc.at(0)) << NFC_TAG_T2T_AREA_SIZE_UNIT_BYTES) |
+      cc.at(1));
   if (cc_len < static_cast<std::uint16_t>(NFC_PCSC_T4_CC_FILE_LEN)) {
     err = "invalid Type 4 CC length";
     return false;
@@ -167,9 +168,9 @@ bool ReadNdefFile(PcscCard& card, PcscTagSnapshot& tag,
     return false;
   }
   auto ndef_len =
-      static_cast<std::uint16_t>((static_cast<unsigned>(len_bytes[0])
+      static_cast<std::uint16_t>((static_cast<unsigned>(len_bytes.at(0))
                                   << NFC_TAG_T2T_AREA_SIZE_UNIT_BYTES) |
-                                 len_bytes[1]);
+                                 len_bytes.at(1));
   if (ndef_len > tag.max_ndef_size_) {
     err = "Type 4 NDEF length exceeds CC Max NDEF message size";
     return false;
@@ -206,7 +207,7 @@ bool ShouldAttemptType4NdefIo(const PcscTagSnapshot& tag,
 }
 
 void NotePassiveType4Probe(PcscTagSnapshot& tag) {
-  if (tag.tag_type_.find("Type 4") == std::string::npos) {
+  if (!tag.tag_type_.contains("Type 4")) {
     return;
   }
   AppendDetailLine(
@@ -355,11 +356,12 @@ static bool WriteType4NdefFile(PcscCard& card,
                                 std::string("cannot clear NLEN: ") + err);
     return false;
   }
-  for (std::uint16_t done = 0; done < ndef.size();) {
-    auto remaining = static_cast<std::uint16_t>(ndef.size() - done);
-    std::uint16_t const chunk_len = std::min<std::uint16_t>(remaining, mlc);
-    std::vector<std::uint8_t> const chunk(ndef.begin() + done,
-                                          ndef.begin() + done + chunk_len);
+  for (std::size_t done = 0; done < ndef.size();) {
+    std::size_t const chunk_len =
+        std::min<std::size_t>(ndef.size() - done, mlc);
+    std::vector<std::uint8_t> const chunk(
+        ndef.begin() + static_cast<std::ptrdiff_t>(done),
+        ndef.begin() + static_cast<std::ptrdiff_t>(done + chunk_len));
     if (!UpdateBinary(card,
                       static_cast<std::uint16_t>(NFC_PCSC_T4_NLEN_LEN + done),
                       chunk, err)) {
@@ -368,7 +370,7 @@ static bool WriteType4NdefFile(PcscCard& card,
           std::string("cannot write NDEF file chunk: ").append(err));
       return false;
     }
-    done = static_cast<std::uint16_t>(done + chunk_len);
+    done += chunk_len;
   }
   if (!UpdateBinary(
           card, 0u,

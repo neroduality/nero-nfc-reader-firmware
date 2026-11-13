@@ -48,7 +48,25 @@ Use a resettable development token for repeated tests -- many keys and cards
 limit stored passkeys, so re-registering on sites like webauthn.io eventually
 fills storage.
 
-## 4. Troubleshooting
+## 4. Reset a key or manage its PIN
+
+`fido_token` (installed with the other host CLIs) talks CTAP2 to the tapped key
+through PC/SC, with flags modeled on libfido2's `fido2-token`:
+
+```bash
+fido_token -I          # versions, options, PIN retries
+fido_token -R          # factory reset: erases ALL passkeys and the PIN
+fido_token -R -S       # reset, then set a new PIN in the same tap
+fido_token -S          # set a PIN on a key that has none
+fido_token -C          # change the existing PIN
+```
+
+PINs are prompted before the tap. Most keys accept a reset only within a few
+seconds of entering the RF field; if the key refuses, `fido_token` asks you to
+remove and tap it again. See [FIDO_TOKEN.md](FIDO_TOKEN.md) for wiping a key
+and setting a new PIN.
+
+## 5. Troubleshooting
 
 If authentication fails:
 

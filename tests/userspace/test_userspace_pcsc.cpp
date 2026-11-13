@@ -38,16 +38,16 @@ enum {
 #include <gtest/gtest.h>
 
 TEST(UserspacePcsc, BuildsAndParsesUriRecord) {
-  auto ndef = nero_nfc::BuildNdefUriRecord("https://example.test/demo");
+  const auto ndef = nero_nfc::BuildNdefUriRecord("https://example.test/demo");
   ASSERT_FALSE(ndef.empty());
 
   auto records = nero_nfc::ParseNdefRecords(ndef);
 
   ASSERT_EQ(records.size(), 1u);
-  EXPECT_EQ(records[0].tnf_, 1u);
-  EXPECT_EQ(records[0].type_, "U");
-  ASSERT_TRUE(records[0].decoded_.has_value());
-  EXPECT_EQ(records[0].decoded_,
+  EXPECT_EQ(records.at(0).tnf_, 1u);
+  EXPECT_EQ(records.at(0).type_, "U");
+  ASSERT_TRUE(records.at(0).decoded_.has_value());
+  EXPECT_EQ(records.at(0).decoded_,
             std::optional<std::string>("https://example.test/demo"));
 }
 
@@ -64,16 +64,16 @@ TEST(UserspacePcsc, RejectsUnsafeTextWhenBuildingRecord) {
 }
 
 TEST(UserspacePcsc, BuildsAndParsesTextRecord) {
-  auto ndef = nero_nfc::BuildNdefTextRecord("hello NFC", "en");
+  const auto ndef = nero_nfc::BuildNdefTextRecord("hello NFC", "en");
   ASSERT_FALSE(ndef.empty());
 
   auto records = nero_nfc::ParseNdefRecords(ndef);
 
   ASSERT_EQ(records.size(), 1u);
-  EXPECT_EQ(records[0].tnf_, 1u);
-  EXPECT_EQ(records[0].type_, "T");
-  ASSERT_TRUE(records[0].decoded_.has_value());
-  EXPECT_EQ(records[0].decoded_, std::optional<std::string>("hello NFC"));
+  EXPECT_EQ(records.at(0).tnf_, 1u);
+  EXPECT_EQ(records.at(0).type_, "T");
+  ASSERT_TRUE(records.at(0).decoded_.has_value());
+  EXPECT_EQ(records.at(0).decoded_, std::optional<std::string>("hello NFC"));
 }
 
 TEST(UserspacePcsc, ParseNdefRejectsReservedUriPrefixCode) {
@@ -84,7 +84,7 @@ TEST(UserspacePcsc, ParseNdefRejectsReservedUriPrefixCode) {
   ndef.insert(ndef.end(), payload.begin(), payload.end());
   auto records = nero_nfc::ParseNdefRecords(ndef);
   ASSERT_EQ(records.size(), 1u);
-  EXPECT_FALSE(records[0].decoded_.has_value());
+  EXPECT_FALSE(records.at(0).decoded_.has_value());
 }
 
 TEST(UserspacePcsc, ParseNdefRejectsUriPayloadWithEmbeddedNul) {
@@ -94,27 +94,27 @@ TEST(UserspacePcsc, ParseNdefRejectsUriPayloadWithEmbeddedNul) {
   ndef.insert(ndef.end(), payload.begin(), payload.end());
   auto records = nero_nfc::ParseNdefRecords(ndef);
   ASSERT_EQ(records.size(), 1u);
-  EXPECT_FALSE(records[0].decoded_.has_value());
+  EXPECT_FALSE(records.at(0).decoded_.has_value());
 }
 
 TEST(UserspacePcsc, ParseNdefStopsOnUnsupportedChunkedRecord) {
   const std::vector<std::uint8_t> chunked = {0xB1u, 0x01u, 0x02u,
                                              'U',   0x04u, 'a'};
-  auto records = nero_nfc::ParseNdefRecords(chunked);
+  const auto records = nero_nfc::ParseNdefRecords(chunked);
   EXPECT_TRUE(records.empty());
 }
 
 TEST(UserspacePcsc, BuildsMimeRecord) {
-  auto ndef =
+  const auto ndef =
       nero_nfc::BuildNdefMimeRecord("text/vcard", {'B', 'E', 'G', 'I', 'N'});
   ASSERT_FALSE(ndef.empty());
 
   auto records = nero_nfc::ParseNdefRecords(ndef);
 
   ASSERT_EQ(records.size(), 1u);
-  EXPECT_EQ(records[0].tnf_, 2u);
-  EXPECT_EQ(records[0].type_, "text/vcard");
-  EXPECT_EQ(records[0].payload_,
+  EXPECT_EQ(records.at(0).tnf_, 2u);
+  EXPECT_EQ(records.at(0).type_, "text/vcard");
+  EXPECT_EQ(records.at(0).payload_,
             (std::vector<std::uint8_t>{'B', 'E', 'G', 'I', 'N'}));
 }
 
@@ -124,16 +124,16 @@ TEST(UserspacePcsc, BuildsAndParsesMultiRecordMessage) {
       nero_nfc::BuildNdefUriRecord("https://example.test/two"),
   };
 
-  auto ndef = nero_nfc::BuildNdefMessage(records);
+  const auto ndef = nero_nfc::BuildNdefMessage(records);
   ASSERT_FALSE(ndef.empty());
   auto parsed = nero_nfc::ParseNdefRecords(ndef);
 
   ASSERT_EQ(parsed.size(), 2u);
-  ASSERT_TRUE(parsed[0].decoded_.has_value());
-  ASSERT_TRUE(parsed[1].decoded_.has_value());
-  EXPECT_EQ(parsed[0].decoded_,
+  ASSERT_TRUE(parsed.at(0).decoded_.has_value());
+  ASSERT_TRUE(parsed.at(1).decoded_.has_value());
+  EXPECT_EQ(parsed.at(0).decoded_,
             std::optional<std::string>("https://example.test/one"));
-  EXPECT_EQ(parsed[1].decoded_,
+  EXPECT_EQ(parsed.at(1).decoded_,
             std::optional<std::string>("https://example.test/two"));
 }
 
@@ -143,10 +143,10 @@ TEST(UserspacePcsc, ParsesHexWithCommonSeparators) {
   ASSERT_TRUE(nero_nfc::ParseHexBytes("04:A1 b2-C3", out));
 
   ASSERT_EQ(out.size(), 4u);
-  EXPECT_EQ(out[0], 0x04u);
-  EXPECT_EQ(out[1], 0xA1u);
-  EXPECT_EQ(out[2], 0xB2u);
-  EXPECT_EQ(out[3], 0xC3u);
+  EXPECT_EQ(out.at(0), 0x04u);
+  EXPECT_EQ(out.at(1), 0xA1u);
+  EXPECT_EQ(out.at(2), 0xB2u);
+  EXPECT_EQ(out.at(3), 0xC3u);
   EXPECT_EQ(nero_nfc::HexBytes(out, ':'), "04:A1:B2:C3");
 }
 
@@ -254,7 +254,7 @@ TEST(UserspacePcsc, FormatsCommercialType4NdefTag) {
 TEST(UserspacePcsc, BuildsAndExtractsType2StorageTlv) {
   std::vector<std::uint8_t> tlv_area;
   std::string err;
-  auto ndef = nero_nfc::BuildNdefUriRecord("https://example.test/type2");
+  const auto ndef = nero_nfc::BuildNdefUriRecord("https://example.test/type2");
 
   ASSERT_TRUE(
       nero_nfc::NeroNfcUtestBuildStorageNdefTlv(ndef, 128u, tlv_area, err))
@@ -268,15 +268,15 @@ TEST(UserspacePcsc, BuildsAndExtractsType2StorageTlv) {
 
   EXPECT_EQ(tag.ndef_message_, ndef);
   ASSERT_EQ(tag.records_.size(), 1u);
-  ASSERT_TRUE(tag.records_[0].decoded_.has_value());
-  EXPECT_EQ(tag.records_[0].decoded_,
+  ASSERT_TRUE(tag.records_.at(0).decoded_.has_value());
+  EXPECT_EQ(tag.records_.at(0).decoded_,
             std::optional<std::string>("https://example.test/type2"));
 }
 
 TEST(UserspacePcsc, BuildsAndExtractsType5StorageTlvAfterExtendedCc) {
   std::vector<std::uint8_t> tlv_area;
   std::string err;
-  auto ndef = nero_nfc::BuildNdefTextRecord("type5 hello");
+  const auto ndef = nero_nfc::BuildNdefTextRecord("type5 hello");
 
   ASSERT_TRUE(
       nero_nfc::NeroNfcUtestBuildStorageNdefTlv(ndef, 256u, tlv_area, err))
@@ -291,8 +291,8 @@ TEST(UserspacePcsc, BuildsAndExtractsType5StorageTlvAfterExtendedCc) {
 
   EXPECT_EQ(tag.ndef_message_, ndef);
   ASSERT_EQ(tag.records_.size(), 1u);
-  ASSERT_TRUE(tag.records_[0].decoded_.has_value());
-  EXPECT_EQ(tag.records_[0].decoded_,
+  ASSERT_TRUE(tag.records_.at(0).decoded_.has_value());
+  EXPECT_EQ(tag.records_.at(0).decoded_,
             std::optional<std::string>("type5 hello"));
 }
 
@@ -415,6 +415,8 @@ TEST(UserspacePcsc, Type5TransparentFallbackBuildsExtendedBlockCommands) {
                                        0x04u, 0x05u, 0x06u, 0x07u, 0x08u}));
 }
 
+namespace {
+
 class UserspacePcscReaderTest : public ::testing::Test {
  protected:
   void TearDown() override {
@@ -422,9 +424,11 @@ class UserspacePcscReaderTest : public ::testing::Test {
   }
 };
 
+}  // namespace
+
 TEST_F(UserspacePcscReaderTest,
        ResolvePcscReaderUsesOnlyReaderWhenNeedleEmpty) {
-  std::vector<std::string> const readers = {
+  const std::vector<std::string> readers = {
       "HID Global OMNIKEY 5422 Smartcard Reader 00 00"};
   nero_nfc::NeroNfcUtestSetListPcscReadersOverride(&readers);
 
@@ -435,7 +439,7 @@ TEST_F(UserspacePcscReaderTest,
 }
 
 TEST_F(UserspacePcscReaderTest, ResolvePcscReaderAutoSelectsUniqueNeroReader) {
-  std::vector<std::string> const readers = {
+  const std::vector<std::string> readers = {
       "ACS ACR1252 Dual Reader SAM 01 00",
       "Nero NFC Arduino UNO R4 WiFi CCID 00 00"};
   nero_nfc::NeroNfcUtestSetListPcscReadersOverride(&readers);
@@ -448,7 +452,7 @@ TEST_F(UserspacePcscReaderTest, ResolvePcscReaderAutoSelectsUniqueNeroReader) {
 
 TEST_F(UserspacePcscReaderTest,
        ResolvePcscReaderKeepsMultipleSelectableReadersAmbiguous) {
-  std::vector<std::string> const readers = {
+  const std::vector<std::string> readers = {
       "HID Global OMNIKEY 5422 Smartcard Reader 00 00",
       "Nero NFC Arduino UNO R4 WiFi CCID 00 00"};
   nero_nfc::NeroNfcUtestSetListPcscReadersOverride(&readers);
@@ -464,7 +468,7 @@ TEST_F(UserspacePcscReaderTest,
 }
 
 TEST_F(UserspacePcscReaderTest, ResolvePcscReaderRejectsAmbiguousDefault) {
-  std::vector<std::string> const readers = {
+  const std::vector<std::string> readers = {
       "HID Global OMNIKEY 5422 Smartcard Reader 00 00",
       "Yubico YubiKey OTP+FIDO+CCID 00 00"};
   nero_nfc::NeroNfcUtestSetListPcscReadersOverride(&readers);
@@ -492,7 +496,7 @@ TEST_F(UserspacePcscReaderTest,
 
 TEST_F(UserspacePcscReaderTest,
        ResolvePcscReaderPrefersExactMatchOverSubstringAmbiguity) {
-  std::vector<std::string> const readers = {"Nero NFC CCID 00 00",
+  const std::vector<std::string> readers = {"Nero NFC CCID 00 00",
                                             "Nero NFC CCID 01 00"};
   nero_nfc::NeroNfcUtestSetListPcscReadersOverride(&readers);
 
@@ -503,7 +507,7 @@ TEST_F(UserspacePcscReaderTest,
 }
 
 TEST_F(UserspacePcscReaderTest, ResolvePcscReaderRejectsAmbiguousSubstring) {
-  std::vector<std::string> const readers = {"Nero NFC CCID 00 00",
+  const std::vector<std::string> readers = {"Nero NFC CCID 00 00",
                                             "Nero NFC CCID 01 00"};
   nero_nfc::NeroNfcUtestSetListPcscReadersOverride(&readers);
 
@@ -516,7 +520,7 @@ TEST_F(UserspacePcscReaderTest, ResolvePcscReaderRejectsAmbiguousSubstring) {
 }
 
 TEST_F(UserspacePcscReaderTest, ResolvePcscReaderFailsWhenNoMatch) {
-  std::vector<std::string> const readers = {"Nero NFC CCID 00 00"};
+  const std::vector<std::string> readers = {"Nero NFC CCID 00 00"};
   nero_nfc::NeroNfcUtestSetListPcscReadersOverride(&readers);
 
   std::string reader;
@@ -544,14 +548,14 @@ TEST(UserspacePcsc, ParsesShareModeAliases) {
 }
 
 TEST(UserspacePcsc, ParsesUriWithHttpsPrefixCode) {
-  auto ndef = nero_nfc::BuildNdefUriRecord("https://webauthn.io/demo");
+  const auto ndef = nero_nfc::BuildNdefUriRecord("https://webauthn.io/demo");
   auto records = nero_nfc::ParseNdefRecords(ndef);
 
   ASSERT_EQ(records.size(), 1u);
-  ASSERT_TRUE(records[0].decoded_.has_value());
-  EXPECT_EQ(records[0].decoded_,
+  ASSERT_TRUE(records.at(0).decoded_.has_value());
+  EXPECT_EQ(records.at(0).decoded_,
             std::optional<std::string>("https://webauthn.io/demo"));
-  EXPECT_EQ(records[0].payload_.front(),
+  EXPECT_EQ(records.at(0).payload_.front(),
             0x04u); /* NFC Forum URI prefix for https:// */
 }
 
@@ -573,14 +577,16 @@ TEST(UserspacePcsc, RejectsInvalidHexInput) {
 }
 
 TEST(UserspacePcsc, BuildNdefMessageProducesTwoRecords) {
-  auto rec1 = nero_nfc::BuildNdefUriRecord("https://one.test");
-  auto rec2 = nero_nfc::BuildNdefUriRecord("https://two.test");
-  auto msg = nero_nfc::BuildNdefMessage({rec1, rec2});
+  const auto rec1 = nero_nfc::BuildNdefUriRecord("https://one.test");
+  const auto rec2 = nero_nfc::BuildNdefUriRecord("https://two.test");
+  const auto msg = nero_nfc::BuildNdefMessage({rec1, rec2});
   auto parsed = nero_nfc::ParseNdefRecords(msg);
 
   ASSERT_EQ(parsed.size(), 2u);
-  ASSERT_TRUE(parsed[0].decoded_.has_value());
-  ASSERT_TRUE(parsed[1].decoded_.has_value());
-  EXPECT_EQ(parsed[0].decoded_, std::optional<std::string>("https://one.test"));
-  EXPECT_EQ(parsed[1].decoded_, std::optional<std::string>("https://two.test"));
+  ASSERT_TRUE(parsed.at(0).decoded_.has_value());
+  ASSERT_TRUE(parsed.at(1).decoded_.has_value());
+  EXPECT_EQ(parsed.at(0).decoded_,
+            std::optional<std::string>("https://one.test"));
+  EXPECT_EQ(parsed.at(1).decoded_,
+            std::optional<std::string>("https://two.test"));
 }

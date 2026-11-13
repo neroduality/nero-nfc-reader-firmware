@@ -32,6 +32,7 @@
 #include "nero_nfc_app.h"
 #include "nero_nfc_platform.h"
 #include "nfc_combined_shell.h"
+#include "nfc_hal_board.h"
 #include "nfc_runtime_mode_poll.h"
 #include "reader_hal.h"
 #include "writer_hal.h"
@@ -97,7 +98,7 @@ void nfc_hal_pushback_return(const uint8_t* bytes, uint16_t len) {
 
 void reader_hal_serial_begin(unsigned long baud) {
 #if !defined(NERO_CCID_ONLY_BUILD)
-  nero_nfc_platform_serial_begin((uint32_t)(baud));
+  nero_nfc_platform_serial_begin((uint32_t)baud);
 #else
   (void)baud;
 #endif
@@ -203,7 +204,7 @@ void writer_hal_serial_begin(unsigned long baud) {
   if ((app != NERO_NFC_NULL) &&
       ((nero_nfc_app_product(app) == NERO_NFC_PRODUCT_WRITER) ||
        !nero_nfc_platform_serial_ready())) {
-    nero_nfc_platform_serial_begin((uint32_t)(baud));
+    nero_nfc_platform_serial_begin((uint32_t)baud);
   }
 #else
   (void)baud;
@@ -293,7 +294,7 @@ uint8_t writer_hal_spi_transfer(uint8_t data) {
 
 void nfc_combined_shell_serial_begin(unsigned long baud) {
 #if !defined(NERO_CCID_ONLY_BUILD)
-  nero_nfc_platform_serial_begin((uint32_t)(baud));
+  nero_nfc_platform_serial_begin((uint32_t)baud);
 #else
   (void)baud;
 #endif
@@ -309,7 +310,7 @@ bool nfc_combined_shell_serial_ready(void) {
 
 void nfc_combined_shell_serial_write_byte(uint8_t value) {
 #if !defined(NERO_CCID_ONLY_BUILD)
-  nero_nfc_platform_serial_write_char((char)(value));
+  nero_nfc_platform_serial_write_char((char)value);
 #else
   (void)value;
 #endif

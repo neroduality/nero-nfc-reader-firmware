@@ -19,6 +19,7 @@
 #include "nero_nfc_null.h"
 
 #include <cstddef>
+#include <iterator>
 #include <span>
 #include <stdexcept>
 #include <string_view>
@@ -43,7 +44,7 @@ template <typename T, std::size_t N>
   if (index >= N) {
     throw std::out_of_range("nero_nfc::At");
   }
-  return AsSpan(arr)[index];
+  return *std::next(std::begin(arr), static_cast<std::ptrdiff_t>(index));
 }
 
 template <typename T, std::size_t N>
@@ -51,7 +52,15 @@ template <typename T, std::size_t N>
   if (index >= N) {
     throw std::out_of_range("nero_nfc::At");
   }
-  return AsSpan(arr)[index];
+  return *std::next(std::begin(arr), static_cast<std::ptrdiff_t>(index));
+}
+
+template <typename T, std::size_t Extent>
+[[nodiscard]] constexpr T& At(std::span<T, Extent> s, std::size_t index) {
+  if (index >= s.size()) {
+    throw std::out_of_range("nero_nfc::At");
+  }
+  return *std::next(s.begin(), static_cast<std::ptrdiff_t>(index));
 }
 
 [[nodiscard]] inline bool CstrEmpty(const char* s) noexcept {

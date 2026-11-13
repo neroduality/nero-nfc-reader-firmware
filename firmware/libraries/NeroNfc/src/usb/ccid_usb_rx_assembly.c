@@ -61,14 +61,14 @@ ccid_usb_rx_feed_result_t ccid_usb_rx_assembly_feed(
   if (packet_len == 0u) {
     return malformed_result(state, packet_len, endpoint_size);
   }
-  if (!nero_nfc_try_add_size((size_t)(state->len), (size_t)(packet_len),
+  if (!nero_nfc_try_add_size((size_t)state->len, (size_t)packet_len,
                              &assembled_len) ||
       assembled_len > sizeof(state->data) ||
       !nero_nfc_copy_bytes(state->data, sizeof(state->data), state->len, packet,
                            packet_len)) {
     return malformed_result(state, packet_len, endpoint_size);
   }
-  state->len = (uint16_t)(assembled_len);
+  state->len = (uint16_t)assembled_len;
 
   if ((state->expected == 0u) && (state->len >= NFC_CCID_BULK_HEADER_LEN)) {
     const uint32_t payload_len = nfc_ccid_u32_load_le(state->data + 1u);
@@ -79,7 +79,7 @@ ccid_usb_rx_feed_result_t ccid_usb_rx_assembly_feed(
         (frame_len > sizeof(state->data))) {
       return malformed_result(state, packet_len, endpoint_size);
     }
-    state->expected = (uint16_t)(frame_len);
+    state->expected = (uint16_t)frame_len;
   }
 
   if ((state->expected != 0u) && (state->len > state->expected)) {

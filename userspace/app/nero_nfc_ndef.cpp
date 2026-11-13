@@ -102,7 +102,7 @@ std::vector<std::string> TextLines(std::string_view text) {
       lines.emplace_back(text.substr(start, pos - start));
     }
     start = pos + 1u;
-    if (start < text.size() && text[pos] == '\r' && text[start] == '\n') {
+    if (start < text.size() && text.at(pos) == '\r' && text.at(start) == '\n') {
       ++start;
     }
   }
@@ -127,7 +127,7 @@ std::optional<std::string> VcardProperty(std::string_view body,
 std::optional<std::string> DecodeVcardPayload(
     const std::vector<std::uint8_t>& payload) {
   const auto body = TextPayload(payload);
-  if (!body.has_value() || body->find("BEGIN:VCARD") == std::string::npos) {
+  if (!body.has_value() || !body->contains("BEGIN:VCARD")) {
     return std::nullopt;
   }
   const auto name = VcardProperty(*body, "FN");
@@ -157,8 +157,8 @@ bool Be16At(const std::vector<std::uint8_t>& payload, std::size_t offset,
     return false;
   }
   value_out = static_cast<std::uint16_t>(
-      (static_cast<std::uint16_t>(payload[offset]) << NFC_BYTE_SHIFT_8) |
-      static_cast<std::uint16_t>(payload[offset + 1u]));
+      (static_cast<std::uint32_t>(payload.at(offset)) << NFC_BYTE_SHIFT_8) |
+      static_cast<std::uint16_t>(payload.at(offset + 1u)));
   return true;
 }
 
@@ -195,19 +195,21 @@ std::optional<std::string> AsciiAttr(const std::vector<std::uint8_t>& payload,
   return std::string(attr->begin(), attr->end());
 }
 
-std::string WscAuthName(const std::optional<std::vector<std::uint8_t>>& attr) {
+std::string_view WscAuthName(
+    const std::optional<std::vector<std::uint8_t>>& attr) {
   if (attr.has_value() && attr->size() == kWscU16ValueLen &&
-      (*attr)[0] == 0x00u &&
-      (*attr)[1] == static_cast<std::uint8_t>(kWscWpa2PskLsb)) {
+      (*attr).at(0) == 0x00u &&
+      (*attr).at(1) == static_cast<std::uint8_t>(kWscWpa2PskLsb)) {
     return "WPA2-Personal";
   }
   return "unknown";
 }
 
-std::string WscEncrName(const std::optional<std::vector<std::uint8_t>>& attr) {
+std::string_view WscEncrName(
+    const std::optional<std::vector<std::uint8_t>>& attr) {
   if (attr.has_value() && attr->size() == kWscU16ValueLen &&
-      (*attr)[0] == 0x00u &&
-      (*attr)[1] == static_cast<std::uint8_t>(kWscAesLsb)) {
+      (*attr).at(0) == 0x00u &&
+      (*attr).at(1) == static_cast<std::uint8_t>(kWscAesLsb)) {
     return "AES";
   }
   return "unknown";
@@ -238,7 +240,8 @@ std::optional<std::string> DecodeWifiWscPayload(
 std::optional<std::string> DecodeBluetoothOobPayload(
     const std::vector<std::uint8_t>& payload) {
   if (payload.size() < kBtOobMinPayloadLen ||
-      payload[0] < kBtOobMinPayloadLen || payload[kBtOobLengthMsbIndex] != 0u) {
+      payload.at(0) < kBtOobMinPayloadLen ||
+      payload.at(kBtOobLengthMsbIndex) != 0u) {
     return std::nullopt;
   }
   std::string out = "Bluetooth OOB: address=";
@@ -247,14 +250,13 @@ std::optional<std::string> DecodeBluetoothOobPayload(
     if (i != 0u) {
       out.push_back(':');
     }
-    const auto payload_index =
-        static_cast<std::size_t>(kBtOobAddrOffset + kBtOobAddrLen - 1u - i);
+    const auto payload_index = (kBtOobAddrOffset + kBtOobAddrLen - 1u - i);
     if (!nero_nfc_span_ok(payload_index, 1u, payload.size())) {
       return std::nullopt;
     }
     const int written =
         nero_nfc_snprintf(&byte_text[0], sizeof(byte_text), "%02X",
-                          static_cast<unsigned>(payload[payload_index]));
+                          static_cast<unsigned>(payload.at(payload_index)));
     if (written <= 0 ||
         static_cast<std::size_t>(written) >= sizeof(byte_text)) {
       return std::nullopt;
@@ -314,7 +316,7 @@ std::vector<std::uint8_t> BuildNdefTextRecord(std::string_view text,
   // -Wfree-nonheap-object false positive under
   // _FORTIFY_SOURCE/_GLIBCXX_ASSERTIONS.
   std::vector<std::uint8_t> payload(1u + lang.size() + text.size());
-  payload[0] = static_cast<std::uint8_t>(lang.size());
+  payload.at(0) = static_cast<std::uint8_t>(lang.size());
   std::ranges::copy(lang, payload.begin() + 1);
   std::ranges::copy(
       text, payload.begin() + 1 + static_cast<std::ptrdiff_t>(lang.size()));
@@ -351,7 +353,7 @@ std::vector<std::uint8_t> BuildNdefUriRecord(std::string_view uri) {
   // Single fixed-size allocation; fill by iterator (see
   // build_ndef_text_record).
   std::vector<std::uint8_t> payload(1u + suffix.size());
-  payload[0] = prefix_code;
+  payload.at(0) = prefix_code;
   std::ranges::copy(suffix, payload.begin() + 1);
   {
     char probe[NERO_NFC_NDEF_DECODE_OUT_MAX];
@@ -388,10 +390,10 @@ std::vector<std::uint8_t> BuildNdefMessage(
     return out;
   }
   for (std::size_t i = 0; i < records.size(); ++i) {
-    if (records[i].empty()) {
+    if (records.at(i).empty()) {
       return {};
     }
-    std::vector<std::uint8_t> record = records[i];
+    std::vector<std::uint8_t> record = records.at(i);
     record.front() = static_cast<std::uint8_t>(
         record.front() & ~(NFC_NDEF_HDR_MB | NFC_NDEF_HDR_ME));
     if (i == 0u) {
@@ -448,7 +450,10 @@ std::vector<NdefRecordSummary> ParseNdefRecords(
     std::vector<std::uint8_t> const payload(payload_bytes.begin(),
                                             payload_bytes.end());
     records.push_back(
-        {rec.tnf, type, payload, DecodeRecordPayload(rec.tnf, type, payload)});
+        {.tnf_ = rec.tnf,
+         .type_ = type,
+         .payload_ = payload,
+         .decoded_ = DecodeRecordPayload(rec.tnf, type, payload)});
     pos = next;
     if (rec.message_end) {
       break;

@@ -46,7 +46,7 @@ std::string StorageAtrHex(nfc_tag_kind_t kind) {
 }
 
 bool ContainsText(const std::string& text, std::string_view needle) {
-  return text.find(needle) != std::string::npos;
+  return text.contains(needle);
 }
 
 void ExpectPresentedMetadata(const nero_nfc::PcscTagSnapshot& tag,
@@ -152,21 +152,20 @@ TEST(UserspacePcscTagDetails, AppliesType2DetailLinesFromCcAndVersion) {
   EXPECT_EQ(tag.manufacturer_, "NXP");
   EXPECT_FALSE(tag.product_name_.empty());
   ASSERT_FALSE(tag.detail_lines_.empty());
-  EXPECT_NE(tag.detail_lines_[0].find("Product code: vendor=0x04"),
+  EXPECT_NE(tag.detail_lines_.at(0).find("Product code: vendor=0x04"),
             std::string::npos);
   EXPECT_NE(std::ranges::find_if(tag.detail_lines_,
                                  [](const std::string& line) {
                                    return line.starts_with("CC: ");
                                  }),
             tag.detail_lines_.end());
-  EXPECT_NE(
-      std::ranges::find_if(
-          tag.detail_lines_,
-          [](const std::string& line) {
-            return line.find("Data format: NFC Forum Type 2 Tag / NDEF TLV") !=
-                   std::string::npos;
-          }),
-      tag.detail_lines_.end());
+  EXPECT_NE(std::ranges::find_if(
+                tag.detail_lines_,
+                [](const std::string& line) {
+                  return line.contains(
+                      "Data format: NFC Forum Type 2 Tag / NDEF TLV");
+                }),
+            tag.detail_lines_.end());
 }
 
 TEST(UserspacePcscTagDetails,
@@ -291,8 +290,7 @@ TEST(UserspacePcscTagDetails, AppliesType4DetailLinesFromCc) {
   EXPECT_EQ(tag.tech_list_, "NfcA, IsoDep, Ndef");
   EXPECT_NE(std::ranges::find_if(tag.detail_lines_,
                                  [](const std::string& line) {
-                                   return line.find("NDEF file ID: 0xE104") !=
-                                          std::string::npos;
+                                   return line.contains("NDEF file ID: 0xE104");
                                  }),
             tag.detail_lines_.end());
   EXPECT_EQ(tag.max_ndef_size_, 498u);

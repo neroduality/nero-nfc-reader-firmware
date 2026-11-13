@@ -72,21 +72,20 @@ nfc_mode_scan_result_t nfc_mode_scan_feed(nfc_mode_scan_state_t* st, uint8_t ch,
 
   st->buf[st->len] = ch;
 
-  if (st->len < NFC_MODE_SCAN_PREFIX_LEN) {
-    if (ch != (uint8_t)K_MODE_PREFIX[st->len]) {
-      st->len++;
-      if (st->len > pushback_cap) {
-        st->len = 0u;
-        return NFC_MODE_SCAN_PUSHBACK_STOP;
-      }
-      if (!nero_nfc_copy_bytes(pushback, pushback_cap, 0u, st->buf, st->len)) {
-        st->len = 0u;
-        return NFC_MODE_SCAN_PUSHBACK_STOP;
-      }
-      *push_len = st->len;
+  if ((st->len < NFC_MODE_SCAN_PREFIX_LEN) &&
+      (ch != (uint8_t)K_MODE_PREFIX[st->len])) {
+    st->len++;
+    if (st->len > pushback_cap) {
       st->len = 0u;
       return NFC_MODE_SCAN_PUSHBACK_STOP;
     }
+    if (!nero_nfc_copy_bytes(pushback, pushback_cap, 0u, st->buf, st->len)) {
+      st->len = 0u;
+      return NFC_MODE_SCAN_PUSHBACK_STOP;
+    }
+    *push_len = st->len;
+    st->len = 0u;
+    return NFC_MODE_SCAN_PUSHBACK_STOP;
   }
 
   st->len++;

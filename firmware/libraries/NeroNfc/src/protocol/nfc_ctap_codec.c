@@ -82,8 +82,8 @@ static bool emit_pk_cred_descriptor(const uint8_t* cred_id, uint16_t cred_len,
     buf[p++] = (uint8_t)cred_len;
   } else {
     buf[p++] = NFC_CBOR_HEADER_TWO_BYTE_BYTES;
-    buf[p++] =
-        (uint8_t)((cred_len >> NFC_BYTE_SHIFT_8) & NFC_ISO7816_BYTE_MASK);
+    buf[p++] = (uint8_t)(((uint32_t)cred_len >> NFC_BYTE_SHIFT_8) &
+                         NFC_ISO7816_BYTE_MASK);
     buf[p++] = (uint8_t)(cred_len & NFC_ISO7816_BYTE_MASK);
   }
   if (!nero_nfc_copy_bytes(buf, buf_max, p, cred_id, cred_len)) {
@@ -243,7 +243,8 @@ bool nfc_ctap_pack_cbor_apdu(uint8_t ctap_cmd, const uint8_t* cbor,
   } else {
     apdu[NFC_ISO7816_APDU_IDX_LC] = NFC_ISO7816_SW2_SUCCESS;
     apdu[NFC_CTAP_APDU_EXTENDED_LC_MSB_OFFSET] =
-        (uint8_t)((payload_len >> NFC_BYTE_SHIFT_8) & NFC_ISO7816_BYTE_MASK);
+        (uint8_t)(((uint32_t)payload_len >> NFC_BYTE_SHIFT_8) &
+                  NFC_ISO7816_BYTE_MASK);
     apdu[NFC_CTAP_APDU_EXTENDED_LC_LSB_OFFSET] =
         (uint8_t)(payload_len & NFC_ISO7816_BYTE_MASK);
     apdu[NFC_CTAP_APDU_EXTENDED_CMD_OFFSET] = ctap_cmd;
@@ -291,7 +292,7 @@ bool nfc_ctap_fido_webauthn_select_step(
           {0u, NFC_CTAP_FIDO_SELECT_PREP_SETTLE, NFC_CTAP_FIDO_SELECT_LOG_NONE},
           {1u, NFC_CTAP_FIDO_SELECT_PREP_RECOVER,
            NFC_CTAP_FIDO_SELECT_LOG_LAST_CHANCE},
-      };
+  };
 
   if (out != NERO_NFC_NULL) {
     out->variant_index = 0u;
@@ -396,7 +397,7 @@ bool nfc_ctap_apdu_command(const uint8_t* apdu, uint16_t apdu_len,
   if (apdu_len < NFC_ISO7816_MIN_EXTENDED_APDU_LEN) {
     return false;
   }
-  lc = (uint16_t)(((uint16_t)apdu[NFC_CTAP_APDU_EXTENDED_LC_MSB_OFFSET]
+  lc = (uint16_t)(((uint32_t)apdu[NFC_CTAP_APDU_EXTENDED_LC_MSB_OFFSET]
                    << NFC_BYTE_SHIFT_8) |
                   apdu[NFC_CTAP_APDU_EXTENDED_LC_LSB_OFFSET]);
   {
@@ -470,7 +471,8 @@ bool nfc_ctap_apdu_needs_ccid_time_extension(const uint8_t* apdu,
   }
   return (ctap_cmd == NFC_CTAP_CMD_MAKE_CREDENTIAL) ||
          (ctap_cmd == NFC_CTAP_CMD_GET_ASSERTION) ||
-         (ctap_cmd == NFC_CTAP_CMD_CLIENT_PIN);
+         (ctap_cmd == NFC_CTAP_CMD_CLIENT_PIN) ||
+         (ctap_cmd == NFC_CTAP_CMD_RESET);
 }
 
 nfc_ctap_relay_disposition_t nfc_ctap_relay_response_disposition(
@@ -483,7 +485,7 @@ nfc_ctap_relay_disposition_t nfc_ctap_relay_response_disposition(
   if ((raw == NERO_NFC_NULL) || (raw_len < NFC_ISO7816_SW_STATUS_WORD_LEN)) {
     return NFC_CTAP_RELAY_FAIL_CLOSED;
   }
-  sw = (uint16_t)(((uint16_t)raw[raw_len - NFC_ISO7816_SW_STATUS_WORD_LEN]
+  sw = (uint16_t)(((uint32_t)raw[raw_len - NFC_ISO7816_SW_STATUS_WORD_LEN]
                    << NFC_BYTE_SHIFT_8) |
                   raw[raw_len - NFC_CTAP_CBOR_HDR_INLINE]);
 

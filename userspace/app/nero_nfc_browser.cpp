@@ -78,10 +78,10 @@ void ForkExecUrlOpener(const char* prog, const std::string& url) {
   }
   /* Rebuild a scrubbed C string so execlp does not consume untrusted bytes. */
   char scrubbed[kMaxUrlBytes + 1u];
-  auto scrub = AsSpan(scrubbed);
+  const auto scrub = AsSpan(scrubbed);
   const size_t n = url.size();
   for (size_t i = 0u; i < n; ++i) {
-    At(scrubbed, i) = static_cast<char>(static_cast<unsigned char>(url[i]));
+    At(scrubbed, i) = static_cast<char>(static_cast<unsigned char>(url.at(i)));
   }
   At(scrubbed, n) = '\0';
 

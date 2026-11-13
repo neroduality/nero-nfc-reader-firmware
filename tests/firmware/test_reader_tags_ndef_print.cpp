@@ -47,7 +47,7 @@ std::vector<std::uint8_t> MakeShortMimeRecord(
   const std::string_view mime_view{mime == NERO_NFC_NULL ? "" : mime};
   for (char ch : mime_view) {
     record.push_back(static_cast<std::uint8_t>(static_cast<unsigned char>(ch)));
-    record[type_len_index]++;
+    record.at(type_len_index)++;
   }
   record.insert(record.end(), payload.begin(), payload.end());
   return record;

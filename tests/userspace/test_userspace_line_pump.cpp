@@ -82,7 +82,7 @@ TEST(LinePump, SingleLineLF) {
   const char* data = "hello\n";
   pump.Feed(data, strlen(data));
   ASSERT_EQ(lines.size(), 1u);
-  EXPECT_EQ(lines[0], "hello");
+  EXPECT_EQ(lines.at(0), "hello");
 }
 
 TEST(LinePump, CRLFStripped) {
@@ -91,7 +91,7 @@ TEST(LinePump, CRLFStripped) {
   const char* data = "hello\r\n";
   pump.Feed(data, strlen(data));
   ASSERT_EQ(lines.size(), 1u);
-  EXPECT_EQ(lines[0], "hello");
+  EXPECT_EQ(lines.at(0), "hello");
 }
 
 TEST(LinePump, MultipleLines) {
@@ -100,9 +100,9 @@ TEST(LinePump, MultipleLines) {
   const char* data = "line1\nline2\nline3\n";
   pump.Feed(data, strlen(data));
   ASSERT_EQ(lines.size(), 3u);
-  EXPECT_EQ(lines[0], "line1");
-  EXPECT_EQ(lines[1], "line2");
-  EXPECT_EQ(lines[2], "line3");
+  EXPECT_EQ(lines.at(0), "line1");
+  EXPECT_EQ(lines.at(1), "line2");
+  EXPECT_EQ(lines.at(2), "line3");
 }
 
 TEST(LinePump, PartialLinesAcrossFeeds) {
@@ -112,7 +112,7 @@ TEST(LinePump, PartialLinesAcrossFeeds) {
   EXPECT_TRUE(lines.empty());
   pump.Feed("de\n", kTestLit3);
   ASSERT_EQ(lines.size(), 1u);
-  EXPECT_EQ(lines[0], "abcde");
+  EXPECT_EQ(lines.at(0), "abcde");
 }
 
 TEST(LinePump, BrowserLineDetectedInCallback) {
@@ -125,7 +125,7 @@ TEST(LinePump, BrowserLineDetectedInCallback) {
   const char* data = "BROWSER_OPEN:https://auth.example.com/login\n";
   pump.Feed(data, strlen(data));
   ASSERT_EQ(browser_urls.size(), 1u);
-  EXPECT_EQ(browser_urls[0], "https://auth.example.com/login");
+  EXPECT_EQ(browser_urls.at(0), "https://auth.example.com/login");
 }
 
 TEST(LinePump, OverflowDropsExcessBytes) {
@@ -142,7 +142,7 @@ TEST(LinePump, OverflowDropsExcessBytes) {
   // A subsequent in-budget line must still be delivered.
   pump.Feed("ok\n", kTestLit3);
   ASSERT_EQ(lines.size(), 1u);
-  EXPECT_EQ(lines[0], "ok");
+  EXPECT_EQ(lines.at(0), "ok");
 }
 
 TEST(LinePump, NoPendingBytesAfterFullLine) {

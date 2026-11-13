@@ -30,6 +30,7 @@ enum {
 #include "st25_iso15693_codec_host.hpp"
 
 #include "nero_nfc_mem_util.h"
+#include "test_bounds.hpp"
 
 #include <array>
 
@@ -46,7 +47,7 @@ TEST(St25Iso15693Codec, StreamEncodeAddsSofCrcAndEof) {
                                        encoded.data(), (uint16_t)encoded.size(),
                                        &enc_len));
   EXPECT_GT(enc_len, (uint16_t)sizeof(kTx));
-  EXPECT_EQ(std::span{encoded}[0], kSt25Iso15693StreamSof1of4);
+  EXPECT_EQ(encoded.at(0), kSt25Iso15693StreamSof1of4);
   EXPECT_EQ(nero_nfc_u8_at(encoded.data(), enc_len, enc_len - 1u),
             kSt25Iso15693StreamEof1of4);
 }

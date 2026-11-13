@@ -19,13 +19,15 @@
 #include "nero_nfc_null.h"
 #include "st25_sketch_spi.h"
 
+#define K_ST25_REGULATOR_CTL_KEEP_MASK 0xF0u
+#define K_ST25_REGULATOR_CTL_TARGET 0x01u
+#define K_ST25_TX_LEN_BITS_HIGH_MASK 0x1Fu
+
 enum {
   K_S_T25_R3916_OSC_STARTUP_POLL_ATTEMPTS = 50u,
   K_ST25_INIT_SETTLE_MS = 5u,
   K_ST25_OSC_POLL_DELAY_MS = 10u,
   K_ST25_IO_CONF1_DEFAULTS = 0x07u,
-  K_ST25_REGULATOR_CTL_KEEP_MASK = 0xF0u,
-  K_ST25_REGULATOR_CTL_TARGET = 0x01u,
   K_ST25_VDD_MV_SCALE_MAJOR = 23u,
   K_ST25_VDD_MV_SCALE_FRAC_NUM = 4u,
   K_ST25_VDD_MV_SCALE_FRAC_ADD = 5u,
@@ -47,7 +49,6 @@ enum {
   K_ST25_AWS_TIME3_DEFAULT = 0x79u,
   K_ST25_AWS_TIME4_DEFAULT = 0x07u,
   K_ST25_FIELD_ON_IRQ_WAIT_TICKS = 200000u,
-  K_ST25_TX_LEN_BITS_HIGH_MASK = 0x1Fu,
   K_ST25_NRT_MS_TO_STEPS_NUM = 33u,
   K_ST25_NRT_MS_TO_STEPS_DEN = 10u,
   K_ST25_NRT_MS_TO_STEPS_ADD = 5u,
@@ -155,8 +156,8 @@ st25_init_status_t st25_runtime_init_common(const st25_runtime_ops_t* ops,
   ops->cmd(ST25R3916_CMD_MEASURE_VDD);
   ops->delay_ms(K_ST25_INIT_SETTLE_MS);
   ad_result = ops->read_reg(ST25R3916_REG_AD_RESULT);
-  vdd_mv = (uint16_t)(((unsigned)(ad_result)*K_ST25_VDD_MV_SCALE_MAJOR) +
-                      (((unsigned)(ad_result)*K_ST25_VDD_MV_SCALE_FRAC_NUM +
+  vdd_mv = (uint16_t)(((unsigned)ad_result * K_ST25_VDD_MV_SCALE_MAJOR) +
+                      ((((unsigned)ad_result * K_ST25_VDD_MV_SCALE_FRAC_NUM) +
                         K_ST25_VDD_MV_SCALE_FRAC_ADD) /
                        K_ST25_VDD_MV_SCALE_FRAC_DEN));
   if (vdd_mv_out != NERO_NFC_NULL) {
@@ -217,7 +218,7 @@ st25_field_on_status_t st25_runtime_field_on_common(
   ops->clear_irqs();
   ops->write_reg(ST25R3916_REG_IRQ_MASK_TARGET, (uint8_t)(~IRQ_TARGET_APON));
   ops->write_reg(ST25R3916_REG_IRQ_MASK_TIMER_NFC,
-                 (uint8_t)(~(IRQ_TIMER_CAT | IRQ_TIMER_CAC)));
+                 (uint8_t)(~((uint32_t)IRQ_TIMER_CAT | IRQ_TIMER_CAC)));
   ops->cmd(ST25R3916_CMD_INITIAL_RF_COLLISION);
 
   irqs = ops->wait_for_irqs(K_ST25_FIELD_ON_IRQ_WAIT_TICKS);
@@ -315,22 +316,22 @@ int st25_runtime_transceive_common_diag(
   tx_bits = (uint16_t)(tx_len * NFC_BITS_PER_BYTE);
   ops->write_reg(ST25R3916_REG_NUM_TX_BYTES2,
                  (uint8_t)(tx_bits & NFC_BYTE_VALUE_MAX));
-  ops->write_reg(
-      ST25R3916_REG_NUM_TX_BYTES1,
-      (uint8_t)((tx_bits >> NFC_BYTE_SHIFT_8) & K_ST25_TX_LEN_BITS_HIGH_MASK));
+  ops->write_reg(ST25R3916_REG_NUM_TX_BYTES1,
+                 (uint8_t)(((uint32_t)tx_bits >> NFC_BYTE_SHIFT_8) &
+                           K_ST25_TX_LEN_BITS_HIGH_MASK));
 
   ops->write_reg(ST25R3916_REG_TIMER_EMV_CONTROL,
                  ST25R3916_REG_TIMER_EMV_CONTROL_nrt_step_4096_fc |
                      ST25R3916_REG_TIMER_EMV_CONTROL_nrt_nfc_on);
   if (extended_nrt_16bit) {
     uint32_t nrt_steps_u32 =
-        (((uint32_t)(timeout_ms)*K_ST25_NRT_MS_TO_STEPS_NUM) /
+        (((uint32_t)timeout_ms * K_ST25_NRT_MS_TO_STEPS_NUM) /
          K_ST25_NRT_MS_TO_STEPS_DEN) +
         K_ST25_NRT_MS_TO_STEPS_ADD;
-    const uint32_t k_nrt_steps_max = (uint32_t)(K_ST25_NRT_STEPS_MAX16);
+    const uint32_t k_nrt_steps_max = (uint32_t)K_ST25_NRT_STEPS_MAX16;
     uint16_t nrt_steps = (nrt_steps_u32 > k_nrt_steps_max)
-                             ? (uint16_t)(k_nrt_steps_max)
-                             : (uint16_t)(nrt_steps_u32);
+                             ? (uint16_t)k_nrt_steps_max
+                             : (uint16_t)nrt_steps_u32;
 
     if ((diag != NERO_NFC_NULL) && (nrt_steps_u32 > k_nrt_steps_max)) {
       diag->nrt_clamped = true;
@@ -344,10 +345,10 @@ int st25_runtime_transceive_common_diag(
                    (uint8_t)(nrt_steps & NFC_BYTE_VALUE_MAX));
   } else {
     uint16_t nrt_calc =
-        (uint16_t)(((uint32_t)(timeout_ms)*K_ST25_NRT_MS_TO_STEPS_SHORT_MUL) +
+        (uint16_t)(((uint32_t)timeout_ms * K_ST25_NRT_MS_TO_STEPS_SHORT_MUL) +
                    K_ST25_NRT_MS_TO_STEPS_SHORT_ADD);
     uint8_t nrt = (nrt_calc > NFC_BYTE_VALUE_MAX) ? NFC_BYTE_VALUE_MAX
-                                                  : (uint8_t)(nrt_calc);
+                                                  : (uint8_t)nrt_calc;
 
     if (diag != NERO_NFC_NULL) {
       diag->nrt_steps_programmed = nrt;
@@ -394,7 +395,7 @@ int st25_runtime_transceive_common_diag(
       elapsed_ms = st25_runtime_elapsed_ms(ops, start);
     }
   } else {
-    ops->delay_ms((uint32_t)(timeout_ms) + K_ST25_TRANSCEIVE_DELAY_SLACK_MS);
+    ops->delay_ms((uint32_t)timeout_ms + K_ST25_TRANSCEIVE_DELAY_SLACK_MS);
     all_irqs |= ops->read_irq_regs();
   }
 
@@ -416,7 +417,7 @@ int st25_runtime_transceive_common_diag(
     ops->write_reg(ST25R3916_REG_ISO14443A_NFC, 0x00u);
   }
   {
-    int rx_len = (int)(ops->read_fifo(rx_buffer, rx_buffer_len));
+    int rx_len = (int)ops->read_fifo(rx_buffer, rx_buffer_len);
     if (!clear_nfc_before_fifo_read) {
       ops->write_reg(ST25R3916_REG_ISO14443A_NFC, 0x00u);
     }

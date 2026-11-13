@@ -39,9 +39,9 @@ constexpr uint16_t kEndpointSize = kTestLit64u;
 std::array<uint8_t, kEndpointSize> HeaderPacket(uint32_t payload_len,
                                                 uint8_t seq) {
   std::array<uint8_t, kEndpointSize> packet{};
-  packet[0] = NFC_CCID_MSG_PC_TO_RDR_XFR;
-  nfc_ccid_u32_store_le(&packet[1], payload_len);
-  packet[NFC_CCID_BULK_SEQ_OFFSET] = seq;
+  packet.at(0) = NFC_CCID_MSG_PC_TO_RDR_XFR;
+  nfc_ccid_u32_store_le(&packet.at(1), payload_len);
+  packet.at(NFC_CCID_BULK_SEQ_OFFSET) = seq;
   return packet;
 }
 }  // namespace

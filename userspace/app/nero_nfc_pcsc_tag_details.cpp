@@ -77,7 +77,7 @@ void ApplyStorageAtrHint(PcscTagSnapshot& tag) {
    * before trusting its contents: TS must be 0x3B (direct convention), and the
    * trailing TCK must make the XOR of T0..TCK zero. Fail closed (no hint) on a
    * malformed ATR rather than scanning arbitrary bytes for the RID. */
-  if (atr[0] != static_cast<std::uint8_t>(NFC_ISO7816_ATR_TS)) {
+  if (atr.at(0) != static_cast<std::uint8_t>(NFC_ISO7816_ATR_TS)) {
     return;
   }
   std::uint8_t const tck =
@@ -88,7 +88,7 @@ void ApplyStorageAtrHint(PcscTagSnapshot& tag) {
   if (tck != 0u) {
     return;
   }
-  auto match = std::ranges::search(atr, NFC_PCSC_STORAGE_RID);
+  const auto match = std::ranges::search(atr, NFC_PCSC_STORAGE_RID);
   if (match.empty()) {
     return;
   }
@@ -98,7 +98,7 @@ void ApplyStorageAtrHint(PcscTagSnapshot& tag) {
   if (pos + kStorageAtrSsAndNameLen >= atr.size()) {
     return;
   }
-  switch (atr[pos]) {
+  switch (atr.at(pos)) {
     case static_cast<std::uint8_t>(NFC_PCSC_STORAGE_STANDARD_ISO14443A):
       tag.tag_type_ = "PC/SC storage: ISO 14443-3A / NFC Forum Type 2";
       break;
@@ -182,7 +182,7 @@ void ApplyType2Details(PcscTagSnapshot& tag,
     nfc_tag_type2_apply_auth0(&info, *auth0);
   }
   if ((info.family == NFC_TAG_TYPE2_FAMILY_UNKNOWN) && !uid.empty() &&
-      uid[0] == static_cast<std::uint8_t>(NFC_TAG_MFR_CODE_ST) &&
+      uid.at(0) == static_cast<std::uint8_t>(NFC_TAG_MFR_CODE_ST) &&
       info.cc_valid &&
       info.cc[0] == static_cast<std::uint8_t>(NFC_FORUM_CC_MAGIC)) {
     nfc_tag_type2_apply_family_hint(&info, NFC_TAG_TYPE2_FAMILY_ST25TN);
@@ -225,47 +225,43 @@ void ApplyType2Details(PcscTagSnapshot& tag,
                         info.version[NFC_TAG_NTAG_VER_PRODUCT_MINOR_INDEX]);
     AppendDetailLine(tag, version_line.str());
   }
-  if (info.cc_valid) {
-    if (nero_nfc_span_ok(NFC_TAG_T2T_CC_ACCESS_INDEX, 1u,
-                         NFC_TAG_T2T_PAGE_SIZE_BYTES)) {
-      AppendDetailLine(
-          tag, "CC: " + HexBytes(std::vector<std::uint8_t>(std::begin(info.cc),
-                                                           std::end(info.cc))));
-      AppendDetailLine(tag, std::string("CC file: E1 ") +
-                                HexU8(info.cc[NFC_TAG_T2T_CC_VER_INDEX]) + ' ' +
-                                HexU8(info.cc[NFC_TAG_T2T_CC_MLEN_INDEX]) +
-                                ' ' +
-                                HexU8(info.cc[NFC_TAG_T2T_CC_ACCESS_INDEX]));
-      AppendDetailLine(tag, "Data format: NFC Forum Type 2 Tag / NDEF TLV");
+  if (info.cc_valid && nero_nfc_span_ok(NFC_TAG_T2T_CC_ACCESS_INDEX, 1u,
+                                        NFC_TAG_T2T_PAGE_SIZE_BYTES)) {
+    AppendDetailLine(
+        tag, "CC: " + HexBytes(std::vector<std::uint8_t>(std::begin(info.cc),
+                                                         std::end(info.cc))));
+    AppendDetailLine(tag, std::string("CC file: E1 ") +
+                              HexU8(info.cc[NFC_TAG_T2T_CC_VER_INDEX]) + ' ' +
+                              HexU8(info.cc[NFC_TAG_T2T_CC_MLEN_INDEX]) + ' ' +
+                              HexU8(info.cc[NFC_TAG_T2T_CC_ACCESS_INDEX]));
+    AppendDetailLine(tag, "Data format: NFC Forum Type 2 Tag / NDEF TLV");
 
-      std::ostringstream mapping;
-      mapping << "NDEF mapping: " << static_cast<unsigned>(info.mapping_major)
-              << '.' << static_cast<unsigned>(info.mapping_minor)
-              << "  Data area: " << info.data_area_size_bytes << " bytes";
-      AppendDetailLine(tag, mapping.str());
+    std::ostringstream mapping;
+    mapping << "NDEF mapping: " << static_cast<unsigned>(info.mapping_major)
+            << '.' << static_cast<unsigned>(info.mapping_minor)
+            << "  Data area: " << info.data_area_size_bytes << " bytes";
+    AppendDetailLine(tag, mapping.str());
 
-      std::ostringstream area;
-      area << "T2T area size: " << info.data_area_size_bytes
-           << " bytes  TLV area size: " << info.data_area_size_bytes
-           << " bytes";
-      AppendDetailLine(tag, area.str());
+    std::ostringstream area;
+    area << "T2T area size: " << info.data_area_size_bytes
+         << " bytes  TLV area size: " << info.data_area_size_bytes << " bytes";
+    AppendDetailLine(tag, area.str());
 
-      tag.max_ndef_size_ =
-          nfc_ndef_tlv_max_payload_for_data_area(info.data_area_size_bytes);
-      tag.read_access_open_ = info.read_access_open;
-      tag.write_access_open_ = info.write_access_open;
-      AppendDetailLine(tag,
-                       std::string("Read access: ") +
-                           (info.read_access_open ? "open" : "restricted") +
-                           "  Write access: " +
-                           (info.write_access_open ? "open" : "restricted"));
-      AppendDetailLine(
-          tag,
-          std::string("Writable: ") + (info.write_access_open ? "yes" : "no") +
-              "  Can be made read-only: " +
-              (info.write_access_open ? "yes" : "already restricted/unknown"));
-    }
+    tag.max_ndef_size_ =
+        nfc_ndef_tlv_max_payload_for_data_area(info.data_area_size_bytes);
+    tag.read_access_open_ = info.read_access_open;
+    tag.write_access_open_ = info.write_access_open;
+    AppendDetailLine(tag, std::string("Read access: ") +
+                              (info.read_access_open ? "open" : "restricted") +
+                              "  Write access: " +
+                              (info.write_access_open ? "open" : "restricted"));
+    AppendDetailLine(
+        tag,
+        std::string("Writable: ") + (info.write_access_open ? "yes" : "no") +
+            "  Can be made read-only: " +
+            (info.write_access_open ? "yes" : "already restricted/unknown"));
   }
+
   if (info.auth0_valid) {
     AppendDetailLine(tag, std::string("Protected by password: ") +
                               (info.password_protected ? "yes" : "no") +
@@ -294,7 +290,7 @@ void ApplyType4Details(PcscTagSnapshot& tag,
                               static_cast<std::uint8_t>(cc.size()))) {
     return;
   }
-  if (tag.tech_list_.find("Ndef") == std::string::npos) {
+  if (!tag.tech_list_.contains("Ndef")) {
     tag.tech_list_ += ", Ndef";
   }
   AppendDetailLine(tag, "CC: " + HexBytes(cc));

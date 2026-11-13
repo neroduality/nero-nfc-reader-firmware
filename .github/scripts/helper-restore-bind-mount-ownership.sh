@@ -26,7 +26,6 @@ set -euo pipefail
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd -- "${SCRIPT_DIR}/../.." && pwd)"
 # shellcheck source=helper-container-bind-mount.sh
-# shellcheck disable=SC1091
 source "${SCRIPT_DIR}/helper-container-bind-mount.sh"
 
 ENGINE="${CONTAINER_ENGINE:-docker}"
@@ -77,7 +76,7 @@ if ! "${ENGINE}" run --rm \
   -v "${REPO_ROOT}:/src" \
   -u 0 \
   --entrypoint chown \
-  docker.io/library/alpine:3.21@sha256:48b0309ca019d89d40f670aa1bc06e426dc0931948452e8491e3d65087abc07d \
+  docker.io/library/alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf \
   -R "${HOST_UID}:${HOST_GID}" \
   "${mount_targets[@]}" 2>/dev/null; then
   if ! restore_with_host_chown; then

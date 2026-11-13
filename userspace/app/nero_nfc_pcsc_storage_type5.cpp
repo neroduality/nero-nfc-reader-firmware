@@ -33,15 +33,6 @@
 
 namespace nero_nfc::pcsc_internal {
 
-namespace {
-
-constexpr std::size_t kType5TransparentFlagsBytes = 1u;
-constexpr std::size_t kType5TransparentFlagsAndBlockBytes =
-    kType5TransparentFlagsBytes +
-    static_cast<std::size_t>(NFC_TAG_T5T_CC_LEN_SHORT);
-
-}  // namespace
-
 static std::vector<std::uint8_t> Type5AddressedCommand(
     std::uint8_t command, const std::vector<std::uint8_t>& uid_lsb) {
   std::vector<std::uint8_t> cmd;
@@ -60,12 +51,12 @@ std::vector<std::uint8_t> Type5AddressedBlockCommand(
                                                         : short_command,
       uid_lsb);
   if (block > NFC_TAG_T5T_ISO15693_BLOCK_ADDR_1BYTE_MAX) {
-    cmd[0] = static_cast<std::uint8_t>(
-        cmd[0] | NFC_TAG_T5T_ISO15693_FLAG_PROTOCOL_EXTENSION);
+    cmd.at(0) = static_cast<std::uint8_t>(
+        cmd.at(0) | NFC_TAG_T5T_ISO15693_FLAG_PROTOCOL_EXTENSION);
     cmd.push_back(static_cast<std::uint8_t>(
         block & NFC_TAG_T5T_ISO15693_BLOCK_ADDR_1BYTE_MAX));
-    cmd.push_back(static_cast<std::uint8_t>(
-        block >> static_cast<unsigned>(NFC_ISO7816_U16_HIGH_BYTE_SHIFT)));
+    cmd.push_back(
+        static_cast<std::uint8_t>(block >> NFC_ISO7816_U16_HIGH_BYTE_SHIFT));
   } else {
     cmd.push_back(static_cast<std::uint8_t>(block));
   }
@@ -86,16 +77,16 @@ std::vector<std::uint8_t> Type5AddressedReadMultipleCommand(
           : static_cast<std::uint8_t>(NFC_TAG_T5T_ISO15693_CMD_READ_MULTIPLE),
       uid_lsb);
   if (extended) {
-    cmd[0] = static_cast<std::uint8_t>(
-        cmd[0] | NFC_TAG_T5T_ISO15693_FLAG_PROTOCOL_EXTENSION);
+    cmd.at(0) = static_cast<std::uint8_t>(
+        cmd.at(0) | NFC_TAG_T5T_ISO15693_FLAG_PROTOCOL_EXTENSION);
     cmd.push_back(static_cast<std::uint8_t>(
         first_block & NFC_TAG_T5T_ISO15693_BLOCK_ADDR_1BYTE_MAX));
-    cmd.push_back(static_cast<std::uint8_t>(
-        first_block >> static_cast<unsigned>(NFC_ISO7816_U16_HIGH_BYTE_SHIFT)));
+    cmd.push_back(static_cast<std::uint8_t>(first_block >>
+                                            NFC_ISO7816_U16_HIGH_BYTE_SHIFT));
     cmd.push_back(static_cast<std::uint8_t>(
         count_field & NFC_TAG_T5T_ISO15693_BLOCK_ADDR_1BYTE_MAX));
-    cmd.push_back(static_cast<std::uint8_t>(
-        count_field >> static_cast<unsigned>(NFC_ISO7816_U16_HIGH_BYTE_SHIFT)));
+    cmd.push_back(static_cast<std::uint8_t>(count_field >>
+                                            NFC_ISO7816_U16_HIGH_BYTE_SHIFT));
   } else {
     cmd.push_back(static_cast<std::uint8_t>(first_block));
     cmd.push_back(static_cast<std::uint8_t>(count_field));
@@ -121,6 +112,15 @@ std::vector<std::uint8_t> Type5AddressedSystemInfoExtCommand(
 }
 
 #ifdef NERO_USERSPACE_HAVE_PCSC
+
+namespace {
+
+constexpr std::size_t kType5TransparentFlagsBytes = 1u;
+constexpr std::size_t kType5TransparentFlagsAndBlockBytes =
+    kType5TransparentFlagsBytes +
+    static_cast<std::size_t>(NFC_TAG_T5T_CC_LEN_SHORT);
+
+}  // namespace
 
 static bool ParseType5Cc(const std::vector<std::uint8_t>& cc,
                          nfc_tag_type5_info_t& info, std::string& err) {
@@ -171,7 +171,7 @@ static bool ReadType5CcStorage(PcscCard& card, std::vector<std::uint8_t>& cc,
     err.clear();
     return true;
   }
-  cc = first_block;
+  cc = std::move(first_block);
   if (cc_len == static_cast<std::uint16_t>(NFC_TAG_T5T_CC_LEN_EXTENDED)) {
     std::vector<std::uint8_t> second_block;
     if (!Type5StorageReadBinary(card, 1u, second_block, err)) {
@@ -221,7 +221,7 @@ static bool Type5TransparentExchange(
   if (TransmitOk(card, capdu, response, err)) {
     return true;
   }
-  capdu[NFC_ISO7816_APDU_IDX_P2] =
+  capdu.at(NFC_ISO7816_APDU_IDX_P2) =
       static_cast<std::uint8_t>(NFC_PCSC_GET_DATA_ATS);
   return TransmitOk(card, capdu, response, err);
 }
@@ -247,8 +247,8 @@ static bool Type5TransparentReadBlock(PcscCard& card,
    * block data. A response without the flags byte (exactly one block) is the
    * raw fallback. */
   if (response.size() >= kType5TransparentFlagsAndBlockBytes) {
-    if ((response[0] & static_cast<std::uint8_t>(
-                           NFC_TAG_T5T_ISO15693_RESP_FLAG_ERROR)) != 0u) {
+    if ((response.at(0) & static_cast<std::uint8_t>(
+                              NFC_TAG_T5T_ISO15693_RESP_FLAG_ERROR)) != 0u) {
       err = "ISO15693 error flag set in transparent read response";
       return false;
     }
@@ -292,7 +292,7 @@ static bool Type5TransparentWriteBlock(PcscCard& card,
     return false;
   }
   if (response.empty() ||
-      (response[0] &
+      (response.at(0) &
        static_cast<std::uint8_t>(NFC_TAG_T5T_ISO15693_RESP_FLAG_ERROR)) == 0u) {
     err.clear();
     return true;
@@ -388,8 +388,9 @@ namespace {
 bool Type5SystemInfoResponseOk(const std::vector<std::uint8_t>& system_info,
                                std::size_t min_len) {
   return system_info.size() >= min_len &&
-         ((system_info[0] & static_cast<std::uint8_t>(
-                                NFC_TAG_T5T_ISO15693_RESP_FLAG_ERROR)) == 0u);
+         ((system_info.at(0) &
+           static_cast<std::uint8_t>(NFC_TAG_T5T_ISO15693_RESP_FLAG_ERROR)) ==
+          0u);
 }
 
 bool Type5CcSignalsMlenOverflow(const nfc_tag_type5_info_t& info) {
@@ -527,7 +528,7 @@ bool Type5RefreshCcIfNeeded(PcscCard& card,
   }
   const std::uint8_t cur_mlen =
       (cc.size() >= static_cast<std::size_t>(NFC_TAG_T5T_CC_LEN_SHORT))
-          ? cc[NFC_TAG_T5T_CC_MLEN_BYTE_INDEX]
+          ? cc.at(NFC_TAG_T5T_CC_MLEN_BYTE_INDEX)
           : 0u;
   if (cur_mlen >= need_mlen) {
     err.clear();
@@ -562,7 +563,7 @@ static bool ReadType5Cc(PcscCard& card, const std::vector<std::uint8_t>& uid,
     }
     return false;
   }
-  cc = first_block;
+  cc = std::move(first_block);
   if (nfc_storage_type5_declared_cc_len_from_first_block(
           cc.data(), static_cast<std::uint16_t>(cc.size())) ==
       NFC_TAG_T5T_CC_LEN_EXTENDED) {

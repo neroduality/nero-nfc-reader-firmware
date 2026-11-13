@@ -14,6 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "nero_nfc_platform_host_fake.h"
 #include "nero_nfc_platform.h"
 
 #include "nero_nfc_app.h"
@@ -31,8 +32,6 @@ static char g_last_serial_char;
 static int g_serial_available;
 static int g_serial_read_byte = -1;
 static uint8_t g_last_spi;
-static uint8_t g_last_pin;
-static uint8_t g_last_pin_mode;
 static uint8_t g_last_pin_value;
 
 void nero_nfc_platform_host_fake_reset(void) {
@@ -42,8 +41,6 @@ void nero_nfc_platform_host_fake_reset(void) {
   g_serial_available = 0;
   g_serial_read_byte = -1;
   g_last_spi = 0u;
-  g_last_pin = 0u;
-  g_last_pin_mode = 0u;
   g_last_pin_value = 0u;
   const nero_nfc_app_t* active = nero_nfc_app_active();
   if (active != NERO_NFC_NULL) {
@@ -116,13 +113,13 @@ static int fake_serial_read_byte(void* context) {
 
 static void fake_pin_mode(void* context, uint8_t pin, uint8_t mode) {
   (void)context;
-  g_last_pin = pin;
-  g_last_pin_mode = mode;
+  (void)pin;
+  (void)mode;
 }
 
 static void fake_digital_write(void* context, uint8_t pin, uint8_t value) {
   (void)context;
-  g_last_pin = pin;
+  (void)pin;
   g_last_pin_value = value;
 }
 

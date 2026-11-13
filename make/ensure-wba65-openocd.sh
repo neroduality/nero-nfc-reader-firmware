@@ -37,10 +37,10 @@ source "${REPO_ROOT}/make/cli-spinner.sh"
 OPENOCD_PREFIX="${REPO_ROOT}/third-party/openocd-wba65"
 OPENOCD_BIN="${OPENOCD_PREFIX}/bin/openocd"
 OPENOCD_SRC="${REPO_ROOT}/third-party/openocd-wba65-src"
-OPENOCD_REV="${WBA65_OPENOCD_REV:-df14f586629a70878636d138ec3bffd9148aaf1b}"
-PATCH_DIR="${REPO_ROOT}/patches/openocd"
+OPENOCD_REV="${WBA65_OPENOCD_REV:-4900bcdfc82848e9cfa7f895b39aca6b9ca4b911}"
 IDCODE_SRC="${OPENOCD_SRC}/src/flash/nor/stm32l4x.c"
-IDCODE_PATCH_MARKER='DBGMCU_IDCODE_L4_G4, DBGMCU_IDCODE_L5, DBGMCU_IDCODE_G0'
+# WBA6 faults on the G0 DBGMCU address; upstream 2ae1981ab probes L5 first.
+IDCODE_FIX_MARKER='DBGMCU_IDCODE_L4_G4, DBGMCU_IDCODE_L5, DBGMCU_IDCODE_G0'
 OPENOCD_JOBS="$(bash "$(dirname "${BASH_SOURCE[0]}")/cpu-jobs.sh")"
 # NUCLEO-WBA65RI flash uses ST-Link only; disable other adapters (auto=yes with libusb).
 OPENOCD_CONFIGURE_PROFILE='stlink-only-v1'
@@ -83,7 +83,7 @@ openocd_spinner_rotate() {
         cli_spinner_set_message "Processing -- still cloning OpenOCD (${elapsed}s)"
       fi
     elif ((elapsed < 20)); then
-      cli_spinner_set_message "Processing -- initializing jimtcl submodule and applying patches"
+      cli_spinner_set_message "Processing -- initializing jimtcl submodule"
     elif ((elapsed < 90)); then
       cli_spinner_set_message "Processing -- bootstrapping and configuring OpenOCD (${elapsed}s)"
     elif ((elapsed < 240)); then
@@ -135,7 +135,6 @@ checkout_openocd_rev() {
   git -C "${OPENOCD_SRC}" fetch --depth 1 origin "${OPENOCD_REV}" 2>/dev/null ||
     git -C "${OPENOCD_SRC}" fetch --depth 1 origin \
       "refs/tags/${OPENOCD_REV}:refs/tags/${OPENOCD_REV}"
-  # Patches modify tracked files (e.g. stm32l4x.c); reset so FETCH_HEAD checkout never aborts.
   git -C "${OPENOCD_SRC}" reset --hard FETCH_HEAD >/dev/null
   # Drop autotools/build products from a previous checkout so bootstrap re-runs cleanly.
   git -C "${OPENOCD_SRC}" clean -fdX >/dev/null
@@ -145,7 +144,7 @@ build_openocd_tree() {
   (
     cd "${OPENOCD_SRC}"
     git submodule update --init --recursive jimtcl
-    apply_openocd_patches
+    openocd_has_idcode_fix || die "stm32-openocd: ${OPENOCD_REV} lacks the WBA6 idcode probe-order fix (${IDCODE_SRC})"
 
     if [[ -x ${OPENOCD_BIN} ]] &&
       [[ -f ${IDCODE_SRC} ]] &&
@@ -170,15 +169,7 @@ build_openocd_tree() {
   )
 }
 
-patch_signature() {
-  if [[ -d ${PATCH_DIR} ]]; then
-    sha256sum "${PATCH_DIR}"/*.patch 2>/dev/null | sha256sum | awk '{print $1}'
-  else
-    echo "none"
-  fi
-}
-
-OPENOCD_WANT="$(printf 'openocd-wba65|%s|%s|%s' "${OPENOCD_CONFIGURE_PROFILE}" "${OPENOCD_REV}" "$(patch_signature)")"
+OPENOCD_WANT="$(printf 'openocd-wba65|%s|%s' "${OPENOCD_CONFIGURE_PROFILE}" "${OPENOCD_REV}")"
 
 openocd_config_matches() {
   local cfg=""
@@ -196,34 +187,16 @@ openocd_has_wba6() {
     grep -aqF 'STM32WBA6x' "${OPENOCD_BIN}" 2>/dev/null
 }
 
-openocd_idcode_patch_applied() {
+openocd_has_idcode_fix() {
   [[ -f ${IDCODE_SRC} ]] &&
-    grep -qF "${IDCODE_PATCH_MARKER}" "${IDCODE_SRC}"
-}
-
-apply_openocd_patches() {
-  if openocd_idcode_patch_applied; then
-    echo "stm32-openocd: idcode probe-order patch already applied" >&2
-    return 0
-  fi
-  [[ -d ${PATCH_DIR} ]] || return 0
-  local patch name
-  shopt -s nullglob
-  for patch in "${PATCH_DIR}"/*.patch; do
-    name="$(basename "${patch}")"
-    echo "stm32-openocd: applying ${name}" >&2
-    # GNU patch 2.8 hangs with -d/-s and a positional patch file when stdout is redirected.
-    patch -d "${OPENOCD_SRC}" -p1 -N --forward -f -i "${patch}" </dev/null
-  done
-  shopt -u nullglob
-  openocd_idcode_patch_applied || die "stm32-openocd: patch apply failed (${IDCODE_SRC})"
+    grep -qF "${IDCODE_FIX_MARKER}" "${IDCODE_SRC}"
 }
 
 write_stamp() {
   printf '%s' "${OPENOCD_WANT}" >"${STAMP}"
 }
 
-# Fast path: installed binary matches current patch set.
+# Fast path: installed binary matches the pinned revision and configure profile.
 if [[ ${FORCE_EXTERNAL} != "1" ]] &&
   [[ -f ${STAMP} ]] &&
   [[ "$(cat "${STAMP}")" == "${OPENOCD_WANT}" ]] &&
@@ -234,8 +207,7 @@ fi
 wba65_openocd_build_tools_ok() {
   # Debian: package "libtool" ships libtoolize; "libtool-bin" ships /usr/bin/libtool.
   # OpenOCD bootstrap uses autoreconf/libtoolize; either libtool or libtoolize is enough.
-  # GNU patch applies patches/openocd/*.patch (sid-slim does not ship it by default).
-  for tool in git make pkg-config autoreconf automake patch; do
+  for tool in git make pkg-config autoreconf automake; do
     command -v "${tool}" >/dev/null 2>&1 || return 1
   done
   { command -v gcc >/dev/null 2>&1 || command -v g++ >/dev/null 2>&1; } || return 1
@@ -248,7 +220,7 @@ if ! wba65_openocd_build_tools_ok; then
     INSTALL_DEPS=1 AUTO_INSTALL_LINUX_DEPS=1 FIRMWARE_ROOT="${REPO_ROOT}" \
       bash "${REPO_ROOT}/make/install-linux-deps.sh"
   else
-    die "missing WBA65 OpenOCD build tools (autoconf/automake/libtool/patch/libusb). Run: make deps  (or INSTALL_DEPS=1 TARGET=nucleo_wba65ri make)"
+    die "missing WBA65 OpenOCD build tools (autoconf/automake/libtool/libusb). Run: make deps  (or INSTALL_DEPS=1 TARGET=nucleo_wba65ri make)"
   fi
 fi
 wba65_openocd_build_tools_ok || die "WBA65 OpenOCD build tools still missing after install"
@@ -266,7 +238,7 @@ checkout_openocd_rev
 
 echo "── Building OpenOCD for NUCLEO-WBA65RI (STM32WBA6x, ${OPENOCD_JOBS} jobs) ──" >&2
 run_openocd_step_with_spinner \
-  "Processing -- initializing jimtcl submodule and applying patches" \
+  "Processing -- initializing jimtcl submodule" \
   build \
   build_openocd_tree
 

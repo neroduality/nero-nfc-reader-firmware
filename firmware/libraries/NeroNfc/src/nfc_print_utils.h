@@ -23,9 +23,10 @@
 
 typedef void (*nero_nfc_emit_fn_t)(char c);
 
+#define NERO_NFC_EMIT_HEX_NIBBLE_MASK 0x0Fu
+#define NERO_NFC_EMIT_HEX_HIGH_NIBBLE_SHIFT 4u
+
 enum {
-  NERO_NFC_EMIT_HEX_NIBBLE_MASK = 0x0Fu,
-  NERO_NFC_EMIT_HEX_HIGH_NIBBLE_SHIFT = 4u,
   NERO_NFC_EMIT_DEC_BUF_CAP = 11u,
   NERO_NFC_EMIT_DEC_RADIX = 10u,
 };
@@ -90,5 +91,5 @@ static inline void nero_nfc_emit_dec_i32(nero_nfc_emit_fn_t emit,
     nero_nfc_emit_dec_u32(emit, mag);
     return;
   }
-  nero_nfc_emit_dec_u32(emit, (uint32_t)(value));
+  nero_nfc_emit_dec_u32(emit, (uint32_t)value);
 }

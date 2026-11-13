@@ -135,7 +135,7 @@ static uint8_t measure_amplitude(void) {
 }
 
 static void print_field_strength(uint8_t amp, uint8_t baseline) {
-  uint8_t bar_len = (uint8_t)(((uint16_t)(amp)*WRITER_APP_FIELD_BAR_WIDTH) /
+  uint8_t bar_len = (uint8_t)(((uint16_t)amp * WRITER_APP_FIELD_BAR_WIDTH) /
                               WRITER_APP_FIELD_GAUGE_MAX);
   nero_nfc_log_write("[NFC writer] Field ");
   if (amp < WRITER_APP_FIELD_ALIGN100) {
@@ -146,7 +146,7 @@ static void print_field_strength(uint8_t amp, uint8_t baseline) {
   }
   {
     char ndc[NERO_NFC_FORMAT_SNPRINTF_DEC_CAP];
-    (void)nero_nfc_snprintf(ndc, sizeof ndc, "%u", (unsigned)((uint32_t)(amp)));
+    (void)nero_nfc_snprintf(ndc, sizeof ndc, "%u", (unsigned)((uint32_t)amp));
     nero_nfc_log_write(ndc);
   }
   nero_nfc_log_write("/255 |");
@@ -155,15 +155,14 @@ static void print_field_strength(uint8_t amp, uint8_t baseline) {
   }
   nero_nfc_log_write("| ");
   if (baseline > 0u) {
-    int16_t coupling = (int16_t)((int16_t)(baseline) - (int16_t)(amp));
+    int16_t coupling = (int16_t)((int16_t)baseline - (int16_t)amp);
     nero_nfc_log_write("coupling=");
     if (coupling > 0) {
       nero_nfc_log_putc('+');
     }
     {
       char ndc[NERO_NFC_FORMAT_SNPRINTF_DEC_CAP];
-      (void)nero_nfc_snprintf(ndc, sizeof ndc, "%d",
-                              (int)((int32_t)(coupling)));
+      (void)nero_nfc_snprintf(ndc, sizeof ndc, "%d", (int)((int32_t)coupling));
       nero_nfc_log_write(ndc);
     }
     nero_nfc_log_write(" | ");
@@ -190,7 +189,7 @@ static bool init_chip(void) {
   nero_nfc_log_write("  Chip ID: 0x");
   {
     char nhx[NERO_NFC_FORMAT_SNPRINTF_HEX_BYTE_CAP];
-    (void)nero_nfc_snprintf(nhx, sizeof nhx, "%02X", (unsigned)(chip_id));
+    (void)nero_nfc_snprintf(nhx, sizeof nhx, "%02X", (unsigned)chip_id);
     nero_nfc_log_write(nhx);
   }
   nero_nfc_log_write("\r\n");
@@ -207,7 +206,7 @@ static bool init_chip(void) {
   {
     char ndc[NERO_NFC_FORMAT_SNPRINTF_DEC_CAP];
     (void)nero_nfc_snprintf(ndc, sizeof ndc, "%u",
-                            (unsigned)((uint32_t)(vdd_mv)));
+                            (unsigned)((uint32_t)vdd_mv));
     nero_nfc_log_write(ndc);
   }
   nero_nfc_log_line(" mV\r\n  Init complete!");
@@ -495,7 +494,7 @@ void writer_loop(void) {
   ctx->last_poll_ms = now;
 
   amp = measure_amplitude();
-  load = (int16_t)((int16_t)(WRITER_APP_BASELINE_AMP) - (int16_t)(amp));
+  load = (int16_t)((int16_t)(WRITER_APP_BASELINE_AMP) - (int16_t)amp);
   if (WRITER_APP_TAG_WRITTEN) {
     if ((now - WRITER_APP_LAST_WRITE_MS) < WRITER_APP_SAME_TAG_COOLDOWN_MS) {
       return;
@@ -503,14 +502,14 @@ void writer_loop(void) {
     if ((load <= WRITER_APP_COUPLING_APPROACH) ||
         (amp >= WRITER_APP_BASELINE_AMP)) {
       if (WRITER_APP_REMOVED_STABLE_SAMPLES <
-          (uint8_t)(WRITER_APP_REMOVAL_STABLE_SAMPLES)) {
+          (uint8_t)WRITER_APP_REMOVAL_STABLE_SAMPLES) {
         ++WRITER_APP_REMOVED_STABLE_SAMPLES;
       }
     } else {
       WRITER_APP_REMOVED_STABLE_SAMPLES = 0u;
     }
     if (WRITER_APP_REMOVED_STABLE_SAMPLES >=
-        (uint8_t)(WRITER_APP_REMOVAL_STABLE_SAMPLES)) {
+        (uint8_t)WRITER_APP_REMOVAL_STABLE_SAMPLES) {
       WRITER_APP_TAG_WRITTEN = false;
       WRITER_APP_BASELINE_AMP = amp;
       WRITER_APP_REMOVED_STABLE_SAMPLES = 0u;

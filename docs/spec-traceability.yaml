@@ -539,6 +539,12 @@ constants:
     source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
 
   - spec_prefix: CTAP2.3
+    symbol: NFC_CTAP_CMD_RESET
+    spec_value: "0x07"
+    ref: "FIDO CTAP 2.3 §6.6 -- authenticatorReset command code 07h."
+    source: firmware/libraries/NeroNfc/src/nfc_tag_geometry_limits.h
+
+  - spec_prefix: CTAP2.3
     symbol: NFC_CTAP_ERR_CBOR_UNEXPECTED_TYPE
     spec_value: "0x11"
     ref: "FIDO CTAP 2.3 §8.2 -- CTAP2_ERR_CBOR_UNEXPECTED_TYPE = 11h."

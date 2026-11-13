@@ -92,9 +92,7 @@ bool ParseBtMac(std::string_view value,
       parsed.size() != static_cast<std::size_t>(NFC_PCSC_T4_NDEF_FC_TLV_LEN)) {
     return false;
   }
-  for (std::size_t i = 0; i < parsed.size(); ++i) {
-    mac[i] = parsed[i];  // span subscript -- not C-array pro-bounds
-  }
+  std::ranges::copy(parsed, mac.begin());
   return true;
 }
 
@@ -115,7 +113,7 @@ std::string WriterUrlComponentEncode(std::string_view text) {
   static constexpr char kHex[] = "0123456789ABCDEF";
   std::string out;
   for (char const raw : text) {
-    auto c = static_cast<unsigned char>(raw);
+    const auto c = static_cast<unsigned char>(raw);
     /* [RFC3986] §2.3 unreserved set is emitted verbatim; everything else
      * (including space) is percent-encoded. Space is %20, not '+' ('+' is only
      * for application/x-www-form-urlencoded form bodies, not URIs/mailto). */
@@ -132,7 +130,7 @@ std::string WriterUrlComponentEncode(std::string_view text) {
 
 std::vector<std::uint8_t> BuildWriterVcardRecord(std::string_view spec) {
   auto parts = SplitPipe(spec);
-  if (parts.empty() || parts[0].empty()) {
+  if (parts.empty() || parts.at(0).empty()) {
     return {};
   }
   /* [RFC6350] vCard property values are line-folded text; reject embedded
@@ -149,13 +147,13 @@ std::vector<std::uint8_t> BuildWriterVcardRecord(std::string_view spec) {
   }
   std::ostringstream vcard;
   vcard << "BEGIN:VCARD\r\nVERSION:" << NFC_RFC6350_VCARD_VERSION_MAJOR
-        << ".0\r\nFN:" << parts[0] << "\r\n";
-  if (parts.size() > 1u && !parts[1].empty()) {
-    vcard << "TEL:" << parts[1] << "\r\n";
+        << ".0\r\nFN:" << parts.at(0) << "\r\n";
+  if (parts.size() > 1u && !parts.at(1).empty()) {
+    vcard << "TEL:" << parts.at(1) << "\r\n";
   }
   if (parts.size() > static_cast<std::size_t>(kSpecThirdFieldIndex) &&
-      !parts[kSpecThirdFieldIndex].empty()) {
-    vcard << "EMAIL:" << parts[kSpecThirdFieldIndex] << "\r\n";
+      !parts.at(kSpecThirdFieldIndex).empty()) {
+    vcard << "EMAIL:" << parts.at(kSpecThirdFieldIndex) << "\r\n";
   }
   vcard << "END:VCARD\r\n";
   return BuildNdefMimeRecord(NFC_NDEF_MIME_VCARD, BytesOf(vcard.str()));
@@ -164,7 +162,7 @@ std::vector<std::uint8_t> BuildWriterVcardRecord(std::string_view spec) {
 void NormalizeWriterNdefHexPayload(std::vector<std::uint8_t>& bytes) {
   nfc_ndef_tlv_t tlv{};
 
-  if (bytes.empty() || bytes[0] != NFC_NDEF_TLV_MESSAGE ||
+  if (bytes.empty() || bytes.at(0) != NFC_NDEF_TLV_MESSAGE ||
       bytes.size() > static_cast<std::size_t>(UINT16_MAX) ||
       nfc_ndef_find_message_tlv(bytes.data(),
                                 static_cast<std::uint16_t>(bytes.size()), 0u,
@@ -174,7 +172,7 @@ void NormalizeWriterNdefHexPayload(std::vector<std::uint8_t>& bytes) {
   const auto value_end = static_cast<std::size_t>(tlv.value_offset) +
                          static_cast<std::size_t>(tlv.value_len);
   if (value_end >= bytes.size() ||
-      bytes[value_end] != NFC_NDEF_TLV_TERMINATOR ||
+      bytes.at(value_end) != NFC_NDEF_TLV_TERMINATOR ||
       (value_end + 1u) != bytes.size()) {
     return;
   }
@@ -184,32 +182,32 @@ void NormalizeWriterNdefHexPayload(std::vector<std::uint8_t>& bytes) {
 
 std::vector<std::uint8_t> BuildWriterMailRecord(std::string_view spec) {
   auto parts = SplitPipe(spec);
-  if (parts.empty() || parts[0].empty()) {
+  if (parts.empty() || parts.at(0).empty()) {
     return {};
   }
-  std::string uri = "mailto:" + parts[0];
+  std::string uri = "mailto:" + parts.at(0);
   bool first_query = true;
-  if (parts.size() > 1u && !parts[1].empty()) {
+  if (parts.size() > 1u && !parts.at(1).empty()) {
     uri += '?';
     first_query = false;
-    uri += "subject=" + WriterUrlComponentEncode(parts[1]);
+    uri += "subject=" + WriterUrlComponentEncode(parts.at(1));
   }
   if (parts.size() > static_cast<std::size_t>(kSpecThirdFieldIndex) &&
-      !parts[kSpecThirdFieldIndex].empty()) {
+      !parts.at(kSpecThirdFieldIndex).empty()) {
     uri += first_query ? '?' : '&';
-    uri += "body=" + WriterUrlComponentEncode(parts[kSpecThirdFieldIndex]);
+    uri += "body=" + WriterUrlComponentEncode(parts.at(kSpecThirdFieldIndex));
   }
   return BuildNdefUriRecord(uri);
 }
 
 std::vector<std::uint8_t> BuildWriterSmsRecord(std::string_view spec) {
   auto parts = SplitPipe(spec);
-  if (parts.empty() || parts[0].empty()) {
+  if (parts.empty() || parts.at(0).empty()) {
     return {};
   }
-  std::string uri = "sms:" + parts[0];
-  if (parts.size() > 1u && !parts[1].empty()) {
-    uri += "?body=" + WriterUrlComponentEncode(parts[1]);
+  std::string uri = "sms:" + parts.at(0);
+  if (parts.size() > 1u && !parts.at(1).empty()) {
+    uri += "?body=" + WriterUrlComponentEncode(parts.at(1));
   }
   return BuildNdefUriRecord(uri);
 }
@@ -237,16 +235,16 @@ std::vector<std::uint8_t> BuildWriterBluetoothRecord(std::string_view value) {
 std::vector<std::uint8_t> BuildWriterWifiRecord(std::string_view spec) {
   auto parts = SplitPipe(spec);
   if (parts.size() < static_cast<std::size_t>(kWifiMinSpecParts) ||
-      parts[0].empty() || parts[1].size() < NFC_WSC_PSK_MIN_LEN ||
-      parts[1].size() > NFC_WSC_PSK_MAX_LEN) {
+      parts.at(0).empty() || parts.at(1).size() < NFC_WSC_PSK_MIN_LEN ||
+      parts.at(1).size() > NFC_WSC_PSK_MAX_LEN) {
     return {};
   }
   std::vector<std::uint8_t> inner;
   WpsPutAttr(inner, NFC_WSC_ATTR_NETWORK_INDEX, {0x01u});
-  WpsPutAttr(inner, NFC_WSC_ATTR_SSID, BytesOf(parts[0]));
+  WpsPutAttr(inner, NFC_WSC_ATTR_SSID, BytesOf(parts.at(0)));
   WpsPutAttr(inner, NFC_WSC_ATTR_AUTH_TYPE, NFC_WSC_AUTH_WPA2_PSK_INIT);
   WpsPutAttr(inner, NFC_WSC_ATTR_ENCR_TYPE, NFC_WSC_ENCR_AES_INIT);
-  WpsPutAttr(inner, NFC_WSC_ATTR_NETWORK_KEY, BytesOf(parts[1]));
+  WpsPutAttr(inner, NFC_WSC_ATTR_NETWORK_KEY, BytesOf(parts.at(1)));
   WpsPutAttr(inner, NFC_WSC_ATTR_MAC_ADDRESS,
              {static_cast<std::uint8_t>(kWscApMacPlaceholder),
               static_cast<std::uint8_t>(kWscApMacPlaceholder),

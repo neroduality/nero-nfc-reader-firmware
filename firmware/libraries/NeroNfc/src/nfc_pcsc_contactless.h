@@ -35,6 +35,23 @@ extern "C" {
  *   [PCSC-P3] contactless storage ATR and transparent exchange identifiers.
  *   [CTAP2.3] NFC transport keep-alive/status SW1 91h.
  *   [T2T-ISO14443-A-NTAG21x] Type 2 AUTH0 GET DATA response length. */
+#define NFC_PCSC_T4_CC_DEFAULT_MLE 0x003Bu
+#define NFC_PCSC_T4_CC_DEFAULT_MLC 0x0034u
+/* [DERIVED] Byte mask helper; intentionally not a standalone SPEC entry. */
+#define NFC_ISO7816_BYTE_MASK 0xFFu
+/* ISO/IEC 7816-3 §8.2.2 -- T0 Y(1) bit for TD1 present (not K length). */
+#define NFC_ISO7816_ATR_T0_TD1_PRESENT 0x80u
+/* [DERIVED] Status-classification helpers; SW byte values are traced
+ * separately. */
+#define NFC_ISO7816_SW1_HIGH_BYTE_MASK 0xFF00u
+/* [DERIVED] Parser mask for CTAP P1 high-bit handling, not an ISO7816
+ * literal. */
+#define NFC_ISO7816_P1_IGNORE_MSB_MASK 0x7Fu
+/* [ISO7816-4] §7 -- APDU encode/decode high-byte shift (host helper). */
+#define NFC_ISO7816_U16_HIGH_BYTE_SHIFT 8u
+/* [ISO7816-4] §7 -- APDU low-byte mask (host helper). */
+#define NFC_ISO7816_LOW_BYTE_MASK 0xFFu
+#define NFC_PCSC_T4_CC_FILE_ID NFC_TAG_T4T_CC_FILE_ID
 enum {
   NFC_PCSC_PROTOCOL_T0 = 0x00u,
   NFC_PCSC_PROTOCOL_T1 = 0x01u,
@@ -43,7 +60,6 @@ enum {
   NFC_PCSC_NDEF_APP_AID_LEN = NFC_TAG_T4T_NDEF_APP_AID_LEN,
   NFC_PCSC_T4_SELECT_FILE_APDU_LEN = 7u,
   NFC_PCSC_T4_READ_BINARY_APDU_LEN = 5u,
-  NFC_PCSC_T4_CC_FILE_ID = NFC_TAG_T4T_CC_FILE_ID,
   NFC_PCSC_T4_CC_FILE_LEN = 15u,
   NFC_PCSC_T4_NLEN_LEN = 2u,
   /* Type 4 short READ BINARY: Le data fits in FSD=256 minus 2-byte SW. */
@@ -63,8 +79,6 @@ enum {
   NFC_PCSC_ISO_DEP_APDU_RESP_STACK = 260u,
   /* NFC Forum Type 4 Tag -- 15-byte CC file (mapping v2.0) helper defaults. */
   NFC_PCSC_T4_CC_MAPPING_VERSION = 0x20u,
-  NFC_PCSC_T4_CC_DEFAULT_MLE = 0x003Bu,
-  NFC_PCSC_T4_CC_DEFAULT_MLC = 0x0034u,
   NFC_PCSC_T4_NDEF_FC_TLV_TAG = 0x04u,
   NFC_PCSC_T4_NDEF_FC_TLV_LEN = 0x06u,
   NFC_PCSC_T4_NDEF_FILE_ID_MSB = 0xE1u,
@@ -108,31 +122,21 @@ enum {
   NFC_ISO7816_P1_SELECT_BY_DF_NAME = 0x04u,
   /* ISO/IEC 7816-4 status-word and APDU geometry helpers. */
   NFC_ISO7816_SW_STATUS_WORD_LEN = 2u,
-  /* [DERIVED] Byte mask helper; intentionally not a standalone SPEC entry. */
-  NFC_ISO7816_BYTE_MASK = 0xFFu,
   /* ISO/IEC 7816-3 ATR layout for the PC/SC Part 3 §3.1.3.2.3.1 contactless
    * ATR (3B 8N 80 01 [ATS historical bytes] TCK). */
   NFC_ISO7816_ATR_TS = 0x3Bu,
-  /* ISO/IEC 7816-3 §8.2.2 -- T0 Y(1) bit for TD1 present (not K length). */
-  NFC_ISO7816_ATR_T0_TD1_PRESENT = 0x80u,
   /* ISO/IEC 7816-3 §8.2.3 -- TD1 Y(2) bit 80h: TD2 follows (PC/SC TD1=80h). */
   NFC_ISO7816_ATR_TD1_TD2_PRESENT = 0x80u,
   /* ISO/IEC 7816-3 §8.2.3 -- TD2 low nibble 01h: protocol T=1. */
   NFC_ISO7816_ATR_TD2_T1 = 0x01u,
   NFC_ISO7816_ATR_FIXED_PREFIX_LEN = 4u,
   NFC_ISO7816_ATR_TS_TCK_OVERHEAD = 5u,
-  /* [DERIVED] Status-classification helpers; SW byte values are traced
-     separately. */
-  NFC_ISO7816_SW1_HIGH_BYTE_MASK = 0xFF00u,
   NFC_ISO7816_SW1_WARNING_MIN = 0x62u,
   NFC_ISO7816_SW1_WARNING_MAX = 0x6Fu,
   NFC_ISO7816_SW_WARNING_MIN = 0x6200u,
   NFC_ISO7816_SW_WARNING_MAX = 0x6FFFu,
   NFC_ISO7816_SW1_MORE_DATA_PATTERN = 0x6100u,
   NFC_ISO7816_SW1_MORE_DATA_VENDOR_PATTERN = 0x9100u,
-  /* [DERIVED] Parser mask for CTAP P1 high-bit handling, not an ISO7816
-     literal. */
-  NFC_ISO7816_P1_IGNORE_MSB_MASK = 0x7Fu,
   NFC_ISO7816_SHORT_LC_MAX = 255u,
   NFC_ISO7816_MIN_CMD_APDU_LEN = 4u,
   /* [DERIVED] APDU parser guard length, not a standalone SPEC entry. */
@@ -188,10 +192,6 @@ enum {
   NFC_ISO7816_LC_SELECT_FILE_ID = 2u,
   /* [ISO7816-4] §5.1.3 -- SW1-SW2 response trailer width (bytes). */
   NFC_ISO7816_SW_LEN = 2u,
-  /* [ISO7816-4] §7 -- APDU encode/decode high-byte shift (host helper). */
-  NFC_ISO7816_U16_HIGH_BYTE_SHIFT = 8u,
-  /* [ISO7816-4] §7 -- APDU low-byte mask (host helper). */
-  NFC_ISO7816_LOW_BYTE_MASK = 0xFFu,
   /* [ISO7816-4] READ BINARY -- P1=FFh, block number in P2 (Type 5 PC/SC
      convention). */
   NFC_ISO7816_READ_BINARY_P1_BLOCK_IN_P2 = 0xFFu,
@@ -399,9 +399,9 @@ NERO_NFC_NODISCARD static inline bool nfc_pcsc_copy_storage_card_atr(
   }
   pos = (uint16_t)(pos + sizeof(history));
   for (uint16_t i = 1u; i < pos; ++i) {
-    tck = (uint8_t)(tck ^ nero_nfc_u8_at(dst, (size_t)(dst_cap), (size_t)(i)));
+    tck = (uint8_t)(tck ^ nero_nfc_u8_at(dst, (size_t)dst_cap, (size_t)i));
   }
-  if (!nero_nfc_store_u8(dst, (size_t)(dst_cap), (size_t)(pos), tck)) {
+  if (!nero_nfc_store_u8(dst, (size_t)dst_cap, (size_t)pos, tck)) {
     return false;
   }
   pos = (uint16_t)(pos + 1u);
@@ -484,37 +484,36 @@ NERO_NFC_NODISCARD static inline bool nfc_pcsc_build_t4_select_file_apdu(
       (apdu_cap < (uint8_t)NFC_PCSC_T4_SELECT_FILE_APDU_LEN)) {
     return false;
   }
-  if (!nero_nfc_store_u8(apdu, (size_t)(apdu_cap),
-                         (size_t)(NFC_ISO7816_APDU_IDX_CLA),
+  if (!nero_nfc_store_u8(apdu, (size_t)apdu_cap,
+                         (size_t)NFC_ISO7816_APDU_IDX_CLA,
                          (uint8_t)NFC_ISO7816_CLA_ISO)) {
     return false;
   }
-  if (!nero_nfc_store_u8(apdu, (size_t)(apdu_cap),
-                         (size_t)(NFC_ISO7816_APDU_IDX_INS),
+  if (!nero_nfc_store_u8(apdu, (size_t)apdu_cap,
+                         (size_t)NFC_ISO7816_APDU_IDX_INS,
                          (uint8_t)NFC_ISO7816_INS_SELECT)) {
     return false;
   }
-  if (!nero_nfc_store_u8(apdu, (size_t)(apdu_cap),
-                         (size_t)(NFC_ISO7816_APDU_IDX_P1),
+  if (!nero_nfc_store_u8(apdu, (size_t)apdu_cap,
+                         (size_t)NFC_ISO7816_APDU_IDX_P1,
                          (uint8_t)NFC_ISO7816_P1_SELECT_BY_FILE_ID)) {
     return false;
   }
-  if (!nero_nfc_store_u8(apdu, (size_t)(apdu_cap),
-                         (size_t)(NFC_ISO7816_APDU_IDX_P2),
+  if (!nero_nfc_store_u8(apdu, (size_t)apdu_cap,
+                         (size_t)NFC_ISO7816_APDU_IDX_P2,
                          (uint8_t)NFC_ISO7816_P2_SELECT_NO_FCI)) {
     return false;
   }
-  if (!nero_nfc_store_u8(apdu, (size_t)(apdu_cap),
-                         (size_t)(NFC_ISO7816_APDU_IDX_LC),
+  if (!nero_nfc_store_u8(apdu, (size_t)apdu_cap,
+                         (size_t)NFC_ISO7816_APDU_IDX_LC,
                          (uint8_t)NFC_ISO7816_LC_SELECT_FILE_ID)) {
     return false;
   }
   if (!nero_nfc_store_u8(
-          apdu, (size_t)(apdu_cap), (size_t)(NFC_ISO7816_SHORT_APDU_HDR_LEN),
+          apdu, (size_t)apdu_cap, (size_t)NFC_ISO7816_SHORT_APDU_HDR_LEN,
           (uint8_t)(file_id >> (uint16_t)NFC_ISO7816_U16_HIGH_BYTE_SHIFT)) ||
       !nero_nfc_store_u8(
-          apdu, (size_t)(apdu_cap),
-          (size_t)(NFC_ISO7816_SHORT_APDU_HDR_LEN + 1u),
+          apdu, (size_t)apdu_cap, (size_t)(NFC_ISO7816_SHORT_APDU_HDR_LEN + 1u),
           (uint8_t)(file_id & (uint16_t)NFC_ISO7816_LOW_BYTE_MASK))) {
     return false;
   }
@@ -532,28 +531,28 @@ NERO_NFC_NODISCARD static inline bool nfc_pcsc_build_t4_read_binary_apdu(
       (apdu_cap < (uint8_t)NFC_PCSC_T4_READ_BINARY_APDU_LEN)) {
     return false;
   }
-  if (!nero_nfc_store_u8(apdu, (size_t)(apdu_cap),
-                         (size_t)(NFC_ISO7816_APDU_IDX_CLA),
+  if (!nero_nfc_store_u8(apdu, (size_t)apdu_cap,
+                         (size_t)NFC_ISO7816_APDU_IDX_CLA,
                          (uint8_t)NFC_ISO7816_CLA_ISO)) {
     return false;
   }
-  if (!nero_nfc_store_u8(apdu, (size_t)(apdu_cap),
-                         (size_t)(NFC_ISO7816_APDU_IDX_INS),
+  if (!nero_nfc_store_u8(apdu, (size_t)apdu_cap,
+                         (size_t)NFC_ISO7816_APDU_IDX_INS,
                          (uint8_t)NFC_ISO7816_INS_READ_BINARY)) {
     return false;
   }
   if (!nero_nfc_store_u8(
-          apdu, (size_t)(apdu_cap), (size_t)(NFC_ISO7816_APDU_IDX_P1),
+          apdu, (size_t)apdu_cap, (size_t)NFC_ISO7816_APDU_IDX_P1,
           (uint8_t)(offset >> (uint16_t)NFC_ISO7816_U16_HIGH_BYTE_SHIFT))) {
     return false;
   }
   if (!nero_nfc_store_u8(
-          apdu, (size_t)(apdu_cap), (size_t)(NFC_ISO7816_APDU_IDX_P2),
+          apdu, (size_t)apdu_cap, (size_t)NFC_ISO7816_APDU_IDX_P2,
           (uint8_t)(offset & (uint16_t)NFC_ISO7816_LOW_BYTE_MASK))) {
     return false;
   }
-  if (!nero_nfc_store_u8(apdu, (size_t)(apdu_cap),
-                         (size_t)(NFC_ISO7816_APDU_IDX_LC), le)) {
+  if (!nero_nfc_store_u8(apdu, (size_t)apdu_cap,
+                         (size_t)NFC_ISO7816_APDU_IDX_LC, le)) {
     return false;
   }
   *apdu_len_out = (uint8_t)NFC_PCSC_T4_READ_BINARY_APDU_LEN;
@@ -575,75 +574,75 @@ NERO_NFC_NODISCARD static inline bool nfc_pcsc_build_type4_cc_file(
       (dst_cap < NFC_PCSC_T4_CC_FILE_LEN)) {
     return false;
   }
-  if (!nero_nfc_store_u8(dst, (size_t)(dst_cap),
+  if (!nero_nfc_store_u8(dst, (size_t)dst_cap,
                          (size_t)(NFC_TAG_CC_CCLEN_MSB_INDEX),
-                         (uint8_t)(0x00u))) {
+                         (uint8_t)0x00u)) {
     return false;
   }
-  if (!nero_nfc_store_u8(dst, (size_t)(dst_cap),
+  if (!nero_nfc_store_u8(dst, (size_t)dst_cap,
                          (size_t)(NFC_TAG_CC_CCLEN_LSB_INDEX),
                          (uint8_t)NFC_PCSC_T4_CC_FILE_LEN)) {
     return false;
   }
-  if (!nero_nfc_store_u8(dst, (size_t)(dst_cap),
+  if (!nero_nfc_store_u8(dst, (size_t)dst_cap,
                          (size_t)(NFC_TAG_T4T_CC_MAPPING_VER_INDEX),
                          (uint8_t)NFC_PCSC_T4_CC_MAPPING_VERSION)) {
     return false;
   }
   if (!nero_nfc_store_u8(
-          dst, (size_t)(dst_cap), (size_t)(NFC_TAG_T4T_CC_MLE_MSB_INDEX),
+          dst, (size_t)dst_cap, (size_t)(NFC_TAG_T4T_CC_MLE_MSB_INDEX),
           (uint8_t)(NFC_PCSC_T4_CC_DEFAULT_MLE >>
                     (uint16_t)NFC_ISO7816_U16_HIGH_BYTE_SHIFT))) {
     return false;
   }
-  if (!nero_nfc_store_u8(dst, (size_t)(dst_cap),
+  if (!nero_nfc_store_u8(dst, (size_t)dst_cap,
                          (size_t)(NFC_TAG_T4T_CC_MLE_LSB_INDEX),
                          (uint8_t)(NFC_PCSC_T4_CC_DEFAULT_MLE &
                                    (uint16_t)NFC_ISO7816_LOW_BYTE_MASK))) {
     return false;
   }
   if (!nero_nfc_store_u8(
-          dst, (size_t)(dst_cap), (size_t)(NFC_TAG_T4T_CC_MLC_MSB_INDEX),
+          dst, (size_t)dst_cap, (size_t)(NFC_TAG_T4T_CC_MLC_MSB_INDEX),
           (uint8_t)(NFC_PCSC_T4_CC_DEFAULT_MLC >>
                     (uint16_t)NFC_ISO7816_U16_HIGH_BYTE_SHIFT))) {
     return false;
   }
-  if (!nero_nfc_store_u8(dst, (size_t)(dst_cap),
+  if (!nero_nfc_store_u8(dst, (size_t)dst_cap,
                          (size_t)(NFC_TAG_T4T_CC_MLC_LSB_INDEX),
                          (uint8_t)(NFC_PCSC_T4_CC_DEFAULT_MLC &
                                    (uint16_t)NFC_ISO7816_LOW_BYTE_MASK))) {
     return false;
   }
-  if (!nero_nfc_store_u8(dst, (size_t)(dst_cap),
+  if (!nero_nfc_store_u8(dst, (size_t)dst_cap,
                          (size_t)(NFC_TAG_T4T_CC_NDEF_TLV_TAG_INDEX),
                          (uint8_t)NFC_PCSC_T4_NDEF_FC_TLV_TAG)) {
     return false;
   }
-  if (!nero_nfc_store_u8(dst, (size_t)(dst_cap),
+  if (!nero_nfc_store_u8(dst, (size_t)dst_cap,
                          (size_t)(NFC_TAG_T4T_CC_NDEF_TLV_LEN_INDEX),
                          (uint8_t)NFC_PCSC_T4_NDEF_FC_TLV_LEN)) {
     return false;
   }
-  if (!nero_nfc_store_u8(dst, (size_t)(dst_cap),
+  if (!nero_nfc_store_u8(dst, (size_t)dst_cap,
                          (size_t)(NFC_TAG_T4T_CC_NDEF_FILE_ID_MSB_INDEX),
                          (uint8_t)NFC_PCSC_T4_NDEF_FILE_ID_MSB) ||
-      !nero_nfc_store_u8(dst, (size_t)(dst_cap),
+      !nero_nfc_store_u8(dst, (size_t)dst_cap,
                          (size_t)(NFC_TAG_T4T_CC_NDEF_FILE_ID_LSB_INDEX),
                          (uint8_t)NFC_PCSC_T4_NDEF_FILE_ID_LSB) ||
       !nero_nfc_store_u8(
-          dst, (size_t)(dst_cap), (size_t)(NFC_TAG_T4T_CC_NDEF_SIZE_MSB_INDEX),
+          dst, (size_t)dst_cap, (size_t)(NFC_TAG_T4T_CC_NDEF_SIZE_MSB_INDEX),
           (uint8_t)(max_ndef_file_size >>
                     (uint16_t)NFC_ISO7816_U16_HIGH_BYTE_SHIFT)) ||
-      !nero_nfc_store_u8(dst, (size_t)(dst_cap),
+      !nero_nfc_store_u8(dst, (size_t)dst_cap,
                          (size_t)(NFC_TAG_T4T_CC_NDEF_SIZE_LSB_INDEX),
                          (uint8_t)(max_ndef_file_size &
                                    (uint16_t)NFC_ISO7816_LOW_BYTE_MASK)) ||
       !nero_nfc_store_u8(
-          dst, (size_t)(dst_cap), (size_t)(NFC_TAG_T4T_CC_READ_ACCESS_INDEX),
+          dst, (size_t)dst_cap, (size_t)(NFC_TAG_T4T_CC_READ_ACCESS_INDEX),
           read_access_open ? (uint8_t)NFC_PCSC_T4_READ_ACCESS_OPEN
                            : (uint8_t)NFC_PCSC_T4_READ_ACCESS_CLOSED) ||
       !nero_nfc_store_u8(
-          dst, (size_t)(dst_cap), (size_t)(NFC_TAG_T4T_CC_WRITE_ACCESS_INDEX),
+          dst, (size_t)dst_cap, (size_t)(NFC_TAG_T4T_CC_WRITE_ACCESS_INDEX),
           write_access_open ? (uint8_t)NFC_PCSC_T4_READ_ACCESS_OPEN
                             : (uint8_t)NFC_PCSC_T4_READ_ACCESS_CLOSED)) {
     return false;
@@ -667,8 +666,8 @@ NERO_NFC_NODISCARD static inline bool nfc_iso7816_apdu_lc(const uint8_t* apdu,
       !nero_nfc_span_ok((size_t)NFC_ISO7816_MIN_CMD_APDU_LEN, 1u, apdu_len)) {
     return false;
   }
-  *lc_out = nero_nfc_u8_at(apdu, (size_t)(apdu_len),
-                           (size_t)(NFC_ISO7816_APDU_IDX_LC));
+  *lc_out =
+      nero_nfc_u8_at(apdu, (size_t)apdu_len, (size_t)NFC_ISO7816_APDU_IDX_LC);
   return true;
 }
 
@@ -712,13 +711,13 @@ NERO_NFC_NODISCARD static inline bool nfc_iso7816_apdu_read_binary(
     return false;
   }
   *offset_out =
-      (uint16_t)(((uint16_t)nero_nfc_u8_at(apdu, (size_t)(apdu_len),
-                                           (size_t)(NFC_ISO7816_APDU_IDX_P1))
+      (uint16_t)(((uint32_t)nero_nfc_u8_at(apdu, (size_t)apdu_len,
+                                           (size_t)NFC_ISO7816_APDU_IDX_P1)
                   << (uint16_t)NFC_ISO7816_U16_HIGH_BYTE_SHIFT) |
-                 nero_nfc_u8_at(apdu, (size_t)(apdu_len),
-                                (size_t)(NFC_ISO7816_APDU_IDX_P2)));
-  *le_out = nero_nfc_u8_at(apdu, (size_t)(apdu_len),
-                           (size_t)(NFC_ISO7816_APDU_IDX_LC));
+                 nero_nfc_u8_at(apdu, (size_t)apdu_len,
+                                (size_t)NFC_ISO7816_APDU_IDX_P2));
+  *le_out =
+      nero_nfc_u8_at(apdu, (size_t)apdu_len, (size_t)NFC_ISO7816_APDU_IDX_LC);
   return true;
 }
 
@@ -746,11 +745,11 @@ NERO_NFC_NODISCARD static inline bool nfc_iso7816_apdu_update_binary(
     return false;
   }
   *offset_out =
-      (uint16_t)(((uint16_t)nero_nfc_u8_at(apdu, (size_t)(apdu_len),
-                                           (size_t)(NFC_ISO7816_APDU_IDX_P1))
+      (uint16_t)(((uint32_t)nero_nfc_u8_at(apdu, (size_t)apdu_len,
+                                           (size_t)NFC_ISO7816_APDU_IDX_P1)
                   << (uint16_t)NFC_ISO7816_U16_HIGH_BYTE_SHIFT) |
-                 nero_nfc_u8_at(apdu, (size_t)(apdu_len),
-                                (size_t)(NFC_ISO7816_APDU_IDX_P2)));
+                 nero_nfc_u8_at(apdu, (size_t)apdu_len,
+                                (size_t)NFC_ISO7816_APDU_IDX_P2));
   *lc_out = lc;
   *data_out = apdu + (uint16_t)NFC_ISO7816_SHORT_APDU_HDR_LEN;
   return true;
@@ -774,27 +773,27 @@ NERO_NFC_NODISCARD static inline bool nfc_pcsc_build_select_aid_apdu(
       (add_le_00 && !nero_nfc_try_add_u16(len, 1u, &len)) || (len > apdu_cap)) {
     return false;
   }
-  if (!nero_nfc_store_u8(apdu, (size_t)(apdu_cap),
-                         (size_t)(NFC_ISO7816_APDU_IDX_CLA),
+  if (!nero_nfc_store_u8(apdu, (size_t)apdu_cap,
+                         (size_t)NFC_ISO7816_APDU_IDX_CLA,
                          (uint8_t)NFC_ISO7816_CLA_ISO)) {
     return false;
   }
-  if (!nero_nfc_store_u8(apdu, (size_t)(apdu_cap),
-                         (size_t)(NFC_ISO7816_APDU_IDX_INS),
+  if (!nero_nfc_store_u8(apdu, (size_t)apdu_cap,
+                         (size_t)NFC_ISO7816_APDU_IDX_INS,
                          (uint8_t)NFC_ISO7816_INS_SELECT)) {
     return false;
   }
-  if (!nero_nfc_store_u8(apdu, (size_t)(apdu_cap),
-                         (size_t)(NFC_ISO7816_APDU_IDX_P1),
+  if (!nero_nfc_store_u8(apdu, (size_t)apdu_cap,
+                         (size_t)NFC_ISO7816_APDU_IDX_P1,
                          (uint8_t)NFC_ISO7816_P1_SELECT_BY_DF_NAME)) {
     return false;
   }
-  if (!nero_nfc_store_u8(apdu, (size_t)(apdu_cap),
-                         (size_t)(NFC_ISO7816_APDU_IDX_P2), p2)) {
+  if (!nero_nfc_store_u8(apdu, (size_t)apdu_cap,
+                         (size_t)NFC_ISO7816_APDU_IDX_P2, p2)) {
     return false;
   }
-  if (!nero_nfc_store_u8(apdu, (size_t)(apdu_cap),
-                         (size_t)(NFC_ISO7816_APDU_IDX_LC), aid_len)) {
+  if (!nero_nfc_store_u8(apdu, (size_t)apdu_cap,
+                         (size_t)NFC_ISO7816_APDU_IDX_LC, aid_len)) {
     return false;
   }
   if (!nero_nfc_copy_bytes(apdu, apdu_cap,
@@ -802,14 +801,14 @@ NERO_NFC_NODISCARD static inline bool nfc_pcsc_build_select_aid_apdu(
                            aid_len)) {
     return false;
   }
-  if (add_le_00) {
-    if (!nero_nfc_store_u8(
-            apdu, (size_t)(apdu_cap),
-            (size_t)((uint16_t)NFC_ISO7816_SHORT_APDU_HDR_LEN + aid_len),
-            (uint8_t)NFC_ISO7816_CLA_ISO)) {
-      return false;
-    }
+  if (add_le_00 &&
+      (!nero_nfc_store_u8(
+          apdu, (size_t)apdu_cap,
+          (size_t)((uint16_t)NFC_ISO7816_SHORT_APDU_HDR_LEN + aid_len),
+          (uint8_t)NFC_ISO7816_CLA_ISO))) {
+    return false;
   }
+
   *apdu_len_out = len;
   return true;
 }
@@ -827,8 +826,8 @@ NERO_NFC_NODISCARD static inline bool nfc_iso7816_response_sw(
     return false;
   }
   *sw1_out =
-      nero_nfc_u8_at(resp, (size_t)(rlen), (size_t)(rlen - NFC_ISO7816_SW_LEN));
-  *sw2_out = nero_nfc_u8_at(resp, (size_t)(rlen), (size_t)(rlen - 1));
+      nero_nfc_u8_at(resp, (size_t)rlen, (size_t)(rlen - NFC_ISO7816_SW_LEN));
+  *sw2_out = nero_nfc_u8_at(resp, (size_t)rlen, (size_t)(rlen - 1));
   return true;
 }
 
@@ -884,11 +883,10 @@ NERO_NFC_NODISCARD static inline bool nfc_iso7816_append_sw(
                         dst_cap)) {
     return false;
   }
-  if (!nero_nfc_store_u8(dst, (size_t)(dst_cap), (size_t)(data_len), sw1)) {
+  if (!nero_nfc_store_u8(dst, (size_t)dst_cap, (size_t)data_len, sw1)) {
     return false;
   }
-  if (!nero_nfc_store_u8(dst, (size_t)(dst_cap), (size_t)(data_len + 1u),
-                         sw2)) {
+  if (!nero_nfc_store_u8(dst, (size_t)dst_cap, (size_t)(data_len + 1u), sw2)) {
     return false;
   }
   *out_len = (uint16_t)response_len;

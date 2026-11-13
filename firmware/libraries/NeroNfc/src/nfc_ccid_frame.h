@@ -29,6 +29,10 @@ extern "C" {
 
 /* [CCID1.10] USB CCID Rev 1.10 -- bulk header, extended APDU message ceiling,
  * response chunking, control requests, slot status, and message type values. */
+#define NFC_CCID_U32_SHIFT_BYTE1 8u
+#define NFC_CCID_U32_SHIFT_BYTE2 16u
+#define NFC_CCID_U32_SHIFT_BYTE3 24u
+#define NFC_CCID_BYTE_MASK 0xFFu
 enum {
   NFC_CCID_BULK_HEADER_LEN = 10u,
   NFC_CCID_WORK_BUF_SIZE = 2060u,
@@ -54,10 +58,6 @@ enum {
      entries. */
   NFC_CCID_U32_BYTE2 = 2u,
   NFC_CCID_U32_BYTE3 = 3u,
-  NFC_CCID_U32_SHIFT_BYTE1 = 8u,
-  NFC_CCID_U32_SHIFT_BYTE2 = 16u,
-  NFC_CCID_U32_SHIFT_BYTE3 = 24u,
-  NFC_CCID_BYTE_MASK = 0xFFu,
   NFC_CCID_DATA_RATE_CLOCK_OFFSET_DEFAULT_CLOCK = 10u,
   NFC_CCID_DATA_RATE_CLOCK_OFFSET_DEFAULT_DATA_RATE = 14u,
 };
@@ -110,13 +110,12 @@ enum {
   NFC_CCID_XFR_RESPONSE_CONTINUE = 0x10u,
 };
 
-enum {
-  NFC_CCID_ICC_ACTIVE = 0x00u,
-  NFC_CCID_ICC_INACTIVE = 0x01u,
-  NFC_CCID_ICC_NO_ICC = 0x02u,
-  NFC_CCID_ICC_CMD_FAIL = 0x40u,
-  NFC_CCID_ICC_CMD_TIME_EXTENSION = 0x80u,
-};
+#define NFC_CCID_ICC_CMD_FAIL 0x40u
+#define NFC_CCID_ICC_CMD_TIME_EXTENSION 0x80u
+
+#define NFC_CCID_ICC_ACTIVE 0x00u
+#define NFC_CCID_ICC_INACTIVE 0x01u
+#define NFC_CCID_ICC_NO_ICC 0x02u
 
 /* Interrupt-IN NotifySlotChange bmSlotICCState (slot 0) per CCID 1.1 §6.3.1:
  * bit0 = current state (0=absent, 1=present); bit1 = changed (0=no, 1=yes). */
@@ -156,8 +155,8 @@ NERO_NFC_NODISCARD static inline bool nfc_ccid_control_abort_request_matches(
     *slot_out = (uint8_t)(w_value & NFC_CCID_BYTE_MASK);
   }
   if (seq_out != NERO_NFC_NULL) {
-    *seq_out =
-        (uint8_t)((w_value >> NFC_CCID_U32_SHIFT_BYTE1) & NFC_CCID_BYTE_MASK);
+    *seq_out = (uint8_t)(((uint32_t)w_value >> NFC_CCID_U32_SHIFT_BYTE1) &
+                         NFC_CCID_BYTE_MASK);
   }
   return true;
 }

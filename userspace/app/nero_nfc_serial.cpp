@@ -73,7 +73,7 @@ int SerialOpen(const std::string& path) {
   }
 #endif
   if (path.empty() || path.size() > NERO_NFC_HOST_SERIAL_LINE_MAX ||
-      path.find('\0') != std::string::npos) {
+      path.contains('\0')) {
     return -1;
   }
   int const fd = open(path.c_str(), O_RDWR | O_NOCTTY | O_NONBLOCK | O_CLOEXEC);
@@ -97,7 +97,7 @@ int SerialOpen(const std::string& path) {
   }
   cfmakeraw(&tty);
 
-  tty.c_cflag &= static_cast<tcflag_t>(~(CSIZE | PARENB | CSTOPB));
+  tty.c_cflag &= ~static_cast<tcflag_t>(CSIZE | PARENB | CSTOPB);
   tty.c_cflag |= CS8 | CLOCAL | CREAD;
   tty.c_cc[VMIN] = 0;
   tty.c_cc[VTIME] = kSerialVtimeTenthsSec;  // 1 second read timeout

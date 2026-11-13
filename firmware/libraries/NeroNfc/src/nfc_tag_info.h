@@ -299,7 +299,7 @@ static inline const char* nfc_tag_iso14443a_manufacturer_name(
   if ((uid == NERO_NFC_NULL) || (uid_len == 0u)) {
     return NERO_NFC_NULL;
   }
-  switch (nero_nfc_u8_at(uid, (size_t)(uid_len), (size_t)(0))) {
+  switch (nero_nfc_u8_at(uid, (size_t)uid_len, (size_t)0)) {
     case NFC_TAG_MFR_CODE_ST:
       return "STMicroelectronics";
     case NFC_TAG_MFR_CODE_NXP:
@@ -315,7 +315,7 @@ static inline const char* nfc_tag_iso15693_manufacturer_name(const uint8_t* uid,
       (uid_len < NFC_TAG_T5T_ISO15693_UID_MFR_MIN_LEN)) {
     return NERO_NFC_NULL;
   }
-  switch (nero_nfc_u8_at(uid, (size_t)(uid_len), (size_t)(1))) {
+  switch (nero_nfc_u8_at(uid, (size_t)uid_len, (size_t)1)) {
     case NFC_TAG_MFR_CODE_ST:
       return "STMicroelectronics";
     case NFC_TAG_MFR_CODE_NXP:
@@ -471,7 +471,7 @@ static inline void nfc_tag_type2_apply_cc(nfc_tag_type2_info_t* info,
   if ((cc == NERO_NFC_NULL) || (cc_len < NFC_TAG_T2T_PAGE_SIZE_BYTES)) {
     return;
   }
-  if (nero_nfc_u8_at(cc, (size_t)(cc_len),
+  if (nero_nfc_u8_at(cc, (size_t)cc_len,
                      (size_t)(NFC_TAG_T2T_CC_MAGIC_INDEX)) !=
       NFC_FORUM_CC_MAGIC) {
     return;
@@ -482,25 +482,25 @@ static inline void nfc_tag_type2_apply_cc(nfc_tag_type2_info_t* info,
   }
   info->cc_valid = true;
   info->mapping_major =
-      (uint8_t)(nero_nfc_u8_at(cc, (size_t)(cc_len),
+      (uint8_t)(nero_nfc_u8_at(cc, (size_t)cc_len,
                                (size_t)(NFC_TAG_T2T_CC_VER_INDEX)) >>
                 NFC_TAG_CC_MAPPING_MAJOR_SHIFT);
   info->mapping_minor =
-      (uint8_t)(nero_nfc_u8_at(cc, (size_t)(cc_len),
+      (uint8_t)(nero_nfc_u8_at(cc, (size_t)cc_len,
                                (size_t)(NFC_TAG_T2T_CC_VER_INDEX)) &
                 NFC_TAG_CC_NIBBLE_MASK);
   info->data_area_size_bytes =
-      (uint16_t)((uint16_t)nero_nfc_u8_at(cc, (size_t)(cc_len),
+      (uint16_t)((uint16_t)nero_nfc_u8_at(cc, (size_t)cc_len,
                                           (size_t)(NFC_TAG_T2T_CC_MLEN_INDEX)) *
                  NFC_TAG_T2T_AREA_SIZE_UNIT_BYTES);
-  info->access = nero_nfc_u8_at(cc, (size_t)(cc_len),
-                                (size_t)(NFC_TAG_T2T_CC_ACCESS_INDEX));
+  info->access =
+      nero_nfc_u8_at(cc, (size_t)cc_len, (size_t)(NFC_TAG_T2T_CC_ACCESS_INDEX));
   info->read_access_open =
-      (nero_nfc_u8_at(cc, (size_t)(cc_len),
+      (nero_nfc_u8_at(cc, (size_t)cc_len,
                       (size_t)(NFC_TAG_T2T_CC_ACCESS_INDEX)) &
        NFC_TAG_CC_ACCESS_HIGH_NIBBLE_MASK) == 0u;
   info->write_access_open =
-      (nero_nfc_u8_at(cc, (size_t)(cc_len),
+      (nero_nfc_u8_at(cc, (size_t)cc_len,
                       (size_t)(NFC_TAG_T2T_CC_ACCESS_INDEX)) &
        NFC_TAG_CC_NIBBLE_MASK) == 0u;
 }
@@ -542,24 +542,24 @@ NERO_NFC_NODISCARD static inline bool nfc_tag_type4_apply_cc(
   }
   {
     uint16_t declared_len = nero_nfc_u8_at(
-        cc, (size_t)(cc_len), (size_t)(NFC_TAG_CC_CCLEN_MSB_INDEX));
+        cc, (size_t)cc_len, (size_t)(NFC_TAG_CC_CCLEN_MSB_INDEX));
     uint16_t mle;
     uint16_t mlc;
     declared_len =
-        (uint16_t)((declared_len << NFC_BYTE_SHIFT_8) |
-                   nero_nfc_u8_at(cc, (size_t)(cc_len),
+        (uint16_t)(((uint32_t)declared_len << NFC_BYTE_SHIFT_8) |
+                   nero_nfc_u8_at(cc, (size_t)cc_len,
                                   (size_t)(NFC_TAG_CC_CCLEN_LSB_INDEX)));
-    mle = (uint16_t)(((uint16_t)nero_nfc_u8_at(
-                          cc, (size_t)(cc_len),
+    mle = (uint16_t)(((uint32_t)nero_nfc_u8_at(
+                          cc, (size_t)cc_len,
                           (size_t)(NFC_TAG_T4T_CC_MLE_MSB_INDEX))
                       << NFC_BYTE_SHIFT_8) |
-                     nero_nfc_u8_at(cc, (size_t)(cc_len),
+                     nero_nfc_u8_at(cc, (size_t)cc_len,
                                     (size_t)(NFC_TAG_T4T_CC_MLE_LSB_INDEX)));
-    mlc = (uint16_t)(((uint16_t)nero_nfc_u8_at(
-                          cc, (size_t)(cc_len),
+    mlc = (uint16_t)(((uint32_t)nero_nfc_u8_at(
+                          cc, (size_t)cc_len,
                           (size_t)(NFC_TAG_T4T_CC_MLC_MSB_INDEX))
                       << NFC_BYTE_SHIFT_8) |
-                     nero_nfc_u8_at(cc, (size_t)(cc_len),
+                     nero_nfc_u8_at(cc, (size_t)cc_len,
                                     (size_t)(NFC_TAG_T4T_CC_MLC_LSB_INDEX)));
     /*
      * [T4T-ISO14443-4] Mapping 2.0 §5.1 Table 5 -- NDEF File Control TLV is
@@ -568,10 +568,10 @@ NERO_NFC_NODISCARD static inline bool nfc_tag_type4_apply_cc(
      * the spec ranges.
      */
     if (declared_len < NFC_TAG_T4T_CC_MIN_LEN || declared_len > cc_len ||
-        nero_nfc_u8_at(cc, (size_t)(cc_len),
+        nero_nfc_u8_at(cc, (size_t)cc_len,
                        (size_t)(NFC_TAG_T4T_CC_NDEF_TLV_TAG_INDEX)) !=
             NFC_TAG_T4T_NDEF_TLV_TYPE ||
-        nero_nfc_u8_at(cc, (size_t)(cc_len),
+        nero_nfc_u8_at(cc, (size_t)cc_len,
                        (size_t)(NFC_TAG_T4T_CC_NDEF_TLV_LEN_INDEX)) !=
             NFC_TAG_T4T_NDEF_TLV_LEN ||
         mle < NFC_TAG_T4T_MLE_MIN || mlc < NFC_TAG_T4T_MLC_MIN) {
@@ -585,51 +585,51 @@ NERO_NFC_NODISCARD static inline bool nfc_tag_type4_apply_cc(
   info->cc_len = NFC_TAG_T4T_CC_MIN_LEN;
   info->cc_valid = true;
   info->mapping_major =
-      (uint8_t)(nero_nfc_u8_at(cc, (size_t)(cc_len),
+      (uint8_t)(nero_nfc_u8_at(cc, (size_t)cc_len,
                                (size_t)(NFC_TAG_T4T_CC_MAPPING_VER_INDEX)) >>
                 NFC_TAG_CC_MAPPING_MAJOR_SHIFT);
   info->mapping_minor =
-      (uint8_t)(nero_nfc_u8_at(cc, (size_t)(cc_len),
+      (uint8_t)(nero_nfc_u8_at(cc, (size_t)cc_len,
                                (size_t)(NFC_TAG_T4T_CC_MAPPING_VER_INDEX)) &
                 NFC_TAG_CC_NIBBLE_MASK);
   info->mle =
-      (uint16_t)(((uint16_t)nero_nfc_u8_at(
-                      cc, (size_t)(cc_len),
+      (uint16_t)(((uint32_t)nero_nfc_u8_at(
+                      cc, (size_t)cc_len,
                       (size_t)(NFC_TAG_T4T_CC_MLE_MSB_INDEX))
                   << NFC_BYTE_SHIFT_8) |
-                 nero_nfc_u8_at(cc, (size_t)(cc_len),
+                 nero_nfc_u8_at(cc, (size_t)cc_len,
                                 (size_t)(NFC_TAG_T4T_CC_MLE_LSB_INDEX)));
   info->mlc =
-      (uint16_t)(((uint16_t)nero_nfc_u8_at(
-                      cc, (size_t)(cc_len),
+      (uint16_t)(((uint32_t)nero_nfc_u8_at(
+                      cc, (size_t)cc_len,
                       (size_t)(NFC_TAG_T4T_CC_MLC_MSB_INDEX))
                   << NFC_BYTE_SHIFT_8) |
-                 nero_nfc_u8_at(cc, (size_t)(cc_len),
+                 nero_nfc_u8_at(cc, (size_t)cc_len,
                                 (size_t)(NFC_TAG_T4T_CC_MLC_LSB_INDEX)));
-  info->tlv_type = nero_nfc_u8_at(cc, (size_t)(cc_len),
+  info->tlv_type = nero_nfc_u8_at(cc, (size_t)cc_len,
                                   (size_t)(NFC_TAG_T4T_CC_NDEF_TLV_TAG_INDEX));
   info->tlv_length = nero_nfc_u8_at(
-      cc, (size_t)(cc_len), (size_t)(NFC_TAG_T4T_CC_NDEF_TLV_LEN_INDEX));
+      cc, (size_t)cc_len, (size_t)(NFC_TAG_T4T_CC_NDEF_TLV_LEN_INDEX));
   info->ndef_file_id[0] = nero_nfc_u8_at(
-      cc, (size_t)(cc_len), (size_t)(NFC_TAG_T4T_CC_NDEF_FILE_ID_MSB_INDEX));
+      cc, (size_t)cc_len, (size_t)(NFC_TAG_T4T_CC_NDEF_FILE_ID_MSB_INDEX));
   info->ndef_file_id[1] = nero_nfc_u8_at(
-      cc, (size_t)(cc_len), (size_t)(NFC_TAG_T4T_CC_NDEF_FILE_ID_LSB_INDEX));
+      cc, (size_t)cc_len, (size_t)(NFC_TAG_T4T_CC_NDEF_FILE_ID_LSB_INDEX));
   info->max_ndef_size =
-      (uint16_t)(((uint16_t)nero_nfc_u8_at(
-                      cc, (size_t)(cc_len),
+      (uint16_t)(((uint32_t)nero_nfc_u8_at(
+                      cc, (size_t)cc_len,
                       (size_t)(NFC_TAG_T4T_CC_NDEF_SIZE_MSB_INDEX))
                   << NFC_BYTE_SHIFT_8) |
-                 nero_nfc_u8_at(cc, (size_t)(cc_len),
+                 nero_nfc_u8_at(cc, (size_t)cc_len,
                                 (size_t)(NFC_TAG_T4T_CC_NDEF_SIZE_LSB_INDEX)));
   info->read_access = nero_nfc_u8_at(
-      cc, (size_t)(cc_len), (size_t)(NFC_TAG_T4T_CC_READ_ACCESS_INDEX));
+      cc, (size_t)cc_len, (size_t)(NFC_TAG_T4T_CC_READ_ACCESS_INDEX));
   info->write_access = nero_nfc_u8_at(
-      cc, (size_t)(cc_len), (size_t)(NFC_TAG_T4T_CC_WRITE_ACCESS_INDEX));
+      cc, (size_t)cc_len, (size_t)(NFC_TAG_T4T_CC_WRITE_ACCESS_INDEX));
   info->read_access_open =
-      nero_nfc_u8_at(cc, (size_t)(cc_len),
+      nero_nfc_u8_at(cc, (size_t)cc_len,
                      (size_t)(NFC_TAG_T4T_CC_READ_ACCESS_INDEX)) == 0x00u;
   info->write_access_open =
-      nero_nfc_u8_at(cc, (size_t)(cc_len),
+      nero_nfc_u8_at(cc, (size_t)cc_len,
                      (size_t)(NFC_TAG_T4T_CC_WRITE_ACCESS_INDEX)) == 0x00u;
   return true;
 }
@@ -682,10 +682,10 @@ static inline void nfc_tag_type5_apply_cc(nfc_tag_type5_info_t* info,
    * [T5T-NFCFORUM] §4.3: CC byte 0 magic is E1h (1-byte block address
    * mode) or E2h (2-byte block address mode). Both are valid magic numbers.
    */
-  if ((nero_nfc_u8_at(cc, (size_t)(cc_len),
+  if ((nero_nfc_u8_at(cc, (size_t)cc_len,
                       (size_t)(NFC_TAG_T2T_CC_MAGIC_INDEX)) !=
        NFC_FORUM_CC_MAGIC) &&
-      (nero_nfc_u8_at(cc, (size_t)(cc_len),
+      (nero_nfc_u8_at(cc, (size_t)cc_len,
                       (size_t)(NFC_TAG_T2T_CC_MAGIC_INDEX)) !=
        NFC_T5T_CC_MAGIC_8BYTE)) {
     return;
@@ -696,10 +696,10 @@ static inline void nfc_tag_type5_apply_cc(nfc_tag_type5_info_t* info,
    * units). Zero MLEN -> NFC_TAG_T5T_CC_LEN_EXTENDED CC; area size is in
    * bytes 6..7.
    */
-  if (nero_nfc_u8_at(cc, (size_t)(cc_len),
+  if (nero_nfc_u8_at(cc, (size_t)cc_len,
                      (size_t)(NFC_TAG_T5T_CC_MLEN_BYTE_INDEX)) != 0u) {
     cc_bytes = NFC_TAG_T5T_CC_LEN_SHORT;
-    size_units = nero_nfc_u8_at(cc, (size_t)(cc_len),
+    size_units = nero_nfc_u8_at(cc, (size_t)cc_len,
                                 (size_t)(NFC_TAG_T5T_CC_MLEN_BYTE_INDEX));
   } else {
     if (cc_len < NFC_TAG_T5T_CC_LEN_EXTENDED) {
@@ -707,11 +707,11 @@ static inline void nfc_tag_type5_apply_cc(nfc_tag_type5_info_t* info,
     }
     cc_bytes = NFC_TAG_T5T_CC_LEN_EXTENDED;
     size_units =
-        (uint16_t)(((uint16_t)nero_nfc_u8_at(
-                        cc, (size_t)(cc_len),
+        (uint16_t)(((uint32_t)nero_nfc_u8_at(
+                        cc, (size_t)cc_len,
                         (size_t)(NFC_TAG_T5T_CC_EXT_SIZE_MSB_INDEX))
                     << NFC_BYTE_SHIFT_8) |
-                   nero_nfc_u8_at(cc, (size_t)(cc_len),
+                   nero_nfc_u8_at(cc, (size_t)cc_len,
                                   (size_t)(NFC_TAG_T5T_CC_EXT_SIZE_LSB_INDEX)));
   }
   if ((size_units == 0u) ||
@@ -727,25 +727,25 @@ static inline void nfc_tag_type5_apply_cc(nfc_tag_type5_info_t* info,
   info->cc_len = cc_bytes;
   info->mapping_major =
       (uint8_t)((unsigned)nero_nfc_u8_at(
-                    cc, (size_t)(cc_len),
+                    cc, (size_t)cc_len,
                     (size_t)(NFC_TAG_T5T_CC_VER_ACCESS_BYTE_INDEX)) >>
                 NFC_TAG_T5T_CC_MAPPING_MAJOR_SHIFT);
   info->mapping_minor =
       (uint8_t)(((unsigned)nero_nfc_u8_at(
-                     cc, (size_t)(cc_len),
+                     cc, (size_t)cc_len,
                      (size_t)(NFC_TAG_T5T_CC_VER_ACCESS_BYTE_INDEX)) >>
                  NFC_TAG_T5T_CC_MAPPING_MINOR_SHIFT) &
                 (unsigned)NFC_TAG_T5T_CC_MAPPING_MINOR_MASK);
   info->access =
-      (uint8_t)(nero_nfc_u8_at(cc, (size_t)(cc_len),
+      (uint8_t)(nero_nfc_u8_at(cc, (size_t)cc_len,
                                (size_t)(NFC_TAG_T5T_CC_VER_ACCESS_BYTE_INDEX)) &
                 NFC_TAG_CC_NIBBLE_MASK);
   info->read_access_open =
-      (nero_nfc_u8_at(cc, (size_t)(cc_len),
+      (nero_nfc_u8_at(cc, (size_t)cc_len,
                       (size_t)(NFC_TAG_T5T_CC_VER_ACCESS_BYTE_INDEX)) &
        NFC_TAG_T5T_CC_ACCESS_READ_MASK) == 0u;
   info->write_access_open =
-      (nero_nfc_u8_at(cc, (size_t)(cc_len),
+      (nero_nfc_u8_at(cc, (size_t)cc_len,
                       (size_t)(NFC_TAG_T5T_CC_VER_ACCESS_BYTE_INDEX)) &
        NFC_TAG_T5T_CC_ACCESS_WRITE_MASK) == 0u;
   info->cc_valid = true;
@@ -775,37 +775,37 @@ static inline void nfc_tag_type5_apply_system_info(nfc_tag_type5_info_t* info,
   info->raw_len =
       (uint8_t)((raw_len > (uint8_t)sizeof(info->raw)) ? sizeof(info->raw)
                                                        : raw_len);
-  info->system_info_flags = nero_nfc_u8_at(raw, (size_t)(raw_len), (size_t)(1));
+  info->system_info_flags = nero_nfc_u8_at(raw, (size_t)raw_len, (size_t)1);
   pos = (uint8_t)(NFC_TAG_T5T_ISO15693_SYS_INFO_PREAMBLE_LEN +
                   NFC_TAG_T5T_ISO15693_SYS_INFO_UID_FIELD_LEN);
-  if ((nero_nfc_u8_at(raw, (size_t)(raw_len), (size_t)(1)) &
+  if ((nero_nfc_u8_at(raw, (size_t)raw_len, (size_t)1) &
        NFC_TAG_T5T_ISO15693_INFO_FLAG_DSFID) != 0u &&
       pos < raw_len) {
-    info->dsfid = nero_nfc_u8_at(raw, (size_t)(raw_len), (size_t)(pos++));
+    info->dsfid = nero_nfc_u8_at(raw, (size_t)raw_len, (size_t)(pos++));
     info->dsfid_valid = true;
   }
-  if ((nero_nfc_u8_at(raw, (size_t)(raw_len), (size_t)(1)) &
+  if ((nero_nfc_u8_at(raw, (size_t)raw_len, (size_t)1) &
        NFC_TAG_T5T_ISO15693_INFO_FLAG_AFI) != 0u &&
       pos < raw_len) {
-    info->afi = nero_nfc_u8_at(raw, (size_t)(raw_len), (size_t)(pos++));
+    info->afi = nero_nfc_u8_at(raw, (size_t)raw_len, (size_t)(pos++));
     info->afi_valid = true;
   }
-  if ((nero_nfc_u8_at(raw, (size_t)(raw_len), (size_t)(1)) &
+  if ((nero_nfc_u8_at(raw, (size_t)raw_len, (size_t)1) &
        NFC_TAG_T5T_ISO15693_INFO_FLAG_MEMORY_SIZE) != 0u &&
       (uint16_t)(pos + NFC_TAG_T5T_ISO15693_MEMORY_SIZE_FIELD_LEN) <= raw_len) {
-    info->block_count = (uint16_t)((uint16_t)nero_nfc_u8_at(
-                                       raw, (size_t)(raw_len), (size_t)(pos)) +
-                                   1u);
+    info->block_count =
+        (uint16_t)((uint16_t)nero_nfc_u8_at(raw, (size_t)raw_len, (size_t)pos) +
+                   1u);
     info->block_size =
-        (uint8_t)((nero_nfc_u8_at(raw, (size_t)(raw_len), (size_t)(pos + 1u)) &
+        (uint8_t)((nero_nfc_u8_at(raw, (size_t)raw_len, (size_t)(pos + 1u)) &
                    NFC_TAG_T5T_ISO15693_BLOCK_SIZE_MASK) +
                   1u);
     pos = (uint8_t)(pos + NFC_TAG_T5T_ISO15693_MEMORY_SIZE_FIELD_LEN);
   }
-  if ((nero_nfc_u8_at(raw, (size_t)(raw_len), (size_t)(1)) &
+  if ((nero_nfc_u8_at(raw, (size_t)raw_len, (size_t)1) &
        NFC_TAG_T5T_ISO15693_INFO_FLAG_IC_REF) != 0u &&
       pos < raw_len) {
-    info->ic_ref = nero_nfc_u8_at(raw, (size_t)(raw_len), (size_t)(pos));
+    info->ic_ref = nero_nfc_u8_at(raw, (size_t)raw_len, (size_t)pos);
     info->ic_ref_valid = true;
   }
 }
@@ -838,43 +838,43 @@ static inline void nfc_tag_type5_apply_system_info_ext(
   info->raw_len =
       (uint8_t)((raw_len > (uint8_t)sizeof(info->raw)) ? sizeof(info->raw)
                                                        : raw_len);
-  info->system_info_flags = nero_nfc_u8_at(raw, (size_t)(raw_len), (size_t)(1));
+  info->system_info_flags = nero_nfc_u8_at(raw, (size_t)raw_len, (size_t)1);
   pos = (uint8_t)(NFC_TAG_T5T_ISO15693_SYS_INFO_PREAMBLE_LEN +
                   NFC_TAG_T5T_ISO15693_SYS_INFO_UID_FIELD_LEN);
-  if ((nero_nfc_u8_at(raw, (size_t)(raw_len), (size_t)(1)) &
+  if ((nero_nfc_u8_at(raw, (size_t)raw_len, (size_t)1) &
        NFC_TAG_T5T_ISO15693_INFO_FLAG_DSFID) != 0u &&
       pos < raw_len) {
-    info->dsfid = nero_nfc_u8_at(raw, (size_t)(raw_len), (size_t)(pos++));
+    info->dsfid = nero_nfc_u8_at(raw, (size_t)raw_len, (size_t)(pos++));
     info->dsfid_valid = true;
   }
-  if ((nero_nfc_u8_at(raw, (size_t)(raw_len), (size_t)(1)) &
+  if ((nero_nfc_u8_at(raw, (size_t)raw_len, (size_t)1) &
        NFC_TAG_T5T_ISO15693_INFO_FLAG_AFI) != 0u &&
       pos < raw_len) {
-    info->afi = nero_nfc_u8_at(raw, (size_t)(raw_len), (size_t)(pos++));
+    info->afi = nero_nfc_u8_at(raw, (size_t)raw_len, (size_t)(pos++));
     info->afi_valid = true;
   }
-  if ((nero_nfc_u8_at(raw, (size_t)(raw_len), (size_t)(1)) &
+  if ((nero_nfc_u8_at(raw, (size_t)raw_len, (size_t)1) &
        NFC_TAG_T5T_ISO15693_INFO_FLAG_MEMORY_SIZE) != 0u &&
       (uint16_t)(pos + NFC_TAG_ST25DV_EXT_MEMORY_SIZE_FIELD_LEN) <= raw_len) {
     uint32_t nb =
-        (uint32_t)nero_nfc_u8_at(raw, (size_t)(raw_len), (size_t)(pos)) |
-        ((uint32_t)nero_nfc_u8_at(raw, (size_t)(raw_len), (size_t)(pos + 1u))
+        (uint32_t)nero_nfc_u8_at(raw, (size_t)raw_len, (size_t)pos) |
+        ((uint32_t)nero_nfc_u8_at(raw, (size_t)raw_len, (size_t)(pos + 1u))
          << NFC_BYTE_SHIFT_8);
     nb += 1u;
     info->block_count = (nb > (uint32_t)UINT16_MAX) ? UINT16_MAX : (uint16_t)nb;
     info->block_size =
         (uint8_t)((nero_nfc_u8_at(
-                       raw, (size_t)(raw_len),
+                       raw, (size_t)raw_len,
                        (size_t)(pos +
                                 NFC_TAG_ST25DV_EXT_MEMORY_BLOCK_SIZE_INDEX)) &
                    NFC_TAG_T5T_ISO15693_BLOCK_SIZE_MASK) +
                   1u);
     pos = (uint8_t)(pos + NFC_TAG_ST25DV_EXT_MEMORY_SIZE_FIELD_LEN);
   }
-  if ((nero_nfc_u8_at(raw, (size_t)(raw_len), (size_t)(1)) &
+  if ((nero_nfc_u8_at(raw, (size_t)raw_len, (size_t)1) &
        NFC_TAG_T5T_ISO15693_INFO_FLAG_IC_REF) != 0u &&
       pos < raw_len) {
-    info->ic_ref = nero_nfc_u8_at(raw, (size_t)(raw_len), (size_t)(pos));
+    info->ic_ref = nero_nfc_u8_at(raw, (size_t)raw_len, (size_t)pos);
     info->ic_ref_valid = true;
   }
 }

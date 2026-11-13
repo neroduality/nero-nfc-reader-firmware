@@ -74,6 +74,14 @@ namespace nero_nfc {
 
 void NeroNfcStderrLine(std::string_view s) { NeroNfcWriteStderrLineImpl(s); }
 
+void NeroNfcStderrPrompt(std::string_view s) {
+  ::flockfile(stderr);
+  if (NeroNfcWriteAll(stderr, s)) {
+    (void)std::fflush(stderr);
+  }
+  ::funlockfile(stderr);
+}
+
 void NeroNfcStderrLine(const char* s) {
   std::size_t len = 0u;
   if (s == NERO_NFC_NULL) {

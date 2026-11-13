@@ -56,10 +56,7 @@ bool ActivationSendFrame(void* context, uint8_t* atqa_out) {
   return true;
 }
 
-void ActivationDelay(void* context, uint32_t ms) {
-  (void)context;
-  (void)ms;
-}
+void ActivationDelay(void* /*context*/, uint32_t ms) { (void)ms; }
 
 int ActivationSelect(void* context, uint8_t sel_cmd, uint8_t* uid_out) {
   auto* fake = static_cast<Iso14443aActivationFake*>(context);

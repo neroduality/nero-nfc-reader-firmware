@@ -52,15 +52,15 @@ uint8_t st25_frontend_irq_target(uint32_t status) {
 nfc_frontend_init_status_t st25_frontend_init(const st25_frontend_ops_t* ops,
                                               uint8_t* chip_id_out,
                                               uint16_t* vdd_mv_out) {
-  return (nfc_frontend_init_status_t)(st25_runtime_init_common(ops, chip_id_out,
-                                                               vdd_mv_out));
+  return (nfc_frontend_init_status_t)st25_runtime_init_common(ops, chip_id_out,
+                                                              vdd_mv_out);
 }
 
 nfc_frontend_field_on_status_t st25_frontend_field_on(
     const st25_frontend_ops_t* ops, bool fail_on_collision, bool verify_txrx,
     bool* used_direct) {
-  return (nfc_frontend_field_on_status_t)(st25_runtime_field_on_common(
-      ops, fail_on_collision, verify_txrx, used_direct));
+  return (nfc_frontend_field_on_status_t)st25_runtime_field_on_common(
+      ops, fail_on_collision, verify_txrx, used_direct);
 }
 
 void st25_frontend_configure_iso14443a(st25_cmd_fn_t direct_cmd,

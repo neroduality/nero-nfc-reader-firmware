@@ -90,6 +90,7 @@ inline constexpr auto kPcscFastRetryWindow = std::chrono::milliseconds(250);
 inline constexpr auto kPcscConnectRetryWindow = std::chrono::seconds(5);
 inline constexpr auto kPcscRemovalPollWindow = std::chrono::seconds(5);
 inline constexpr auto kPcscRemovalSettleWindow = std::chrono::milliseconds(50);
+inline constexpr auto kPcscRecoverySleep = std::chrono::seconds(1);
 
 NERO_NFC_NODISCARD bool IsType4Compatible(const PcscTagSnapshot& tag);
 NERO_NFC_NODISCARD bool StatusOk(const std::vector<std::uint8_t>& rapdu);
@@ -118,7 +119,6 @@ NERO_NFC_NODISCARD bool WaitForPresentReader(
     std::size_t* present_count_out = NERO_NFC_NULL);
 void AnnouncePcscReaderSelection(std::size_t present_count,
                                  const std::string& reader);
-std::string TagFingerprint(const PcscTagSnapshot& tag);
 NERO_NFC_NODISCARD bool IsRetryableConnectError(LONG rv);
 void PrimeReaderState(SCARDCONTEXT ctx, const std::string& reader);
 NERO_NFC_NODISCARD bool ListReadersImpl(std::vector<std::string>& readers,
@@ -137,6 +137,8 @@ class PcscCard {
   [[nodiscard]] SCARDCONTEXT Context() const;
   NERO_NFC_NODISCARD bool EnsureContext(std::string& err);
   void Disconnect(DWORD disposition = SCARD_UNPOWER_CARD);
+  /* Drop the card handle and the PC/SC context; EnsureContext() reopens. */
+  void ResetContext();
   NERO_NFC_NODISCARD bool Connect(const std::string& reader,
                                   PcscShareMode share_mode, std::string& err);
   NERO_NFC_NODISCARD bool BeginTransaction(std::string& err);

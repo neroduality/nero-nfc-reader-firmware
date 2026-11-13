@@ -79,7 +79,7 @@ std::string FormatPcscTagSnapshotBody(const PcscTagSnapshot& tag) {
   if (!tag.ndef_message_.empty()) {
     out << "NDEF message: " << tag.ndef_message_.size() << " bytes\n";
     for (std::size_t i = 0; i < tag.records_.size(); ++i) {
-      const auto& rec = tag.records_[i];
+      const auto& rec = tag.records_.at(i);
       out << "  Record #" << (i + 1u)
           << ": TNF=" << static_cast<unsigned>(rec.tnf_)
           << " Type=" << rec.type_ << " Payload=" << rec.payload_.size() << "B";

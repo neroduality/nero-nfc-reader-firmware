@@ -91,11 +91,11 @@ static bool iso15693_write(uint8_t block, const uint8_t* data,
                                           WRITER_FRONTEND, WRITER_APP_UID15,
                                           block, data, data_len);
   writer_hal_delay_ms(NFC_TAG_T5T_RF_WRITE_SETTLE_MS);
-  if (iso15693_read(block, rb, data_len) < (int)(data_len)) {
+  if (iso15693_read(block, rb, data_len) < (int)data_len) {
     return false;
   }
   for (uint8_t i = 0u; i < data_len; i++) {
-    if (!nero_nfc_span_ok((size_t)(i), 1u, (size_t)(data_len)) ||
+    if (!nero_nfc_span_ok((size_t)i, 1u, (size_t)data_len) ||
         rb[i] != data[i]) {
       return false;
     }
@@ -109,7 +109,7 @@ static bool writer_type5_write_unit(uint16_t unit, const uint8_t* data,
       (unit > UINT8_MAX)) {
     return false;
   }
-  return iso15693_write((uint8_t)(unit), data, data_len);
+  return iso15693_write((uint8_t)unit, data, data_len);
 }
 
 /*
@@ -190,14 +190,14 @@ bool writer_tag_write_type5_impl(void) {
                               : (int)(NFC_TAG_T5T_CC_LEN_SHORT);
       }
       nero_nfc_zero_bytes(&cc_info, sizeof(cc_info));
-      nfc_tag_type5_apply_cc(&cc_info, existing_cc, (uint8_t)(existing_cc_len));
+      nfc_tag_type5_apply_cc(&cc_info, existing_cc, (uint8_t)existing_cc_len);
       if (cc_info.cc_valid && !cc_info.write_access_open) {
         nero_nfc_log_line(
             "  ERROR: Type 5 tag reports write access restricted");
         return false;
       }
       if (cc_info.cc_valid) {
-        cc_len = (uint16_t)(existing_cc_len);
+        cc_len = (uint16_t)existing_cc_len;
         first_data_block = (uint16_t)(cc_len / NFC_STORAGE_TYPE5_BLOCK_SIZE);
         if (!nero_nfc_copy_bytes(cc_block, sizeof(cc_block), 0u, existing_cc,
                                  cc_len)) {
@@ -221,7 +221,7 @@ bool writer_tag_write_type5_impl(void) {
         (uint16_t)(avail_bytes / NFC_TAG_T5T_AREA_SIZE_UNIT_BYTES);
     mlen_max = NERO_NFC_MIN(mlen_max, UINT8_MAX);
     if (mlen > mlen_max) {
-      mlen = (uint8_t)(mlen_max);
+      mlen = (uint8_t)mlen_max;
     }
   }
   if ((cc_len == (uint16_t)(NFC_TAG_T5T_CC_LEN_EXTENDED)) ||
@@ -230,14 +230,14 @@ bool writer_tag_write_type5_impl(void) {
        (cc_block[NFC_TAG_T5T_CC_MLEN_BYTE_INDEX] >= mlen))) {
     write_cc = false;
   } else {
-    if ((cc_block[0] != NFC_FORUM_CC_MAGIC) &&
-        (cc_block[0] != NFC_T5T_CC_MAGIC_8BYTE)) {
-      if (!nero_nfc_copy_bytes(cc_block, sizeof(cc_block), 0u,
-                               WRITER_TYPE5_SHORT_CC_TEMPLATE,
-                               sizeof(WRITER_TYPE5_SHORT_CC_TEMPLATE))) {
-        return false;
-      }
+    if (((cc_block[0] != NFC_FORUM_CC_MAGIC) &&
+         (cc_block[0] != NFC_T5T_CC_MAGIC_8BYTE)) &&
+        (!nero_nfc_copy_bytes(cc_block, sizeof(cc_block), 0u,
+                              WRITER_TYPE5_SHORT_CC_TEMPLATE,
+                              sizeof(WRITER_TYPE5_SHORT_CC_TEMPLATE)))) {
+      return false;
     }
+
     cc_block[NFC_TAG_T5T_CC_MLEN_BYTE_INDEX] = mlen;
     cc_len = NFC_TAG_T5T_CC_LEN_SHORT;
     first_data_block = 1u;
@@ -261,17 +261,17 @@ bool writer_tag_write_type5_impl(void) {
           "  ERROR: Type 5 geometry exceeds supported writer range");
       return false;
     }
-    const uint16_t data_area_size = (uint16_t)(data_area_raw);
+    const uint16_t data_area_size = (uint16_t)data_area_raw;
     if (!nfc_storage_type5_data_blocks(cc_len, data_area_size, blk_size,
                                        nb_blocks, &first_data_block,
                                        &last_data_block) ||
-        (((uint32_t)(first_data_block) + (uint32_t)(blocks_needed)-1u) >
+        (((uint32_t)first_data_block + (uint32_t)blocks_needed - 1u) >
          last_data_block)) {
       nero_nfc_log_line("  ERROR: NDEF too big for this tag");
       return false;
     }
   }
-  if (((uint32_t)(first_data_block) + (uint32_t)(blocks_needed)) >
+  if (((uint32_t)first_data_block + (uint32_t)blocks_needed) >
       (NFC_TAG_T5T_ISO15693_BLOCK_ADDR_1BYTE_MAX + 1u)) {
     nero_nfc_log_line("  ERROR: NDEF would exceed 1-byte addressing range");
     return false;
@@ -288,7 +288,7 @@ bool writer_tag_write_type5_impl(void) {
     {
       char ndc[NERO_NFC_FORMAT_SNPRINTF_DEC_CAP];
       (void)nero_nfc_snprintf(ndc, sizeof ndc, "%u",
-                              (unsigned)((uint32_t)(total)));
+                              (unsigned)((uint32_t)total));
       nero_nfc_log_write(ndc);
     }
     nero_nfc_log_write("): ");
@@ -299,13 +299,13 @@ bool writer_tag_write_type5_impl(void) {
     nero_nfc_log_write("\r\n");
 
     nero_nfc_log_line("\r\n  ── Byte-level explainer (write) ──");
-    nfc_tutorial_t5t_cc(nero_nfc_log_putc, cc_block, (uint8_t)(cc_len));
+    nfc_tutorial_t5t_cc(nero_nfc_log_putc, cc_block, (uint8_t)cc_len);
     if (write_cc) {
       nfc_tutorial_t5t_write_cmd(nero_nfc_log_putc, NERO_NFC_NULL, 0u, cc_block,
                                  NFC_STORAGE_TYPE5_BLOCK_SIZE);
     } else {
       nfc_tutorial_t5t_write_cmd(nero_nfc_log_putc, NERO_NFC_NULL,
-                                 (uint8_t)(first_data_block), tlv,
+                                 (uint8_t)first_data_block, tlv,
                                  NFC_STORAGE_TYPE5_BLOCK_SIZE);
     }
     nfc_tutorial_ndef_tlv(nero_nfc_log_putc, tlv, total);

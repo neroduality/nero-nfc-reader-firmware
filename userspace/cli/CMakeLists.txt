@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# CLI binaries: nero_nfc_uart, reader, writer.
+# CLI binaries: nero_nfc_uart, reader, writer, fido_token.
 #
 add_executable(nero_nfc_uart nero_nfc_uart_main.cpp)
 target_link_libraries(nero_nfc_uart PRIVATE nero_nfc_app)
@@ -24,3 +24,6 @@ target_link_libraries(reader PRIVATE nero_nfc_app)
 
 add_executable(writer writer_main.cpp)
 target_link_libraries(writer PRIVATE nero_nfc_app)
+
+add_executable(fido_token fido_token_main.cpp)
+target_link_libraries(fido_token PRIVATE nero_nfc_app)

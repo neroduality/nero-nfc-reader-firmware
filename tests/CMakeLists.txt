@@ -42,7 +42,7 @@ option(NERO_TESTS_ENABLE_PCSC "Link libpcsclite-backed PC/SC integration into un
 option(
   NERO_ENABLE_EXTENDED_SANITIZERS
   "With ASan/UBSan enabled, probe extra -fsanitize flags (pointer-*, bounds-strict on GCC)" ON)
-option(NERO_USE_SYSTEM_GTEST "Use find_package(GTest) instead of FetchContent (local/scan-build)" OFF)
+option(NERO_USE_SYSTEM_GTEST "Use find_package(GTest) instead of FetchContent" ON)
 
 set(NERO_FIRMWARE_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/..")
 
@@ -151,8 +151,6 @@ else()
   foreach(_nero_gtest_target IN ITEMS gtest gtest_main)
     if(TARGET ${_nero_gtest_target})
       set_property(TARGET ${_nero_gtest_target} PROPERTY POSITION_INDEPENDENT_CODE ON)
-      target_compile_options(${_nero_gtest_target} PRIVATE
-        $<$<CXX_COMPILER_ID:GNU>:-Wno-maybe-uninitialized>)
     endif()
   endforeach()
 endif()
@@ -309,7 +307,11 @@ add_library(
   "${NERO_FIRMWARE_ROOT}/userspace/app/nero_nfc_pcsc_storage_type2.cpp"
   "${NERO_FIRMWARE_ROOT}/userspace/app/nero_nfc_pcsc_storage_type5.cpp"
   "${NERO_FIRMWARE_ROOT}/userspace/app/nero_nfc_pcsc_type4.cpp"
-  "${NERO_FIRMWARE_ROOT}/userspace/app/nero_nfc_pcsc.cpp")
+  "${NERO_FIRMWARE_ROOT}/userspace/app/nero_nfc_pcsc.cpp"
+  "${NERO_FIRMWARE_ROOT}/userspace/app/nero_nfc_cbor.cpp"
+  "${NERO_FIRMWARE_ROOT}/userspace/app/nero_nfc_ctap.cpp"
+  "${NERO_FIRMWARE_ROOT}/userspace/app/nero_nfc_ctap_pin.cpp"
+  "${NERO_FIRMWARE_ROOT}/userspace/app/nero_nfc_fido_token.cpp")
 
 target_include_directories(
   nero_under_test
@@ -361,6 +363,12 @@ if(NERO_TESTS_ENABLE_PCSC)
   endif()
 endif()
 set(NERO_TESTS_HAVE_PCSC "${_nero_test_pcsc_found}" CACHE INTERNAL "libpcsclite linked into nero_under_test")
+find_package(OpenSSL 3.0 QUIET COMPONENTS Crypto)
+if(NOT OpenSSL_FOUND)
+  message(FATAL_ERROR
+    "OpenSSL 3 (libcrypto) is required. Install libssl-dev (Debian/Ubuntu) or openssl-devel (Fedora), or run make deps.")
+endif()
+target_link_libraries(nero_under_test PUBLIC OpenSSL::Crypto)
 
 # Compile-only TUs for clang-tidy compile_commands.json (not linked into test binaries).
 add_library(

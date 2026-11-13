@@ -111,9 +111,9 @@ std::uint16_t StorageTlvPayloadCap(std::uint16_t data_area_size) {
 
 std::vector<std::uint8_t> NormalizeType5Uid(std::vector<std::uint8_t> uid) {
   if (uid.size() == NFC_TAG_T5T_ISO15693_SYS_INFO_UID_FIELD_LEN &&
-      uid[NFC_TAG_T5T_ISO15693_UID_MSB_BYTE_INDEX] ==
+      uid.at(NFC_TAG_T5T_ISO15693_UID_MSB_BYTE_INDEX) ==
           static_cast<std::uint8_t>(NFC_TAG_T4T_RATS_START_BYTE) &&
-      uid[0] != static_cast<std::uint8_t>(NFC_TAG_T4T_RATS_START_BYTE)) {
+      uid.at(0) != static_cast<std::uint8_t>(NFC_TAG_T4T_RATS_START_BYTE)) {
     std::ranges::reverse(uid);
   }
   return uid;
@@ -173,8 +173,8 @@ bool TlvAreaHasTerminator(const std::vector<std::uint8_t>& raw,
 bool StorageReadBinaryApdu(PcscCard& card, std::uint8_t p1, std::uint8_t p2,
                            std::uint8_t len, std::vector<std::uint8_t>& data,
                            std::string& err) {
-  auto read_with_len = [&](std::uint8_t le, std::uint8_t& sw1,
-                           std::uint8_t& sw2) {
+  const auto read_with_len = [&](std::uint8_t le, std::uint8_t& sw1,
+                                 std::uint8_t& sw2) {
     std::vector<std::uint8_t> rapdu;
     if (!card.Transmit({static_cast<std::uint8_t>(NFC_ISO7816_CLA_PROPRIETARY),
                         static_cast<std::uint8_t>(NFC_ISO7816_INS_READ_BINARY),
@@ -188,8 +188,8 @@ bool StorageReadBinaryApdu(PcscCard& card, std::uint8_t p1, std::uint8_t p2,
       return true;
     }
     if (rapdu.size() >= static_cast<std::size_t>(NFC_PCSC_T4_NLEN_LEN)) {
-      sw1 =
-          rapdu[rapdu.size() - static_cast<std::size_t>(NFC_PCSC_T4_NLEN_LEN)];
+      sw1 = rapdu.at(rapdu.size() -
+                     static_cast<std::size_t>(NFC_PCSC_T4_NLEN_LEN));
       sw2 = rapdu.back();
       std::ostringstream msg;
       msg << "APDU SW=" << HexBytes({sw1, sw2}, '\0');
@@ -208,20 +208,20 @@ bool StorageReadBinaryApdu(PcscCard& card, std::uint8_t p1, std::uint8_t p2,
   if (read_with_len(len, sw1, sw2)) {
     return true;
   }
-  if (sw1 == static_cast<std::uint8_t>(NFC_ISO7816_SW1_WRONG_LENGTH) &&
-      sw2 != len) {
-    if (read_with_len(sw2, sw1, sw2)) {
-      return true;
-    }
+  if ((sw1 == static_cast<std::uint8_t>(NFC_ISO7816_SW1_WRONG_LENGTH) &&
+       sw2 != len) &&
+      read_with_len(sw2, sw1, sw2)) {
+    return true;
   }
-  if (sw1 == static_cast<std::uint8_t>(NFC_ISO7816_SW1_WRONG_LENGTH_ALT) &&
-      sw2 == static_cast<std::uint8_t>(NFC_ISO7816_SW2_SUCCESS) &&
-      len != static_cast<std::uint8_t>(NFC_ISO7816_SW2_SUCCESS)) {
-    if (read_with_len(static_cast<std::uint8_t>(NFC_ISO7816_SW2_SUCCESS), sw1,
-                      sw2)) {
-      return true;
-    }
+
+  if ((sw1 == static_cast<std::uint8_t>(NFC_ISO7816_SW1_WRONG_LENGTH_ALT) &&
+       sw2 == static_cast<std::uint8_t>(NFC_ISO7816_SW2_SUCCESS) &&
+       len != static_cast<std::uint8_t>(NFC_ISO7816_SW2_SUCCESS)) &&
+      read_with_len(static_cast<std::uint8_t>(NFC_ISO7816_SW2_SUCCESS), sw1,
+                    sw2)) {
+    return true;
   }
+
   return false;
 }
 
@@ -388,7 +388,7 @@ bool StorageWriteUnitsWithIo(PcscCard& card,
     std::uint16_t chunk_units =
         std::min<std::uint16_t>(remaining_units, max_units_per_apdu);
     const auto unit = static_cast<std::uint16_t>(first_unit + unit_index);
-    auto make_chunk = [&](std::uint16_t chunk_unit_count) {
+    const auto make_chunk = [&](std::uint16_t chunk_unit_count) {
       std::vector<std::uint8_t> chunk(
           static_cast<std::size_t>(chunk_unit_count) * unit_size, 0u);
       const auto left = static_cast<std::uint16_t>(bytes.size() - off);

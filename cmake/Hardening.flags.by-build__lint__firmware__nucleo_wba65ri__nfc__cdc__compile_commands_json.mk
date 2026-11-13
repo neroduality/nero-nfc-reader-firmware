@@ -18,6 +18,6 @@
 # Arduino / Make consumers: include this file and append to build.extra_flags
 # (or equivalent), e.g. NFC_BUILD_EXTRA_FLAGS += $(NERO_OPENSSF_CFLAGS)
 #
-NERO_OPENSSF_CFLAGS := -Wall -Wextra -Wformat -Wformat=2 -Wconversion -Wsign-conversion -Wtrampolines -Wimplicit-fallthrough -Werror=implicit -Werror=incompatible-pointer-types -Werror=int-conversion -fstack-protector-strong -fno-delete-null-pointer-checks -fno-strict-overflow -fno-strict-aliasing -ftrivial-auto-var-init=zero -Whardened -Werror=trampolines
-NERO_OPENSSF_CXXFLAGS := -Wall -Wextra -Wformat -Wformat=2 -Wconversion -Wsign-conversion -Wtrampolines -Wimplicit-fallthrough -fstack-protector-strong -fno-delete-null-pointer-checks -fno-strict-overflow -fno-strict-aliasing -ftrivial-auto-var-init=zero -Whardened -Werror=trampolines
+NERO_OPENSSF_CFLAGS := -Wall -Wextra -Wformat -Wformat=2 -Wconversion -Wsign-conversion -Wtrampolines -Wimplicit-fallthrough -Walloca -Wshadow -Wundef -Wformat-signedness -Wstrict-prototypes -Wold-style-definition -Werror=implicit -Werror=incompatible-pointer-types -Werror=int-conversion -ffunction-sections -fdata-sections -fstack-protector-strong -fno-delete-null-pointer-checks -fno-strict-overflow -fno-strict-aliasing -ftrivial-auto-var-init=zero -Whardened -Werror=trampolines
+NERO_OPENSSF_CXXFLAGS := -Wall -Wextra -Wformat -Wformat=2 -Wconversion -Wsign-conversion -Wtrampolines -Wimplicit-fallthrough -Walloca -Wshadow -Wundef -Wformat-signedness -ffunction-sections -fdata-sections -fstack-protector-strong -fno-delete-null-pointer-checks -fno-strict-overflow -fno-strict-aliasing -ftrivial-auto-var-init=zero -Whardened -Werror=trampolines
 NERO_OPENSSF_CPPFLAGS :=

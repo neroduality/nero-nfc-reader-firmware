@@ -14,9 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Host-side CI on linux/amd64 GitHub runners: lint gate, then container matrix (`make test`).
-# Runs on push/PR, and workflow_dispatch.
-# Local reproduction: make ci-local;
+# Host-side CI on linux/amd64 GitHub runners: lint gate, then container matrix
+# (Debug + Release unit tests + scan-build per container). Runs on push/PR and
+# workflow_dispatch.
+# Local reproduction: make ci-local
 name: Main CI
 
 on:
@@ -41,7 +42,7 @@ jobs:
     name: Lint (make lint)
     runs-on: ubuntu-24.04
     container:
-      image: debian:sid-slim@sha256:54f7a23f03be1e9fe2849c61a7455588ea29b84c1659440f8ece2aea4c9871af
+      image: docker.io/library/debian:sid-slim@sha256:07a3205e8583fdff12d2b05bd030f50437e9fd340ee616df0c05dc77af75767b
       options: --platform linux/amd64
     timeout-minutes: 360
 
@@ -65,7 +66,7 @@ jobs:
             exit 1
           fi
 
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
@@ -76,7 +77,7 @@ jobs:
         id: lint_kit_cfg
         run: bash .github/scripts/lint-kit-config.sh --github-output "$(pwd)"
 
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: ${{ steps.lint_kit_cfg.outputs.repository }}
           ref: ${{ steps.lint_kit_cfg.outputs.ref }}
@@ -100,10 +101,10 @@ jobs:
         include:
           - id: debian-sid
             name: Debian sid
-            image: debian:sid-slim@sha256:54f7a23f03be1e9fe2849c61a7455588ea29b84c1659440f8ece2aea4c9871af
-          - id: fedora-43
-            name: Fedora 43
-            image: fedora:43@sha256:762d73ba1c455232b0272c5d445a34f36c4b9f421cbc05ce8102552325b6a222
+            image: docker.io/library/debian:sid-slim@sha256:07a3205e8583fdff12d2b05bd030f50437e9fd340ee616df0c05dc77af75767b
+          - id: fedora-45
+            name: Fedora 45
+            image: docker.io/library/fedora:45@sha256:a7d72ba2745b100a3351087472e5ee7b2450af7cf331e7673007e3817612839c
 
     container:
       image: ${{ matrix.image }}
@@ -121,20 +122,51 @@ jobs:
           if command -v apt-get >/dev/null 2>&1; then
             export DEBIAN_FRONTEND=noninteractive
             apt-get update -qq
-            apt-get install -y --no-install-recommends ca-certificates git tar
+            # clang-tools → clang-NN for scan-build. Skip the `clang` metapackage:
+            # bare clang on PATH skews lint-kit host_target_triple vs /usr/bin/cc.
+            # llvm-N provides llvm-ar-N and llvm-ranlib-N (not in clang-tools).
+            apt-get install -y --no-install-recommends ca-certificates git tar clang-tools
+            scan_build_path="$(readlink -f -- "$(command -v scan-build)")"
+            if [[ ${scan_build_path} =~ scan-build-([0-9]+) ]]; then
+              apt-get install -y --no-install-recommends "llvm-${BASH_REMATCH[1]}"
+            fi
           elif command -v dnf >/dev/null 2>&1; then
-            dnf install -y --setopt=install_weak_deps=False ca-certificates git tar
+            dnf install -y --setopt=install_weak_deps=False ca-certificates git tar clang-analyzer
             dnf clean all
           else
             printf 'error: unsupported base image (need apt-get or dnf)\n' >&2
             exit 1
           fi
 
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
-      - name: Release unit tests (fresh CMake; ci-run-test-container.sh)
+      - name: Debug + Release unit tests + scan-build (ci-run-tests.sh)
         env:
           CI_SKIP_CHECKOUT_PREREQUISITES: "1"
-        run: bash .github/scripts/ci-run-test-container.sh
+        run: bash .github/scripts/ci-run-tests.sh
+
+      - name: Stage scan-build artifact
+        if: always()
+        run: |
+          set -euo pipefail
+          mkdir -p tests/scan-build-report
+          if [[ ! -f tests/scan-build-report/summary.txt ]] &&
+            ! compgen -G 'tests/scan-build-report/*/index.html' >/dev/null; then
+            {
+              printf 'completed_at: %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+              printf 'exit_status: unknown\n'
+              printf 'bug_reports: 0\n'
+              printf 'html_reports: none\n'
+              printf 'note: scan-build did not complete in this job (an earlier step may have failed).\n'
+            } >tests/scan-build-report/summary.txt
+          fi
+
+      - name: Upload scan-build report
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: scan-build-${{ matrix.id }}
+          path: tests/scan-build-report
+          if-no-files-found: warn

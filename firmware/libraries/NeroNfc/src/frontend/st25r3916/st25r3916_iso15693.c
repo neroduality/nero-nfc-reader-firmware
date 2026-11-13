@@ -31,21 +31,25 @@
 #define ST25_ISO15693_STREAM_11_1OF4 0x80u
 #define ST25_ISO15693_MAX_STREAM_FRAME 128u
 
+#define K_ST25_V_CRC_POLY 0x8408u
+#define K_ST25_V_DIBIT_MASK 0x03u
+#define K_ST25_V_DIBIT_SHIFT 2u
+#define K_ST25_V_SOF_MASK 0x1Fu
+#define K_ST25_V_EOF_HIGH_MASK 0xE0u
+#define K_ST25_V_INFO_FLAG_DSFID 0x02u
+#define K_ST25_V_INFO_FLAG_AFI 0x04u
+#define K_ST25_V_BLOCK_SIZE_MASK 0x1Fu
+
 enum {
   K_ST25_V_CRC_INIT = 0xFFFFu,
-  K_ST25_V_CRC_POLY = 0x8408u,
   K_ST25_V_STREAM_NIBBLES_PER_BYTE = 4u,
-  K_ST25_V_DIBIT_MASK = 0x03u,
-  K_ST25_V_DIBIT_SHIFT = 2u,
   K_ST25_V_DIBIT0 = 0u,
   K_ST25_V_DIBIT1 = 1u,
   K_ST25_V_DIBIT2 = 2u,
   K_ST25_V_CRC_LEN = 2u,
   K_ST25_V_MANCHESTER_START_POS = 5u,
   K_ST25_V_STREAM_MIN_IN_LEN = 3u,
-  K_ST25_V_SOF_MASK = 0x1Fu,
   K_ST25_V_SOF_EXPECT = 0x17u,
-  K_ST25_V_EOF_HIGH_MASK = 0xE0u,
   K_ST25_V_EOF_HIGH_EXPECT = 0xA0u,
   K_ST25_V_EOF_LOW_EXPECT = 0x03u,
   K_ST25_V_MAN_ONE = 0x02u,
@@ -66,10 +70,7 @@ enum {
   K_ST25_V_GET_SYS_INFO_CMD_CAP = 12u,
   K_ST25_V_GET_SYS_INFO_RX_CAP = 16u,
   K_ST25_V_GET_SYS_INFO_MIN_RX = 11u,
-  K_ST25_V_INFO_FLAG_DSFID = 0x02u,
-  K_ST25_V_INFO_FLAG_AFI = 0x04u,
   K_ST25_V_MEM_SIZE_FIELD_LEN = 2u,
-  K_ST25_V_BLOCK_SIZE_MASK = 0x1Fu,
   K_ST25_V_IDX2 = 2u,
 };
 
@@ -80,10 +81,10 @@ uint16_t st25_iso15693_crc16(const uint8_t* data, uint16_t len) {
     return 0u;
   }
   for (uint16_t i = 0u; i < len; i++) {
-    crc = (uint16_t)(crc ^ (uint16_t)(data[i]));
+    crc = (uint16_t)(crc ^ (uint16_t)data[i]);
     for (uint8_t bit = 0u; bit < NFC_BITS_PER_BYTE; bit++) {
       if ((crc & 0x0001u) != 0u) {
-        crc = (uint16_t)((crc >> 1) ^ K_ST25_V_CRC_POLY);
+        crc = (uint16_t)(((uint32_t)crc >> 1) ^ K_ST25_V_CRC_POLY);
       } else {
         crc = (uint16_t)(crc >> 1);
       }
@@ -102,25 +103,25 @@ NERO_NFC_NODISCARD bool st25_iso15693_stream_put1of4(uint8_t data, uint8_t* out,
   for (unsigned i = 0u; i < (unsigned)K_ST25_V_STREAM_NIBBLES_PER_BYTE; i++) {
     switch (data & K_ST25_V_DIBIT_MASK) {
       case K_ST25_V_DIBIT0:
-        if (!nero_nfc_store_u8(out, (size_t)(out_max), (size_t)((*pos)++),
+        if (!nero_nfc_store_u8(out, (size_t)out_max, (size_t)((*pos)++),
                                (uint8_t)(ST25_ISO15693_STREAM_00_1OF4))) {
           return false;
         }
         break;
       case K_ST25_V_DIBIT1:
-        if (!nero_nfc_store_u8(out, (size_t)(out_max), (size_t)((*pos)++),
+        if (!nero_nfc_store_u8(out, (size_t)out_max, (size_t)((*pos)++),
                                (uint8_t)(ST25_ISO15693_STREAM_01_1OF4))) {
           return false;
         }
         break;
       case K_ST25_V_DIBIT2:
-        if (!nero_nfc_store_u8(out, (size_t)(out_max), (size_t)((*pos)++),
+        if (!nero_nfc_store_u8(out, (size_t)out_max, (size_t)((*pos)++),
                                (uint8_t)(ST25_ISO15693_STREAM_10_1OF4))) {
           return false;
         }
         break;
       default:
-        if (!nero_nfc_store_u8(out, (size_t)(out_max), (size_t)((*pos)++),
+        if (!nero_nfc_store_u8(out, (size_t)out_max, (size_t)((*pos)++),
                                (uint8_t)(ST25_ISO15693_STREAM_11_1OF4))) {
           return false;
         }
@@ -147,7 +148,7 @@ NERO_NFC_NODISCARD bool st25_iso15693_stream_encode(const uint8_t* tx,
       (out_max < K_ST25_V_CRC_LEN)) {
     return false;
   }
-  if (!nero_nfc_store_u8(out, (size_t)(out_max), (size_t)(pos++),
+  if (!nero_nfc_store_u8(out, (size_t)out_max, (size_t)(pos++),
                          (uint8_t)(ST25_ISO15693_STREAM_SOF_1OF4))) {
     return false;
   }
@@ -163,7 +164,7 @@ NERO_NFC_NODISCARD bool st25_iso15693_stream_encode(const uint8_t* tx,
                                     out_max, &pos)) {
     return false;
   }
-  if (!nero_nfc_store_u8(out, (size_t)(out_max), (size_t)(pos++),
+  if (!nero_nfc_store_u8(out, (size_t)out_max, (size_t)(pos++),
                          (uint8_t)(ST25_ISO15693_STREAM_EOF_1OF4))) {
     return false;
   }
@@ -176,9 +177,9 @@ uint8_t st25_iso15693_stream_bit(const uint8_t* buf, uint16_t buf_len,
   if (buf_len <= (bit_pos / NFC_BITS_PER_BYTE)) {
     return 0u;
   }
-  return (uint8_t)(((unsigned)(nero_nfc_u8_at(
-                        buf, (size_t)(buf_len),
-                        (size_t)(bit_pos / NFC_BITS_PER_BYTE))) >>
+  return (uint8_t)(((unsigned)nero_nfc_u8_at(
+                        buf, (size_t)buf_len,
+                        (size_t)(bit_pos / NFC_BITS_PER_BYTE)) >>
                     (bit_pos % NFC_BITS_PER_BYTE)) &
                    0x01u);
 }
@@ -195,8 +196,8 @@ int st25_iso15693_stream_decode(const uint8_t* in, uint16_t in_len,
   if ((in == NERO_NFC_NULL) || (out == NERO_NFC_NULL) ||
       (in_len < K_ST25_V_STREAM_MIN_IN_LEN) ||
       (in_len > ST25_ISO15693_MAX_STREAM_FRAME) ||
-      ((nero_nfc_u8_at(in, (size_t)(in_len), (size_t)(0)) &
-        K_ST25_V_SOF_MASK) != K_ST25_V_SOF_EXPECT)) {
+      ((nero_nfc_u8_at(in, (size_t)in_len, (size_t)0) & K_ST25_V_SOF_MASK) !=
+       K_ST25_V_SOF_EXPECT)) {
     return -1;
   }
 
@@ -212,7 +213,7 @@ int st25_iso15693_stream_decode(const uint8_t* in, uint16_t in_len,
         (((manchester_pos / NFC_BITS_PER_BYTE) + 1u) < in_len) &&
         ((in[manchester_pos / NFC_BITS_PER_BYTE] & K_ST25_V_EOF_HIGH_MASK) ==
          K_ST25_V_EOF_HIGH_EXPECT) &&
-        (nero_nfc_u8_at(in, (size_t)(in_len),
+        (nero_nfc_u8_at(in, (size_t)in_len,
                         (size_t)((manchester_pos / NFC_BITS_PER_BYTE) + 1u)) ==
          K_ST25_V_EOF_LOW_EXPECT)) {
       break;
@@ -254,7 +255,7 @@ int st25_iso15693_stream_decode(const uint8_t* in, uint16_t in_len,
   for (uint16_t i = 0u; i < (uint16_t)(byte_len - K_ST25_V_CRC_LEN); i++) {
     out[i] = tmp[i];
   }
-  return (int)(byte_len - K_ST25_V_CRC_LEN);
+  return byte_len - K_ST25_V_CRC_LEN;
 }
 
 NERO_NFC_NODISCARD bool st25_iso15693_inventory(
@@ -331,7 +332,7 @@ int st25_iso15693_read_block(st25_iso15693_transceive_fn_t transceive,
   if (!nero_nfc_copy_bytes(buf, buf_len, 0u, &rx[1], copy_len)) {
     return -1;
   }
-  return (int)(copy_len);
+  return (int)copy_len;
 }
 
 NERO_NFC_NODISCARD bool st25_iso15693_write_block(
@@ -420,11 +421,11 @@ NERO_NFC_NODISCARD bool st25_iso15693_get_system_info(
   if ((info_flags & K_ST25_V_INFO_FLAG_AFI) == 0u) {
     return false;
   }
-  if ((uint16_t)(pos + K_ST25_V_MEM_SIZE_FIELD_LEN) > (uint16_t)(rlen)) {
+  if ((uint16_t)(pos + K_ST25_V_MEM_SIZE_FIELD_LEN) > (uint16_t)rlen) {
     return false;
   }
   if (nb_blocks_out != NERO_NFC_NULL) {
-    *nb_blocks_out = (uint16_t)((uint16_t)(rx[pos]) + 1u);
+    *nb_blocks_out = (uint16_t)((uint16_t)rx[pos] + 1u);
   }
   if (block_size_out != NERO_NFC_NULL) {
     *block_size_out = (uint8_t)((rx[pos + 1u] & K_ST25_V_BLOCK_SIZE_MASK) + 1u);
@@ -471,7 +472,7 @@ int st25_iso15693_ext_read_block(st25_iso15693_transceive_fn_t transceive,
   if (!nero_nfc_copy_bytes(buf, buf_len, 0u, &rx[1], copy_len)) {
     return -1;
   }
-  return (int)(copy_len);
+  return (int)copy_len;
 }
 
 NERO_NFC_NODISCARD bool st25_iso15693_ext_write_block(

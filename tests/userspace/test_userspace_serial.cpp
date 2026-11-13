@@ -36,7 +36,6 @@ namespace {
 enum {
   kPtsPathScratchCap = 256u,
 };
-}  // namespace
 
 class UserspaceSerialTest : public ::testing::Test {
  protected:
@@ -46,6 +45,29 @@ class UserspaceSerialTest : public ::testing::Test {
     nero_nfc::NeroNfcUtestSetSerialResetSkipDelays(false);
   }
 };
+
+class PtyMaster {
+ public:
+  PtyMaster() : fd_(posix_openpt(O_RDWR | O_NOCTTY)) {}
+
+  PtyMaster(const PtyMaster&) = delete;
+  PtyMaster& operator=(const PtyMaster&) = delete;
+  PtyMaster(PtyMaster&&) = delete;
+  PtyMaster& operator=(PtyMaster&&) = delete;
+
+  ~PtyMaster() {
+    if (fd_ >= 0) {
+      (void)close(fd_);
+    }
+  }
+
+  [[nodiscard]] int Fd() const { return fd_; }
+
+ private:
+  int fd_;
+};
+
+}  // namespace
 
 TEST_F(UserspaceSerialTest, OpenHookShortCircuitsKernelOpen) {
   bool called = false;
@@ -81,7 +103,8 @@ TEST(SerialOpen, OpenFailsWhenPathIsRegularFile) {
 }
 
 TEST_F(UserspaceSerialTest, ResetWithSkipDelaysTouchesIoctlOnPty) {
-  int const master = posix_openpt(O_RDWR | O_NOCTTY);
+  const PtyMaster pty;
+  const int master = pty.Fd();
   if (master < 0) {
     GTEST_SKIP() << "posix_openpt not available";
   }
@@ -95,11 +118,11 @@ TEST_F(UserspaceSerialTest, ResetWithSkipDelaysTouchesIoctlOnPty) {
   nero_nfc::NeroNfcUtestSetSerialResetSkipDelays(true);
   (void)nero_nfc::SerialReset(fd);
   EXPECT_TRUE(nero_nfc::SerialClose(fd));
-  close(master);
 }
 
 TEST(SerialOpen, OpensPtySlaveWhenAvailable) {
-  int const master = posix_openpt(O_RDWR | O_NOCTTY);
+  const PtyMaster pty;
+  const int master = pty.Fd();
   if (master < 0) {
     GTEST_SKIP() << "posix_openpt not available";
   }
@@ -110,5 +133,4 @@ TEST(SerialOpen, OpensPtySlaveWhenAvailable) {
   int const fd = nero_nfc::SerialOpen(std::string(&pts[0]));
   ASSERT_GE(fd, 0);
   EXPECT_TRUE(nero_nfc::SerialClose(fd));
-  close(master);
 }

@@ -76,26 +76,25 @@ static inline uint16_t reader_ccid_build_t0_params(uint8_t* param,
   if (cap < (unsigned)NFC_CCID_T0_PARAMS_LEN || param == NERO_NFC_NULL) {
     return 0u;
   }
-  if (!nero_nfc_store_u8(param, (size_t)(cap), (size_t)(0),
-                         (uint8_t)(READER_CCID_PARAM_BM_FINDEX_DINDEX))) {
+  if (!nero_nfc_store_u8(param, (size_t)cap, (size_t)0,
+                         (uint8_t)READER_CCID_PARAM_BM_FINDEX_DINDEX)) {
     return 0u;
   }
-  if (!nero_nfc_store_u8(param, (size_t)(cap), (size_t)(1), (uint8_t)(0u))) {
+  if (!nero_nfc_store_u8(param, (size_t)cap, (size_t)1, (uint8_t)0u)) {
     return 0u;
   }
-  if (!nero_nfc_store_u8(param, (size_t)(cap),
-                         (size_t)(READER_CCID_PARAM_IDX_BGUARDTIME),
-                         (uint8_t)(0u))) {
+  if (!nero_nfc_store_u8(param, (size_t)cap,
+                         (size_t)READER_CCID_PARAM_IDX_BGUARDTIME,
+                         (uint8_t)0u)) {
     return 0u;
   }
-  if (!nero_nfc_store_u8(param, (size_t)(cap),
-                         (size_t)(READER_CCID_PARAM_IDX_BWAITING),
-                         (uint8_t)(READER_CCID_PARAM_BWAITING_T0))) {
+  if (!nero_nfc_store_u8(param, (size_t)cap,
+                         (size_t)READER_CCID_PARAM_IDX_BWAITING,
+                         (uint8_t)READER_CCID_PARAM_BWAITING_T0)) {
     return 0u;
   }
-  if (!nero_nfc_store_u8(param, (size_t)(cap),
-                         (size_t)(READER_CCID_PARAM_IDX_BCLKSTOP),
-                         (uint8_t)(0u))) {
+  if (!nero_nfc_store_u8(param, (size_t)cap,
+                         (size_t)READER_CCID_PARAM_IDX_BCLKSTOP, (uint8_t)0u)) {
     return 0u;
   }
   return (uint16_t)NFC_CCID_T0_PARAMS_LEN;
@@ -108,35 +107,34 @@ static inline uint16_t reader_ccid_build_t1_params(uint8_t* param,
   if (cap < (unsigned)NFC_CCID_T1_PARAMS_LEN || param == NERO_NFC_NULL) {
     return 0u;
   }
-  if (!nero_nfc_store_u8(param, (size_t)(cap), (size_t)(0),
-                         (uint8_t)(READER_CCID_PARAM_BM_FINDEX_DINDEX))) {
+  if (!nero_nfc_store_u8(param, (size_t)cap, (size_t)0,
+                         (uint8_t)READER_CCID_PARAM_BM_FINDEX_DINDEX)) {
     return 0u;
   }
-  if (!nero_nfc_store_u8(param, (size_t)(cap), (size_t)(1), (uint8_t)(0u))) {
+  if (!nero_nfc_store_u8(param, (size_t)cap, (size_t)1, (uint8_t)0u)) {
     return 0u;
   }
-  if (!nero_nfc_store_u8(param, (size_t)(cap),
-                         (size_t)(READER_CCID_PARAM_IDX_BGUARDTIME),
-                         (uint8_t)(0u))) {
+  if (!nero_nfc_store_u8(param, (size_t)cap,
+                         (size_t)READER_CCID_PARAM_IDX_BGUARDTIME,
+                         (uint8_t)0u)) {
     return 0u;
   }
-  if (!nero_nfc_store_u8(param, (size_t)(cap),
-                         (size_t)(READER_CCID_PARAM_IDX_BWAITING),
-                         (uint8_t)(READER_CCID_PARAM_BWAITING_T1))) {
+  if (!nero_nfc_store_u8(param, (size_t)cap,
+                         (size_t)READER_CCID_PARAM_IDX_BWAITING,
+                         (uint8_t)READER_CCID_PARAM_BWAITING_T1)) {
     return 0u;
   }
-  if (!nero_nfc_store_u8(param, (size_t)(cap),
-                         (size_t)(READER_CCID_PARAM_IDX_BCLKSTOP),
-                         (uint8_t)(0u))) {
+  if (!nero_nfc_store_u8(param, (size_t)cap,
+                         (size_t)READER_CCID_PARAM_IDX_BCLKSTOP, (uint8_t)0u)) {
     return 0u;
   }
-  if (!nero_nfc_store_u8(param, (size_t)(cap),
-                         (size_t)(READER_CCID_PARAM_IDX_BIFSC),
-                         (uint8_t)(READER_CCID_PARAM_BIFSC))) {
+  if (!nero_nfc_store_u8(param, (size_t)cap,
+                         (size_t)READER_CCID_PARAM_IDX_BIFSC,
+                         (uint8_t)READER_CCID_PARAM_BIFSC)) {
     return 0u;
   }
-  if (!nero_nfc_store_u8(param, (size_t)(cap),
-                         (size_t)(READER_CCID_PARAM_IDX_BNAD), (uint8_t)(0u))) {
+  if (!nero_nfc_store_u8(param, (size_t)cap, (size_t)READER_CCID_PARAM_IDX_BNAD,
+                         (uint8_t)0u)) {
     return 0u;
   }
   return (uint16_t)NFC_CCID_T1_PARAMS_LEN;
@@ -157,31 +155,30 @@ NERO_NFC_NODISCARD static inline bool reader_ccid_encode_params_response(
       response_len > buf_cap) {
     return false;
   }
-  if (!nero_nfc_store_u8(buf, buf_cap, (size_t)(0), rdr_pc_parameters)) {
+  if (!nero_nfc_store_u8(buf, buf_cap, (size_t)0, rdr_pc_parameters)) {
     return 0u;
   }
   if (!reader_ccid_store_u32_le(buf, buf_cap, 1u, parm_len)) {
     return false;
   }
-  if (!nero_nfc_store_u8(buf, buf_cap, (size_t)(NFC_CCID_BULK_SLOT_OFFSET),
-                         (uint8_t)(0u))) {
+  if (!nero_nfc_store_u8(buf, buf_cap, (size_t)NFC_CCID_BULK_SLOT_OFFSET,
+                         (uint8_t)0u)) {
     return 0u;
   }
-  if (!nero_nfc_store_u8(buf, buf_cap, (size_t)(NFC_CCID_BULK_SEQ_OFFSET),
+  if (!nero_nfc_store_u8(buf, buf_cap, (size_t)NFC_CCID_BULK_SEQ_OFFSET,
                          seq8)) {
     return 0u;
   }
-  if (!nero_nfc_store_u8(buf, buf_cap,
-                         (size_t)(NFC_CCID_BULK_LEVEL_PARAM_OFFSET), icclvl)) {
+  if (!nero_nfc_store_u8(buf, buf_cap, (size_t)NFC_CCID_BULK_LEVEL_PARAM_OFFSET,
+                         icclvl)) {
     return 0u;
   }
   if (!nero_nfc_store_u8(buf, buf_cap,
-                         (size_t)(NFC_CCID_BULK_LEVEL_PARAM2_OFFSET),
-                         err_code)) {
+                         (size_t)NFC_CCID_BULK_LEVEL_PARAM2_OFFSET, err_code)) {
     return 0u;
   }
   if (!nero_nfc_store_u8(buf, buf_cap,
-                         (size_t)(NFC_CCID_BULK_LEVEL_PARAM3_OFFSET),
+                         (size_t)NFC_CCID_BULK_LEVEL_PARAM3_OFFSET,
                          protocol_num)) {
     return 0u;
   }
@@ -197,8 +194,7 @@ static inline uint8_t reader_ccid_param_error_for_request(
     uint8_t protocol_t1) {
   uint32_t data_len = 0u;
   if ((frame != NERO_NFC_NULL) && (nbytes >= NFC_CCID_BULK_HEADER_LEN) &&
-      (nero_nfc_u8_at(frame, (size_t)(nbytes), (size_t)(0)) ==
-       set_params_msg)) {
+      (nero_nfc_u8_at(frame, (size_t)nbytes, (size_t)0) == set_params_msg)) {
     /* [CCID1.10] Rev 1.10 section 6.2.6 -- report the lowest offending byte
      * offset first: dwLength (1), then bProtocolNum (7), then abRFU[0]/[1]
      * (8/9). */
@@ -272,8 +268,7 @@ reader_ccid_encode_data_rate_clock_response(uint8_t* buf18, size_t buf_cap,
       !nero_nfc_store_u8(buf18, buf_cap, NFC_CCID_BULK_LEVEL_PARAM_OFFSET,
                          icc_level) ||
       !nero_nfc_store_u8(buf18, buf_cap,
-                         (size_t)(NFC_CCID_BULK_LEVEL_PARAM2_OFFSET),
-                         err_code)) {
+                         (size_t)NFC_CCID_BULK_LEVEL_PARAM2_OFFSET, err_code)) {
     return false;
   }
   return nero_nfc_store_u8(buf18, buf_cap, NFC_CCID_BULK_LEVEL_PARAM3_OFFSET,

@@ -19,6 +19,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <iterator>
 #include <stdexcept>
 
 namespace nero_nfc_test {
@@ -41,6 +42,16 @@ template <typename T, std::size_t N>
     throw std::out_of_range("nero_nfc_test::At");
   }
   return arr[index];
+}
+
+/* Contiguous views such as std::span have no .at() member. */
+template <typename View>
+[[nodiscard]] constexpr auto At(const View& view, std::size_t index)
+    -> decltype(*view.begin()) {
+  if (index >= view.size()) {
+    throw std::out_of_range("nero_nfc_test::At");
+  }
+  return *std::next(view.begin(), static_cast<std::ptrdiff_t>(index));
 }
 
 }  // namespace nero_nfc_test

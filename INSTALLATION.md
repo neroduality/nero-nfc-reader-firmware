@@ -27,7 +27,7 @@ Two firmware modes: **serial reader/writer (CDC)** or **USB smart-card reader
 
 ## Host
 
-Install host dependencies and CLIs (reader, writer, and `nero_nfc_uart`).
+Install host dependencies and CLIs (reader, writer, `nero_nfc_uart`, and `fido_token`).
 
 ```bash
 make deps
@@ -103,4 +103,5 @@ Step-by-step walkthroughs after install:
 - [TUTORIAL_TAGS.md](docs/TUTORIAL_TAGS.md) -- read and write NDEF on Type 2, Type 4, and
   Type 5 tags (serial or PC/SC)
 - [TUTORIAL_WEBAUTHN_CCID.md](docs/TUTORIAL_WEBAUTHN_CCID.md) -- WebAuthn with CCID
+- [FIDO_TOKEN.md](docs/FIDO_TOKEN.md) -- wipe a security key and set a new PIN
   firmware and NFC FIDO security keys/cards

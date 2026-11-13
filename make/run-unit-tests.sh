@@ -104,7 +104,7 @@ nero_unit_test_profile() {
     "${SANITIZE_UNDEFINED:-0}" \
     "${SANITIZE_THREAD:-0}" \
     "${debug_sanitizers_default}" \
-    "${NERO_USE_SYSTEM_GTEST:-0}" \
+    "${NERO_USE_SYSTEM_GTEST:-1}" \
     "${NERO_ENABLE_EXTENDED_SANITIZERS:-1}" \
     "${NERO_TESTS_ENABLE_PCSC:-0}"
 }
@@ -132,7 +132,7 @@ Environment (optional):
   NERO_ENABLE_EXTENDED_SANITIZERS=OFF   CMake: skip extra -fsanitize=* probes (default ON in CMake).
   PERF_RECORD=1           After tests, run `perf record -g` on the binary (Linux perf_events).
                           Non-fatal if perf is missing or lacks permission (try: sysctl kernel.perf_event_paranoid).
-  NERO_USE_SYSTEM_GTEST=1 Pass -DNERO_USE_SYSTEM_GTEST=ON (requires distro libgtest-dev / gtest-devel).
+  NERO_USE_SYSTEM_GTEST=0 Build googletest via FetchContent instead of distro libgtest-dev / gtest-devel.
 
 Fetches make third-party-nfc-libs (ST25R3916 + NFC-RFAL headers) before CMake.
 On Linux, this script runs make/install-linux-deps.sh only when
@@ -142,7 +142,7 @@ INSTALL_DEPS=0; use `make deps` or `INSTALL_DEPS=1 make test` on a fresh host.
 Typical workflows:
   bash make/run-unit-tests.sh
   COVERAGE=1 bash make/run-unit-tests.sh
-  bash make/scan-build-tests.sh                # Clang analyzer
+  bash .github/scripts/ci-scan-build.sh        # Clang analyzer
 
 This script targets cmake 3.20+, Ninja or Make, and a C++23 toolchain.
 Direct invocation defaults to Debug with ASan+UBSan. ``make test`` uses Release without
@@ -216,7 +216,7 @@ else
   cmake_args+=(-DNERO_ENABLE_COVERAGE=OFF)
 fi
 
-if [[ ${NERO_USE_SYSTEM_GTEST:-0} == "1" ]]; then
+if [[ ${NERO_USE_SYSTEM_GTEST:-1} == "1" ]]; then
   cmake_args+=(-DNERO_USE_SYSTEM_GTEST=ON)
 else
   cmake_args+=(-DNERO_USE_SYSTEM_GTEST=OFF)
@@ -321,7 +321,7 @@ if [[ -f "${build_dir}/CMakeCache.txt" ]]; then
   w_sa="$(want_cache_on "${SANITIZE_ADDRESS:-0}")"
   w_su="$(want_cache_on "${SANITIZE_UNDEFINED:-0}")"
   w_st="$(want_cache_on "${SANITIZE_THREAD:-0}")"
-  w_gt="$(want_cache_on "${NERO_USE_SYSTEM_GTEST:-0}")"
+  w_gt="$(want_cache_on "${NERO_USE_SYSTEM_GTEST:-1}")"
   w_dbg="$(want_cache_on "${debug_sanitizers_default}")"
   if [[ -n ${c_cov} && ${c_cov} != "${w_cov}" ]] ||
     [[ -n ${c_sa} && ${c_sa} != "${w_sa}" ]] ||

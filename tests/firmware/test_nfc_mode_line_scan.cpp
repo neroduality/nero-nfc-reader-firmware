@@ -104,7 +104,7 @@ TEST(NfcModeLineScan, PrefixMismatchFirstChar) {
   std::vector<uint8_t> pb;
   EXPECT_EQ(FeedAll(&st, "x", &pb), NFC_MODE_SCAN_PUSHBACK_STOP);
   ASSERT_EQ(pb.size(), 1u);
-  EXPECT_EQ(pb[0], 'x');
+  EXPECT_EQ(pb.at(0), 'x');
 }
 
 TEST(NfcModeLineScan, BackToBackReaderThenWriter) {

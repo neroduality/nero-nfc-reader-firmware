@@ -31,7 +31,6 @@ EXPECTED = {
     "tusb.o": "tusb.c",
     "tusb_fifo.o": "common/tusb_fifo.c",
     "usbd.o": "device/usbd.c",
-    "usbd_control.o": "device/usbd_control.c",
     "dwc2_common.o": "portable/synopsys/dwc2/dwc2_common.c",
     "dcd_dwc2.o": "portable/synopsys/dwc2/dcd_dwc2.c",
 }

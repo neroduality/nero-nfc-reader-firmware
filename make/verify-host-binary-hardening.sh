@@ -32,7 +32,7 @@ if ! command -v readelf >/dev/null 2>&1; then
   exit 1
 fi
 
-expected_bins=(reader writer nero_nfc_uart)
+expected_bins=(reader writer nero_nfc_uart fido_token)
 fail=0
 
 check_pie() {

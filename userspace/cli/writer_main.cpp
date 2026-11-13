@@ -32,6 +32,7 @@
 #include "nero_nfc_io.hpp"
 #include "nero_nfc_pcsc.hpp"
 #include "nero_nfc_writer_payload.hpp"
+#include "nero_nfc_bounds.hpp"
 
 namespace {
 
@@ -43,7 +44,7 @@ void Usage(const char* argv0) {
       argv0);
   nero_nfc::NeroNfcStderrLine(R"(
 Bridge selection:
-  omit --bridge       Auto-select PC/SC when available, else CDC serial
+  omit --bridge       Auto-select: Nero PC/SC reader, else CDC serial, else any PC/SC reader
   --bridge=cdc        Require the CDC/UART firmware interface
   --bridge=pcsc       Require the CCID firmware interface
 
@@ -105,8 +106,8 @@ int main(int argc, char** argv) {
   std::vector<std::vector<std::uint8_t>> ndef_records;
   std::vector<std::string> cdc_extra;
   std::vector<std::string> pcsc_unsupported_args;
-  auto add_record = [&](std::vector<std::uint8_t> record,
-                        std::string_view flag) {
+  const auto add_record = [&](std::vector<std::uint8_t> record,
+                              std::string_view flag) {
     if (record.empty()) {
       nero_nfc::NeroNfcStderrLine("error: invalid or too-large {}", flag);
       return false;
@@ -117,7 +118,7 @@ int main(int argc, char** argv) {
 
   const auto args = std::span(argv, static_cast<std::size_t>(argc));
   for (std::size_t i = 1u; i < args.size(); ++i) {
-    std::string const arg(args[i]);
+    const std::string arg(nero_nfc::At(args, i));
     auto uri = FlagValue(arg, "uri");
     auto link = FlagValue(arg, "link");
     auto unit_link = FlagValue(arg, "unit-link");
@@ -141,17 +142,17 @@ int main(int argc, char** argv) {
     auto wifi = FlagValue(arg, "wifi");
     auto data = FlagValue(arg, "data");
     if (IsHelpArg(arg)) {
-      Usage(args[0]);
+      Usage(nero_nfc::At(args, 0));
       return nero_nfc::kCliExitSuccess;
     }
     if (arg.starts_with("--bridge=")) {
-      auto parsed = nero_nfc::ParseHostBridge(
+      const auto parsed = nero_nfc::ParseHostBridge(
           arg.substr(std::string("--bridge=").size()));
       if (!parsed.has_value()) {
         nero_nfc::NeroNfcStderrLine(
             "error: unsupported --bridge value \"{}\" (use cdc or pcsc)",
             arg.substr(std::string("--bridge=").size()));
-        Usage(args[0]);
+        Usage(nero_nfc::At(args, 0));
         return nero_nfc::kCliExitUsageError;
       }
       requested_bridge = parsed;
@@ -165,7 +166,7 @@ int main(int argc, char** argv) {
             "error: unsupported --pcsc-share value \"{}\" (use shared or "
             "exclusive)",
             arg.substr(std::string("--pcsc-share=").size()));
-        Usage(args[0]);
+        Usage(nero_nfc::At(args, 0));
         return nero_nfc::kCliExitUsageError;
       }
       pcsc_share_mode = *parsed;
@@ -283,8 +284,9 @@ int main(int argc, char** argv) {
 
   nero_nfc::HostBridgeSelection selection;
   std::string err;
-  if (!nero_nfc::ChooseHostBridge(requested_bridge, opts.port_, pcsc_reader,
-                                  selection, err, pcsc_share_specified)) {
+  if (!nero_nfc::WaitForHostBridge(requested_bridge, opts.port_, pcsc_reader,
+                                   selection, err, pcsc_share_specified,
+                                   "writer")) {
     nero_nfc::NeroNfcStderrLine("error: {}", err);
     return nero_nfc::kCliExitUsageError;
   }

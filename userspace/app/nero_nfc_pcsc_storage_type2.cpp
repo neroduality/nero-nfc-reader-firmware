@@ -147,7 +147,7 @@ static bool ReadStorageNdefTlv(PcscCard& card, std::uint16_t first_unit,
     err = "invalid seeded storage READ BINARY geometry";
     return false;
   }
-  auto scan_raw = [&]() -> std::optional<bool> {
+  const auto scan_raw = [&] -> std::optional<bool> {
     if (raw.size() <= tlv_start_offset) {
       return std::nullopt;
     }

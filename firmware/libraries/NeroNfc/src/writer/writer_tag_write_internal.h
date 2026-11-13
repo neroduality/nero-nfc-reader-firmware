@@ -84,7 +84,7 @@ NERO_NFC_NODISCARD static inline bool writer_tag_write_storage_tlv_units(
       {
         char ndc[NERO_NFC_FORMAT_SNPRINTF_DEC_CAP];
         (void)nero_nfc_snprintf(ndc, sizeof ndc, "%u",
-                                (unsigned)(uint32_t)(unit));
+                                (unsigned)(uint32_t)unit);
         nero_nfc_log_write(ndc);
       }
       nero_nfc_log_line(" FAILED");

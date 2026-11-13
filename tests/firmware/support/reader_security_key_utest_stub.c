@@ -18,6 +18,7 @@
 #include "reader_context.h"
 #include "reader_hal_utest.h"
 #include "reader_security_key.h"
+#include "reader_security_key_utest_stub.h"
 
 #include "nero_nfc_mem_util.h"
 
@@ -109,9 +110,9 @@ bool reader_security_key_select_fido_probe(bool verbose,
   if ((rsp_out != NERO_NFC_NULL) && (rsp_cap >= TEST_LIT_2) &&
       (rsp_len_out != NERO_NFC_NULL)) {
     const uint8_t sw[] = {
-        g_select_fido_probe_ok ? (uint8_t)(TEST_LIT_0X90)
-                               : (uint8_t)(TEST_LIT_0X6A),
-        g_select_fido_probe_ok ? (uint8_t)(0x00u) : (uint8_t)(TEST_LIT_0X82),
+        g_select_fido_probe_ok ? (uint8_t)TEST_LIT_0X90
+                               : (uint8_t)TEST_LIT_0X6A,
+        g_select_fido_probe_ok ? (uint8_t)0x00u : (uint8_t)TEST_LIT_0X82,
     };
     (void)nero_nfc_copy_bytes(rsp_out, rsp_cap, 0u, &sw[0], sizeof(sw));
     *rsp_len_out = TEST_LIT_2;

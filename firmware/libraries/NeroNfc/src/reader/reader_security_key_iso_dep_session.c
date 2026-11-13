@@ -39,6 +39,11 @@ void nfc_frontend_ensure_tx_rx(nfc_frontend_t* frontend) { (void)frontend; }
 #include <stdint.h>
 #include "nero_nfc_format.h"
 
+#define READER_SECURITY_KEY_ISO14443A_SAK_CASCADE_BIT 0x04u
+#define READER_SECURITY_KEY_ISO_DEP_SBLOCK_DESELECT \
+  ((uint8_t)NFC_PCSC_ESCAPE_TRANSPARENT_INS)
+#define READER_SECURITY_KEY_ISO_DEP_SBLOCK_CID_BIT ISO_DEP_PCB_CID_BIT
+
 enum {
   READER_SECURITY_KEY_ISO_DEP_RATS_FSDI7_CID0 =
       (uint8_t)(NFC_TAG_T4T_RATS_PARAM_FSDI7),
@@ -63,7 +68,7 @@ enum {
   READER_SECURITY_KEY_ISO14443A_ANTICOLL_TX_CAP = 9u,
   READER_SECURITY_KEY_ISO14443A_SHORT_RX_CAP = 8u,
   READER_SECURITY_KEY_ISO14443A_ATQA_LEN = NFC_TAG_ATQA_LEN,
-  READER_SECURITY_KEY_ISO_DEP_RATS_RX_CAP = (uint16_t)(NFC_ISO14443_ATS_MAX),
+  READER_SECURITY_KEY_ISO_DEP_RATS_RX_CAP = (uint16_t)NFC_ISO14443_ATS_MAX,
   READER_SECURITY_KEY_ISO_DEP_SBLOCK_TX_CAP = 3u,
   READER_SECURITY_KEY_ISO14443A_CL1_UID_CASCADE_START = 1u,
   READER_SECURITY_KEY_ISO14443A_CL1_UID_CASCADE_END = 3u,
@@ -77,14 +82,10 @@ enum {
   READER_SECURITY_KEY_ISO14443A_SELECT_TX_LEN = 7u,
   READER_SECURITY_KEY_ISO14443A_UID_LEN = 4u,
   READER_SECURITY_KEY_ISO14443A_CASCADE_UID_LEN = 7u,
-  READER_SECURITY_KEY_ISO14443A_SAK_CASCADE_BIT = 0x04u,
   READER_SECURITY_KEY_ISO_DEP_CCID_HEARTBEAT_MS = 2000u,
   READER_SECURITY_KEY_ISO_DEP_FWT_TENTHS_DIVISOR = 100u,
   READER_SECURITY_KEY_ISO_DEP_FWT_TENTHS_ROUNDING = 50u,
   READER_SECURITY_KEY_ISO_DEP_FWT_PRINT_SCALE = 10u,
-  READER_SECURITY_KEY_ISO_DEP_SBLOCK_DESELECT =
-      (uint8_t)(NFC_PCSC_ESCAPE_TRANSPARENT_INS),
-  READER_SECURITY_KEY_ISO_DEP_SBLOCK_CID_BIT = ISO_DEP_PCB_CID_BIT,
   READER_SECURITY_KEY_ISO_DEP_SBLOCK_TX_LEN_WITH_CID = 2u,
   ISO_DEP_HW_SETTLE_MS = 2u,
   ISO_DEP_READER_RECONFIG_SETTLE_MS = 8u,
@@ -173,7 +174,7 @@ uint8_t reader_security_key_iso_dep_last_error(void) {
 #endif
 
 static void reader_security_key_iso_dep_reset_framing(void) {
-  G_ISO_DEP_RATS_PARAM = (uint8_t)(READER_SECURITY_KEY_ISO_DEP_RATS_FSDI7_CID0);
+  G_ISO_DEP_RATS_PARAM = (uint8_t)READER_SECURITY_KEY_ISO_DEP_RATS_FSDI7_CID0;
   G_ISO_DEP_CID = 0u;
   G_ISO_DEP_PCB_HAS_CID = false;
   G_ISO_DEP_LAST_INF_OFF = 0u;
@@ -205,7 +206,7 @@ static void iso_dep_dump_bytes(const char* label, const uint8_t* buf, int len) {
   nero_nfc_log_write(" len=");
   {
     char ndc[NERO_NFC_FORMAT_SNPRINTF_DEC_CAP];
-    (void)nero_nfc_snprintf(ndc, sizeof ndc, "%d", (int)((int32_t)(len)));
+    (void)nero_nfc_snprintf(ndc, sizeof ndc, "%d", (int)((int32_t)len));
     nero_nfc_log_write(ndc);
   }
   if ((buf != NERO_NFC_NULL) && (len > 0)) {
@@ -237,7 +238,7 @@ static bool iso_dep_select_uid_traced(uint8_t sel_cmd, uint8_t* uid_out,
   }
 
   tx_buffer[0] = sel_cmd;
-  tx_buffer[1] = (uint8_t)(READER_SECURITY_KEY_ISO14443A_ANTICOLLISION_NVB);
+  tx_buffer[1] = (uint8_t)READER_SECURITY_KEY_ISO14443A_ANTICOLLISION_NVB;
   iso_dep_dump_bytes("anticoll TX", tx_buffer,
                      READER_SECURITY_KEY_ISO14443A_ANTICOLLISION_TX_LEN);
   rx_len = reader_protocol_transceive14(
@@ -251,7 +252,8 @@ static bool iso_dep_select_uid_traced(uint8_t sel_cmd, uint8_t* uid_out,
     return false;
   }
 
-  bcc = (uint8_t)(rx_buffer[READER_SECURITY_KEY_ISO14443A_ANTICOLL_UID_BYTE0] ^
+  bcc = (uint8_t)((uint32_t)rx_buffer
+                      [READER_SECURITY_KEY_ISO14443A_ANTICOLL_UID_BYTE0] ^
                   rx_buffer[READER_SECURITY_KEY_ISO14443A_ANTICOLL_UID_BYTE1] ^
                   rx_buffer[READER_SECURITY_KEY_ISO14443A_ANTICOLL_UID_BYTE2] ^
                   rx_buffer[READER_SECURITY_KEY_ISO14443A_ANTICOLL_UID_BYTE3]);
@@ -263,14 +265,14 @@ static bool iso_dep_select_uid_traced(uint8_t sel_cmd, uint8_t* uid_out,
       char nhx[NERO_NFC_FORMAT_SNPRINTF_HEX_BYTE_CAP];
       (void)nero_nfc_snprintf(
           nhx, sizeof nhx, "%02X",
-          (unsigned)(rx_buffer
-                         [READER_SECURITY_KEY_ISO14443A_ANTICOLL_BCC_OFFSET]));
+          (unsigned)
+              rx_buffer[READER_SECURITY_KEY_ISO14443A_ANTICOLL_BCC_OFFSET]);
       nero_nfc_log_write(nhx);
     }
     nero_nfc_log_write(" expect=0x");
     {
       char nhx[NERO_NFC_FORMAT_SNPRINTF_HEX_BYTE_CAP];
-      (void)nero_nfc_snprintf(nhx, sizeof nhx, "%02X", (unsigned)(bcc));
+      (void)nero_nfc_snprintf(nhx, sizeof nhx, "%02X", (unsigned)bcc);
       nero_nfc_log_write(nhx);
     }
     nero_nfc_log_write("\r\n");
@@ -283,7 +285,7 @@ static bool iso_dep_select_uid_traced(uint8_t sel_cmd, uint8_t* uid_out,
   }
 
   tx_buffer[0] = sel_cmd;
-  tx_buffer[1] = (uint8_t)(READER_SECURITY_KEY_ISO14443A_SELECT_NVB);
+  tx_buffer[1] = (uint8_t)READER_SECURITY_KEY_ISO14443A_SELECT_NVB;
   tx_buffer[READER_SECURITY_KEY_ISO14443A_SELECT_UID_BYTE0] =
       rx_buffer[READER_SECURITY_KEY_ISO14443A_ANTICOLL_UID_BYTE0];
   tx_buffer[READER_SECURITY_KEY_ISO14443A_SELECT_UID_BYTE1] =
@@ -329,7 +331,7 @@ bool reader_security_key_iso_dep_activate_after_hlta(void) {
     {
       char ndc[NERO_NFC_FORMAT_SNPRINTF_DEC_CAP];
       (void)nero_nfc_snprintf(ndc, sizeof ndc, "%u",
-                              (unsigned)((uint32_t)((attempt + 1u))));
+                              (unsigned)((uint32_t)(attempt + 1u)));
       nero_nfc_log_write(ndc);
     }
     nero_nfc_log_write(" short-frame=");
@@ -344,12 +346,12 @@ bool reader_security_key_iso_dep_activate_after_hlta(void) {
     nero_nfc_log_write("  [ISO-DEP]   ATQA=0x");
     {
       char nhx[NERO_NFC_FORMAT_SNPRINTF_HEX_BYTE_CAP];
-      (void)nero_nfc_snprintf(nhx, sizeof nhx, "%02X", (unsigned)(atqa[0]));
+      (void)nero_nfc_snprintf(nhx, sizeof nhx, "%02X", (unsigned)atqa[0]);
       nero_nfc_log_write(nhx);
     }
     {
       char nhx[NERO_NFC_FORMAT_SNPRINTF_HEX_BYTE_CAP];
-      (void)nero_nfc_snprintf(nhx, sizeof nhx, "%02X", (unsigned)(atqa[1]));
+      (void)nero_nfc_snprintf(nhx, sizeof nhx, "%02X", (unsigned)atqa[1]);
       nero_nfc_log_write(nhx);
     }
     nero_nfc_log_write("\r\n");
@@ -407,7 +409,7 @@ static bool iso_dep_select_uid_quiet(uint8_t sel_cmd, uint8_t* uid_out,
   }
 
   tx_buffer[0] = sel_cmd;
-  tx_buffer[1] = (uint8_t)(READER_SECURITY_KEY_ISO14443A_ANTICOLLISION_NVB);
+  tx_buffer[1] = (uint8_t)READER_SECURITY_KEY_ISO14443A_ANTICOLLISION_NVB;
   rx_len = reader_protocol_transceive14(
       tx_buffer, READER_SECURITY_KEY_ISO14443A_ANTICOLLISION_TX_LEN, rx_buffer,
       sizeof(rx_buffer), false, ISO_DEP14443A_CMD_TIMEOUT_MS, true, false);
@@ -415,7 +417,8 @@ static bool iso_dep_select_uid_quiet(uint8_t sel_cmd, uint8_t* uid_out,
     return false;
   }
 
-  bcc = (uint8_t)(rx_buffer[READER_SECURITY_KEY_ISO14443A_ANTICOLL_UID_BYTE0] ^
+  bcc = (uint8_t)((uint32_t)rx_buffer
+                      [READER_SECURITY_KEY_ISO14443A_ANTICOLL_UID_BYTE0] ^
                   rx_buffer[READER_SECURITY_KEY_ISO14443A_ANTICOLL_UID_BYTE1] ^
                   rx_buffer[READER_SECURITY_KEY_ISO14443A_ANTICOLL_UID_BYTE2] ^
                   rx_buffer[READER_SECURITY_KEY_ISO14443A_ANTICOLL_UID_BYTE3]);
@@ -429,7 +432,7 @@ static bool iso_dep_select_uid_quiet(uint8_t sel_cmd, uint8_t* uid_out,
   }
 
   tx_buffer[0] = sel_cmd;
-  tx_buffer[1] = (uint8_t)(READER_SECURITY_KEY_ISO14443A_SELECT_NVB);
+  tx_buffer[1] = (uint8_t)READER_SECURITY_KEY_ISO14443A_SELECT_NVB;
   tx_buffer[READER_SECURITY_KEY_ISO14443A_SELECT_UID_BYTE0] =
       rx_buffer[READER_SECURITY_KEY_ISO14443A_ANTICOLL_UID_BYTE0];
   tx_buffer[READER_SECURITY_KEY_ISO14443A_SELECT_UID_BYTE1] =
@@ -534,20 +537,20 @@ static bool iso_dep_rats_traced(uint16_t timeout_ms, uint8_t rats_param,
   nero_nfc_log_write(": RATS E0 ");
   {
     char nhx[NERO_NFC_FORMAT_SNPRINTF_HEX_BYTE_CAP];
-    (void)nero_nfc_snprintf(nhx, sizeof nhx, "%02X", (unsigned)(rats_param));
+    (void)nero_nfc_snprintf(nhx, sizeof nhx, "%02X", (unsigned)rats_param);
     nero_nfc_log_write(nhx);
   }
   nero_nfc_log_write(" -> rx_len=");
   {
     char ndc[NERO_NFC_FORMAT_SNPRINTF_DEC_CAP];
-    (void)nero_nfc_snprintf(ndc, sizeof ndc, "%d", (int)((int32_t)(rlen)));
+    (void)nero_nfc_snprintf(ndc, sizeof ndc, "%d", (int)((int32_t)rlen));
     nero_nfc_log_write(ndc);
   }
   if (rlen >= 1) {
     nero_nfc_log_write(" rx[0]=0x");
     {
       char nhx[NERO_NFC_FORMAT_SNPRINTF_HEX_BYTE_CAP];
-      (void)nero_nfc_snprintf(nhx, sizeof nhx, "%02X", (unsigned)(rx[0]));
+      (void)nero_nfc_snprintf(nhx, sizeof nhx, "%02X", (unsigned)rx[0]);
       nero_nfc_log_write(nhx);
     }
   }
@@ -574,9 +577,9 @@ bool reader_security_key_iso_dep_session_open(uint16_t rats_timeout_ms) {
 
   reader_security_key_iso_dep_reset_framing();
   nero_nfc_log_line("\r\n  [ISO-DEP] Step 1 -- probe RATS (discover ATS / TC)");
-  if (!iso_dep_rats_traced(
-          rats_timeout_ms,
-          (uint8_t)(READER_SECURITY_KEY_ISO_DEP_RATS_FSDI7_CID0), "Step 1")) {
+  if (!iso_dep_rats_traced(rats_timeout_ms,
+                           (uint8_t)READER_SECURITY_KEY_ISO_DEP_RATS_FSDI7_CID0,
+                           "Step 1")) {
     nero_nfc_log_line("  [ISO-DEP] ABORT: probe RATS produced no ATS.");
     return false;
   }
@@ -614,7 +617,7 @@ bool reader_security_key_iso_dep_session_open_quiet(uint16_t rats_timeout_ms) {
   reader_security_key_iso_dep_reset_framing();
   if (!iso_dep_rats_quiet(
           rats_timeout_ms,
-          (uint8_t)(READER_SECURITY_KEY_ISO_DEP_RATS_FSDI7_CID0))) {
+          (uint8_t)READER_SECURITY_KEY_ISO_DEP_RATS_FSDI7_CID0)) {
     return false;
   }
   parse_ats_quiet();
@@ -661,7 +664,7 @@ static void parse_ats(void) {
   {
     char ndc[NERO_NFC_FORMAT_SNPRINTF_DEC_CAP];
     (void)nero_nfc_snprintf(ndc, sizeof ndc, "%u",
-                            (unsigned)((uint32_t)(ats_profile.pic_frame_max)));
+                            (unsigned)((uint32_t)ats_profile.pic_frame_max));
     nero_nfc_log_write(ndc);
   }
   nero_nfc_log_line(" bytes");
@@ -671,7 +674,7 @@ static void parse_ats(void) {
     {
       char nhx[NERO_NFC_FORMAT_SNPRINTF_HEX_BYTE_CAP];
       (void)nero_nfc_snprintf(nhx, sizeof nhx, "%02X",
-                              (unsigned)(ats_profile.ta));
+                              (unsigned)ats_profile.ta);
       nero_nfc_log_write(nhx);
     }
     nero_nfc_log_line("  (TX/RX bitrate caps)");
@@ -686,7 +689,7 @@ static void parse_ats(void) {
     {
       char nhx[NERO_NFC_FORMAT_SNPRINTF_HEX_BYTE_CAP];
       (void)nero_nfc_snprintf(nhx, sizeof nhx, "%02X",
-                              (unsigned)(ats_profile.tb));
+                              (unsigned)ats_profile.tb);
       nero_nfc_log_write(nhx);
     }
     nero_nfc_log_write("  FWI=");
@@ -701,8 +704,8 @@ static void parse_ats(void) {
       char ndc[NERO_NFC_FORMAT_SNPRINTF_DEC_CAP];
       (void)nero_nfc_snprintf(
           ndc, sizeof ndc, "%u",
-          (unsigned)((fwt_tenths_ms /
-                      READER_SECURITY_KEY_ISO_DEP_FWT_PRINT_SCALE)));
+          (unsigned)(fwt_tenths_ms /
+                     READER_SECURITY_KEY_ISO_DEP_FWT_PRINT_SCALE));
       nero_nfc_log_write(ndc);
     }
     nero_nfc_log_putc('.');
@@ -710,8 +713,8 @@ static void parse_ats(void) {
       char ndc[NERO_NFC_FORMAT_SNPRINTF_DEC_CAP];
       (void)nero_nfc_snprintf(
           ndc, sizeof ndc, "%u",
-          (unsigned)((fwt_tenths_ms %
-                      READER_SECURITY_KEY_ISO_DEP_FWT_PRINT_SCALE)));
+          (unsigned)(fwt_tenths_ms %
+                     READER_SECURITY_KEY_ISO_DEP_FWT_PRINT_SCALE));
       nero_nfc_log_write(ndc);
     }
     nero_nfc_log_line("ms)");
@@ -721,7 +724,7 @@ static void parse_ats(void) {
     {
       char nhx[NERO_NFC_FORMAT_SNPRINTF_HEX_BYTE_CAP];
       (void)nero_nfc_snprintf(nhx, sizeof nhx, "%02X",
-                              (unsigned)(ats_profile.tc));
+                              (unsigned)ats_profile.tc);
       nero_nfc_log_write(nhx);
     }
     nero_nfc_log_write("  CID ");
@@ -734,9 +737,8 @@ static void parse_ats(void) {
     nero_nfc_log_write("  Historical (");
     {
       char ndc[NERO_NFC_FORMAT_SNPRINTF_DEC_CAP];
-      (void)nero_nfc_snprintf(
-          ndc, sizeof ndc, "%u",
-          (unsigned)((uint32_t)(ats_profile.historical_len)));
+      (void)nero_nfc_snprintf(ndc, sizeof ndc, "%u",
+                              (unsigned)((uint32_t)ats_profile.historical_len));
       nero_nfc_log_write(ndc);
     }
     nero_nfc_log_write("): ");
@@ -774,7 +776,7 @@ static void parse_ats_quiet(void) {
 static bool iso_dep_open_main_from_active_quiet(uint16_t rats_timeout_ms) {
   if (iso_dep_rats_quiet(
           rats_timeout_ms,
-          (uint8_t)(READER_SECURITY_KEY_ISO_DEP_RATS_FSDI7_CID0))) {
+          (uint8_t)READER_SECURITY_KEY_ISO_DEP_RATS_FSDI7_CID0)) {
     parse_ats_quiet();
     G_ISO_DEP_CID = 0u;
     G_ISO_DEP_PCB_HAS_CID = true;
@@ -783,7 +785,7 @@ static bool iso_dep_open_main_from_active_quiet(uint16_t rats_timeout_ms) {
 
   if (iso_dep_rats_quiet(
           rats_timeout_ms,
-          (uint8_t)(READER_SECURITY_KEY_ISO_DEP_RATS_FSDI4_CID0))) {
+          (uint8_t)READER_SECURITY_KEY_ISO_DEP_RATS_FSDI4_CID0)) {
     parse_ats_quiet();
     G_ISO_DEP_CID = 0u;
     G_ISO_DEP_PCB_HAS_CID = true;
@@ -792,7 +794,7 @@ static bool iso_dep_open_main_from_active_quiet(uint16_t rats_timeout_ms) {
 
   if (iso_dep_rats_quiet(
           rats_timeout_ms,
-          (uint8_t)(READER_SECURITY_KEY_ISO_DEP_RATS_FSDI4_CID1))) {
+          (uint8_t)READER_SECURITY_KEY_ISO_DEP_RATS_FSDI4_CID1)) {
     parse_ats_quiet();
     G_ISO_DEP_CID = 1u;
     G_ISO_DEP_PCB_HAS_CID = true;
@@ -806,9 +808,9 @@ bool reader_security_key_iso_dep_open_main_from_active(
     uint16_t rats_timeout_ms) {
   nero_nfc_log_line(
       "\r\n  [ISO-DEP] Step 5a -- main RATS FSDI=7 CID=0 + CID in PCB (E0 70)");
-  if (iso_dep_rats_traced(
-          rats_timeout_ms,
-          (uint8_t)(READER_SECURITY_KEY_ISO_DEP_RATS_FSDI7_CID0), "Step 5a")) {
+  if (iso_dep_rats_traced(rats_timeout_ms,
+                          (uint8_t)READER_SECURITY_KEY_ISO_DEP_RATS_FSDI7_CID0,
+                          "Step 5a")) {
     parse_ats();
     G_ISO_DEP_CID = 0u;
     G_ISO_DEP_PCB_HAS_CID = true;
@@ -817,9 +819,9 @@ bool reader_security_key_iso_dep_open_main_from_active(
 
   nero_nfc_log_line(
       "\r\n  [ISO-DEP] Step 5b -- fallback RATS FSDI=4 CID=0 + CID (E0 40)");
-  if (iso_dep_rats_traced(
-          rats_timeout_ms,
-          (uint8_t)(READER_SECURITY_KEY_ISO_DEP_RATS_FSDI4_CID0), "Step 5b")) {
+  if (iso_dep_rats_traced(rats_timeout_ms,
+                          (uint8_t)READER_SECURITY_KEY_ISO_DEP_RATS_FSDI4_CID0,
+                          "Step 5b")) {
     parse_ats();
     G_ISO_DEP_CID = 0u;
     G_ISO_DEP_PCB_HAS_CID = true;
@@ -828,9 +830,9 @@ bool reader_security_key_iso_dep_open_main_from_active(
 
   nero_nfc_log_line(
       "\r\n  [ISO-DEP] Step 5c -- fallback RATS FSDI=4 CID=1 (E0 41)");
-  if (iso_dep_rats_traced(
-          rats_timeout_ms,
-          (uint8_t)(READER_SECURITY_KEY_ISO_DEP_RATS_FSDI4_CID1), "Step 5c")) {
+  if (iso_dep_rats_traced(rats_timeout_ms,
+                          (uint8_t)READER_SECURITY_KEY_ISO_DEP_RATS_FSDI4_CID1,
+                          "Step 5c")) {
     parse_ats();
     G_ISO_DEP_CID = 1u;
     G_ISO_DEP_PCB_HAS_CID = true;
@@ -847,7 +849,7 @@ void reader_security_key_iso_dep_send_deselect(void) {
   uint8_t rx[READER_SECURITY_KEY_ISO14443A_SHORT_RX_CAP];
   uint8_t tx_len = 1u;
 
-  tx[0] = (uint8_t)(READER_SECURITY_KEY_ISO_DEP_SBLOCK_DESELECT);
+  tx[0] = (uint8_t)READER_SECURITY_KEY_ISO_DEP_SBLOCK_DESELECT;
   if (G_ISO_DEP_PCB_HAS_CID) {
     tx[0] = (uint8_t)(READER_SECURITY_KEY_ISO_DEP_SBLOCK_DESELECT |
                       READER_SECURITY_KEY_ISO_DEP_SBLOCK_CID_BIT);
@@ -898,7 +900,7 @@ void reader_security_key_iso_dep_wait_post_deselect_gap(void) {
   if (elapsed >= SECURITY_KEY_POST_DESELECT_MIN_GAP_MS) {
     return;
   }
-  remaining = (uint32_t)(SECURITY_KEY_POST_DESELECT_MIN_GAP_MS)-elapsed;
+  remaining = (uint32_t)SECURITY_KEY_POST_DESELECT_MIN_GAP_MS - elapsed;
   reader_hal_delay_ms(remaining);
 }
 

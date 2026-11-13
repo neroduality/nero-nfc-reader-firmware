@@ -51,8 +51,7 @@ void reader_hal_spi_begin_transaction(void);
 void reader_hal_spi_end_transaction(void);
 uint8_t reader_hal_spi_transfer(uint8_t data);
 
-#if defined(NERO_CCID_USB_BUILD)
-
+/* CCID bulk transport. Builds without NERO_CCID_USB_BUILD link inert stubs. */
 NERO_NFC_NODISCARD bool reader_hal_ccid_recv(uint8_t* buf, uint16_t* len_io);
 
 NERO_NFC_NODISCARD bool reader_hal_ccid_peek(const uint8_t** buf_out,
@@ -69,8 +68,6 @@ NERO_NFC_NODISCARD bool reader_hal_ccid_abort_request_pending(uint8_t* slot_out,
                                                               uint8_t* seq_out);
 
 void reader_hal_ccid_clear_abort_request(uint8_t slot, uint8_t seq);
-
-#endif /* NERO_CCID_USB_BUILD */
 
 #ifdef __cplusplus
 }

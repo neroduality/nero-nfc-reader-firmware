@@ -15,20 +15,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Shared CI entry: Release unit tests (same as ``make test``) in container matrix jobs.
+# Shared CI entry: Debug unit tests (ASan+UBSan), the same tests again in Release
+# (same as ``make test``), and scan-build.
 # Always wipes CMake trees first (``make/wipe-host-build-trees.sh ci``) -- no cache reuse.
-# Usage (from firmware root):
-#   AUTO_INSTALL_LINUX_DEPS=1 bash .github/scripts/ci-run-tests.sh
+#
+# Usage (from repo root):
+#   bash .github/scripts/ci-run-tests.sh
 set -euo pipefail
 
-repo_root="$(pwd)"
-if [[ ! -f "${repo_root}/Makefile" ]]; then
-  printf 'error: run from firmware root (missing Makefile)\n' >&2
+repo_root="${FIRMWARE_ROOT:-$(pwd)}"
+if [[ ! -f "${repo_root}/Makefile" ]] || [[ ! -d "${repo_root}/firmware" ]]; then
+  printf 'error: run from repo root (or set FIRMWARE_ROOT)\n' >&2
   exit 1
 fi
 
 # shellcheck source=helper-container-bind-mount.sh
 source "${repo_root}/.github/scripts/helper-container-bind-mount.sh"
+
+export FIRMWARE_ROOT="${repo_root}"
 
 if [[ $(id -u) -eq 0 && -n ${HOST_UID:-} && ${NERO_NFC_CI_AS_USER:-0} != 1 ]]; then
   AUTO_INSTALL_LINUX_DEPS=1 INSTALL_DEPS=1 INSTALL_LINT_DEPS=0 \
@@ -39,7 +43,7 @@ fi
 
 nero_nfc_refuse_root_bind_mount_writes
 
-if [[ "$(uname -s)" == "Linux" && $(id -u) -eq 0 ]]; then
+if [[ "$(uname -s)" == "Linux" ]]; then
   auto_install_linux_deps="${AUTO_INSTALL_LINUX_DEPS:-}"
   if [[ -z ${auto_install_linux_deps} ]]; then
     if [[ ${GITHUB_ACTIONS:-false} == true ]]; then
@@ -49,19 +53,22 @@ if [[ "$(uname -s)" == "Linux" && $(id -u) -eq 0 ]]; then
     fi
   fi
   if [[ ${auto_install_linux_deps} != "0" ]]; then
-    AUTO_INSTALL_LINUX_DEPS="${auto_install_linux_deps}" \
-      INSTALL_DEPS="${INSTALL_DEPS:-${auto_install_linux_deps}}" \
-      INSTALL_LINT_DEPS="${INSTALL_LINT_DEPS:-0}" \
+    AUTO_INSTALL_LINUX_DEPS=1 INSTALL_DEPS=1 INSTALL_LINT_DEPS="${INSTALL_LINT_DEPS:-0}" \
       bash "${repo_root}/make/install-linux-deps.sh"
   fi
 fi
 
-script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=helper-toolchain.sh
-source "${script_dir}/helper-toolchain.sh"
+source "${repo_root}/.github/scripts/helper-toolchain.sh"
 nero_nfc_toolchain_activate
 
 bash "${repo_root}/make/wipe-host-build-trees.sh" ci
 
+SANITIZE_ADDRESS=1 SANITIZE_UNDEFINED=1 NERO_TESTS_BUILD_TYPE=Debug \
+  bash "${repo_root}/make/run-unit-tests.sh"
+
+# Release-config pass: identical tests against the optimized objects that ship.
 SANITIZE_ADDRESS=0 SANITIZE_UNDEFINED=0 NERO_TESTS_BUILD_TYPE=Release \
   bash "${repo_root}/make/run-unit-tests.sh"
+
+bash "${repo_root}/.github/scripts/ci-scan-build.sh"

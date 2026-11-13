@@ -39,7 +39,9 @@ ENTRY(Reset_Handler)
 _estack = ORIGIN(RAM) + LENGTH(RAM); /* end of "RAM" Ram type memory */
 
 _Min_Heap_Size = 0x200; /* required amount of heap */
-_Min_Stack_Size = 0x400; /* required amount of stack */
+_Min_Stack_Size = 0x4000; /* required amount of stack */
+/* Core 3.x startup loads _sstack into MSPLIM: overflowing it is a STKOF HardFault. */
+_sstack = _estack - _Min_Stack_Size;
 
 /* Memories definition */
 MEMORY

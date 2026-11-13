@@ -16,7 +16,6 @@
 
 #include "nero_nfc_pcsc.hpp"
 #include "nero_nfc_bounds.hpp"
-#include <span>
 #include "nero_nfc_hex.hpp"
 #include "nero_nfc_io.hpp"
 #include "nero_nfc_null.h"
@@ -24,6 +23,7 @@
 #include "nero_nfc_pcsc_tag_details.hpp"
 #include "nfc_pcsc_contactless.h"
 #include "nfc_tag_geometry_limits.h"
+#include <span>
 
 #include <algorithm>
 #include <atomic>
@@ -115,8 +115,8 @@ void ReadAndApplyStorageDetails(PcscCard& card, PcscTagSnapshot& out,
     ApplyType2Details(out, uid, type2_version, type2_cc, type2_signature,
                       type2_auth0);
   }
-  if (!type4_cc.empty() || out.tag_type_.find("Type 4") != std::string::npos ||
-      out.tag_type_.find("FIDO") != std::string::npos) {
+  if (!type4_cc.empty() || out.tag_type_.contains("Type 4") ||
+      out.tag_type_.contains("FIDO")) {
     ApplyType4Details(out, uid, type4_cc);
   }
   if (!type5_system_info.empty() || !type5_cc.empty()) {
@@ -244,6 +244,8 @@ bool PcscWriteTagWithCard(PcscCard& card, const std::string& reader,
 
 namespace nero_nfc {
 
+namespace {
+
 class WriterProgressSpinner {
  public:
   explicit WriterProgressSpinner(std::string_view message)
@@ -299,6 +301,70 @@ class WriterProgressSpinner {
   std::atomic_bool done_{false};
   std::thread worker_;
 };
+
+#ifdef NERO_USERSPACE_HAVE_PCSC
+void ReportPcscRetry(std::string_view tool, const std::string& err,
+                     std::string& last_reported) {
+  if (err == last_reported) {
+    return;
+  }
+  NeroNfcStderrLine("\r{}: {}; retrying (Ctrl+C to stop)", tool, err);
+  last_reported = err;
+}
+
+// Blocks until a tag is present, riding out reader unplug/re-enumeration and
+// pcscd restarts instead of failing the session.
+void WaitForTagWithRecovery(pcsc_internal::PcscCard& card,
+                            std::string_view reader_substring,
+                            std::string& reader, std::size_t& present_count,
+                            std::string_view tool) {
+  std::string last_reported;
+  for (;;) {
+    std::string err;
+    bool ok = card.EnsureContext(err);
+    if (ok && reader_substring.empty()) {
+      ok = pcsc_internal::ResolvePcscReaderForOperation(
+          card, reader_substring, reader, err, false, &present_count);
+    } else if (ok) {
+      ok = ResolvePcscReader(reader_substring, reader, err) &&
+           pcsc_internal::WaitForCardPresent(card.Context(), reader,
+                                             std::nullopt, err);
+    }
+    if (ok) {
+      return;
+    }
+    ReportPcscRetry(tool, err, last_reported);
+    card.ResetContext();
+    std::this_thread::sleep_for(pcsc_internal::kPcscRecoverySleep);
+  }
+}
+
+// Blocks until the tag is gone. A reader that disappears from PC/SC counts as
+// removal so the next wait re-resolves it.
+void WaitForTagRemovalWithRecovery(pcsc_internal::PcscCard& card,
+                                   const std::string& reader,
+                                   std::string_view tool) {
+  std::string last_reported;
+  for (;;) {
+    std::string err;
+    if (card.EnsureContext(err) &&
+        pcsc_internal::WaitForCardAbsentStable(card.Context(), reader, err)) {
+      return;
+    }
+    ReportPcscRetry(tool, err, last_reported);
+    card.ResetContext();
+    std::this_thread::sleep_for(pcsc_internal::kPcscRecoverySleep);
+    std::vector<std::string> readers;
+    std::string list_err;
+    if (!ListPcscReaders(readers, list_err) ||
+        !std::ranges::contains(readers, reader)) {
+      return;
+    }
+  }
+}
+#endif  // NERO_USERSPACE_HAVE_PCSC
+
+}  // namespace
 
 std::optional<PcscShareMode> ParsePcscShareMode(std::string_view text) {
   std::string const mode = pcsc_internal::LowerCopy(text);
@@ -460,7 +526,7 @@ bool ChoosePcscReaderFromList(const std::vector<std::string>& readers,
   std::vector<std::string> matches;
   const std::string want = pcsc_internal::LowerCopy(reader_substring);
   if (!want.empty()) {
-    auto exact =
+    const auto exact =
         std::ranges::find_if(readers, [&](const std::string& candidate) {
           return pcsc_internal::LowerCopy(candidate) == want;
         });
@@ -469,11 +535,11 @@ bool ChoosePcscReaderFromList(const std::vector<std::string>& readers,
       err.clear();
       return true;
     }
-    std::ranges::copy_if(readers, std::back_inserter(matches),
-                         [&](const std::string& candidate) {
-                           return pcsc_internal::LowerCopy(candidate).find(
-                                      want) != std::string::npos;
-                         });
+    std::ranges::copy_if(
+        readers, std::back_inserter(matches),
+        [&](const std::string& candidate) {
+          return pcsc_internal::LowerCopy(candidate).contains(want);
+        });
     if (matches.size() == 1u) {
       reader = matches.front();
       err.clear();
@@ -554,7 +620,8 @@ bool PcscReadTag(std::string_view reader_substring,
 
 bool PcscReadTag(std::string_view reader_substring, PcscTagSnapshot& out,
                  std::string& err) {
-  return PcscReadTag(reader_substring, PcscReadOptions{}, out, err);
+  const PcscReadOptions defaults;
+  return PcscReadTag(reader_substring, defaults, out, err);
 }
 
 bool PcscWriteTag(std::string_view reader_substring,
@@ -623,28 +690,16 @@ int RunPcscReader(std::string_view reader_substring,
         "selectable reader (Ctrl+C to stop)");
   }
   bool first = true;
-  bool saw_confirmed_absence = true;
-  std::string last_fingerprint;
   bool first_cycle = true;
   for (;;) {
     if (!first_cycle) {
       NeroNfcStdoutLine("");
     }
     WriterProgressSpinner wait_spinner("reader: ready for next NFC tag");
-    bool wait_ok = false;
     std::size_t present_count = 0u;
-    if (auto_reader) {
-      wait_ok = pcsc_internal::ResolvePcscReaderForOperation(
-          card, reader_substring, reader, err, false, &present_count);
-    } else {
-      wait_ok = pcsc_internal::WaitForCardPresent(card.Context(), reader,
-                                                  std::nullopt, err);
-    }
+    WaitForTagWithRecovery(card, reader_substring, reader, present_count,
+                           "reader");
     wait_spinner.Finish();
-    if (!wait_ok) {
-      NeroNfcStderrLine("error: {}", err);
-      return 1;
-    }
     if (auto_reader) {
       pcsc_internal::AnnouncePcscReaderSelection(present_count, reader);
     }
@@ -655,31 +710,18 @@ int RunPcscReader(std::string_view reader_substring,
     if (!pcsc_internal::PcscReadTagWithCard(card, reader, options, tag, err)) {
       NeroNfcStderrLine("error: {}", err);
       card.Disconnect();
-      if (!pcsc_internal::WaitForCardAbsentStable(card.Context(), reader,
-                                                  err)) {
-        NeroNfcStderrLine("error: {}", err);
-        return 1;
-      }
-      saw_confirmed_absence = true;
+      WaitForTagRemovalWithRecovery(card, reader, "reader");
       first_cycle = false;
       continue;
     }
-    const std::string fingerprint = pcsc_internal::TagFingerprint(tag);
-    if (saw_confirmed_absence || fingerprint != last_fingerprint) {
-      NeroNfcStdoutLine(FormatPcscTagSnapshotHeader(tag).c_str());
-      const std::string body = FormatPcscTagSnapshotBody(tag);
-      if (!body.empty()) {
-        NeroNfcStdoutLine(body.c_str());
-      }
-      first = false;
-      last_fingerprint = fingerprint;
+    NeroNfcStdoutLine(FormatPcscTagSnapshotHeader(tag).c_str());
+    const std::string body = FormatPcscTagSnapshotBody(tag);
+    if (!body.empty()) {
+      NeroNfcStdoutLine(body.c_str());
     }
+    first = false;
     card.Disconnect();
-    if (!pcsc_internal::WaitForCardAbsentStable(card.Context(), reader, err)) {
-      NeroNfcStderrLine("error: {}", err);
-      return 1;
-    }
-    saw_confirmed_absence = true;
+    WaitForTagRemovalWithRecovery(card, reader, "reader");
     first_cycle = false;
   }
 #endif
@@ -732,20 +774,10 @@ int RunPcscWriter(std::string_view reader_substring,
     }
     WriterProgressSpinner wait_spinner(
         "writer: ready for next writable NFC tag");
-    bool wait_ok = false;
     std::size_t present_count = 0u;
-    if (auto_reader) {
-      wait_ok = pcsc_internal::ResolvePcscReaderForOperation(
-          card, reader_substring, reader, err, false, &present_count);
-    } else {
-      wait_ok = pcsc_internal::WaitForCardPresent(card.Context(), reader,
-                                                  std::nullopt, err);
-    }
+    WaitForTagWithRecovery(card, reader_substring, reader, present_count,
+                           "writer");
     wait_spinner.Finish();
-    if (!wait_ok) {
-      NeroNfcStderrLine("error: {}", err);
-      return 1;
-    }
     if (auto_reader) {
       pcsc_internal::AnnouncePcscReaderSelection(present_count, reader);
     }
@@ -757,19 +789,12 @@ int RunPcscWriter(std::string_view reader_substring,
     if (!write_ok) {
       NeroNfcStderrLine("error: {}", err);
       card.Disconnect();
-      if (!pcsc_internal::WaitForCardAbsentStable(card.Context(), reader,
-                                                  err)) {
-        NeroNfcStderrLine("error: {}", err);
-        return 1;
-      }
+      WaitForTagRemovalWithRecovery(card, reader, "writer");
       first_cycle = false;
       continue;
     }
     NeroNfcStdoutLine("*** SUCCESS - Wrote NDEF message ***");
-    if (!pcsc_internal::WaitForCardAbsentStable(card.Context(), reader, err)) {
-      NeroNfcStderrLine("error: {}", err);
-      return 1;
-    }
+    WaitForTagRemovalWithRecovery(card, reader, "writer");
     first_cycle = false;
   }
 #endif

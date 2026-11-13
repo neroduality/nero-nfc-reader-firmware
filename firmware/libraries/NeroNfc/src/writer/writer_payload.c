@@ -32,6 +32,11 @@
 
 #include <stdio.h>
 
+#define WRITER_HEX_NIBBLE_SHIFT 4u
+/* [WSC] big-endian 2-byte attribute ID/length serialization. */
+#define WRITER_WSC_BYTE_SHIFT8 8u
+#define WRITER_WSC_BYTE_MASK 0xFFu
+
 enum {
   WRITER_WSC_SSID_MAX_LEN = 32u,
   WRITER_WPS_ATTR_HDR_LEN = 4u,
@@ -45,14 +50,10 @@ enum {
   WRITER_BT_MAC_LAST_OCTET_INDEX = 5u,
   WRITER_BT_MAC_STR_LEN = 17u,
   WRITER_BT_OOB_PAYLOAD_LEN = 8u,
-  WRITER_HEX_NIBBLE_SHIFT = 4u,
   WRITER_MAILTO_URI_OVERHEAD = 32u,
   WRITER_GEO_URI_OVERHEAD = 8u,
   /* str2 may appear twice in a mailto URI (subject and body) when split. */
   WRITER_MAILTO_STR2_COPIES = 2u,
-  /* [WSC] big-endian 2-byte attribute ID/length serialization. */
-  WRITER_WSC_BYTE_SHIFT8 = 8u,
-  WRITER_WSC_BYTE_MASK = 0xFFu,
   /* [WSC] AP MAC Address attribute placeholder -- the writer does not know the
    * AP BSSID, so it emits the all-zero MAC the enrollee fills in from the link.
    */
@@ -87,11 +88,11 @@ static uint16_t ndef_emit_uri(uint8_t* out, uint16_t cap, uint8_t uri_id,
   /* [NDEF-RTD] URI Record Type 1.0 -- identifier codes 0x00..0x23 only; reject
    * RFU codes so the writer never emits a record its own decoder would reject.
    */
-  if (uri_id >= (uint8_t)(NERO_NFC_URI_PREFIX_CODE_COUNT)) {
+  if (uri_id >= (uint8_t)NERO_NFC_URI_PREFIX_CODE_COUNT) {
     return 0u;
   }
   if ((out == NERO_NFC_NULL) || (uri == NERO_NFC_NULL) ||
-      !nero_nfc_bounded_strlen(uri, (size_t)(WRITER_RTD_URI_PAYLOAD_MAX) + 1u,
+      !nero_nfc_bounded_strlen(uri, (size_t)WRITER_RTD_URI_PAYLOAD_MAX + 1u,
                                &ul) ||
       (ul > WRITER_RTD_URI_PAYLOAD_MAX) || (ul == 0u)) {
     return 0u;
@@ -103,27 +104,26 @@ static uint16_t ndef_emit_uri(uint8_t* out, uint16_t cap, uint8_t uri_id,
     return 0u;
   }
   if (!nero_nfc_store_u8(
-          out, (size_t)(cap), (size_t)(0),
+          out, (size_t)cap, (size_t)0,
           (uint8_t)(NFC_NDEF_HDR_MB | NFC_NDEF_HDR_ME | NFC_NDEF_HDR_SR |
                     NFC_NDEF_TNF_WELL_KNOWN))) {
     return 0u;
   }
-  if (!nero_nfc_store_u8(out, (size_t)(cap), (size_t)(1),
-                         (uint8_t)(WRITER_NDEF_WELL_KNOWN_TYPE_LEN))) {
+  if (!nero_nfc_store_u8(out, (size_t)cap, (size_t)1,
+                         (uint8_t)WRITER_NDEF_WELL_KNOWN_TYPE_LEN)) {
     return 0u;
   }
-  if (!nero_nfc_store_u8(out, (size_t)(cap),
-                         (size_t)(WRITER_NDEF_SR_PAYLOAD_LEN_OFFSET),
-                         (uint8_t)(plen))) {
+  if (!nero_nfc_store_u8(out, (size_t)cap,
+                         (size_t)WRITER_NDEF_SR_PAYLOAD_LEN_OFFSET,
+                         (uint8_t)plen)) {
     return 0u;
   }
-  if (!nero_nfc_store_u8(out, (size_t)(cap),
-                         (size_t)(WRITER_NDEF_SR_TYPE_OFFSET),
-                         (uint8_t)(NFC_NDEF_RTD_TYPE_URI))) {
+  if (!nero_nfc_store_u8(out, (size_t)cap, (size_t)WRITER_NDEF_SR_TYPE_OFFSET,
+                         (uint8_t)NFC_NDEF_RTD_TYPE_URI)) {
     return 0u;
   }
-  if (!nero_nfc_store_u8(out, (size_t)(cap),
-                         (size_t)(WRITER_NDEF_SR_URI_ID_OFFSET), uri_id)) {
+  if (!nero_nfc_store_u8(out, (size_t)cap, (size_t)WRITER_NDEF_SR_URI_ID_OFFSET,
+                         uri_id)) {
     return 0u;
   }
   return nero_nfc_copy_bytes(out, cap,
@@ -139,7 +139,7 @@ static uint16_t ndef_emit_text(uint8_t* out, uint16_t cap, const char* text) {
   static const char EN_LANG[] = "en";
   size_t tl = 0u;
   if ((out == NERO_NFC_NULL) || (text == NERO_NFC_NULL) ||
-      !nero_nfc_bounded_strlen(text, (size_t)(WRITER_RTD_TEXT_PAYLOAD_MAX) + 1u,
+      !nero_nfc_bounded_strlen(text, (size_t)WRITER_RTD_TEXT_PAYLOAD_MAX + 1u,
                                &tl) ||
       (tl > WRITER_RTD_TEXT_PAYLOAD_MAX)) {
     return 0u;
@@ -152,28 +152,26 @@ static uint16_t ndef_emit_text(uint8_t* out, uint16_t cap, const char* text) {
     return 0u;
   }
   if (!nero_nfc_store_u8(
-          out, (size_t)(cap), (size_t)(0),
+          out, (size_t)cap, (size_t)0,
           (uint8_t)(NFC_NDEF_HDR_MB | NFC_NDEF_HDR_ME | NFC_NDEF_HDR_SR |
                     NFC_NDEF_TNF_WELL_KNOWN))) {
     return 0u;
   }
-  if (!nero_nfc_store_u8(out, (size_t)(cap), (size_t)(1),
-                         (uint8_t)(WRITER_NDEF_WELL_KNOWN_TYPE_LEN))) {
+  if (!nero_nfc_store_u8(out, (size_t)cap, (size_t)1,
+                         (uint8_t)WRITER_NDEF_WELL_KNOWN_TYPE_LEN)) {
     return 0u;
   }
-  if (!nero_nfc_store_u8(out, (size_t)(cap),
-                         (size_t)(WRITER_NDEF_SR_PAYLOAD_LEN_OFFSET),
-                         (uint8_t)(plen))) {
+  if (!nero_nfc_store_u8(out, (size_t)cap,
+                         (size_t)WRITER_NDEF_SR_PAYLOAD_LEN_OFFSET,
+                         (uint8_t)plen)) {
     return 0u;
   }
-  if (!nero_nfc_store_u8(out, (size_t)(cap),
-                         (size_t)(WRITER_NDEF_SR_TYPE_OFFSET),
-                         (uint8_t)(NFC_NDEF_RTD_TYPE_TEXT))) {
+  if (!nero_nfc_store_u8(out, (size_t)cap, (size_t)WRITER_NDEF_SR_TYPE_OFFSET,
+                         (uint8_t)NFC_NDEF_RTD_TYPE_TEXT)) {
     return 0u;
   }
-  if (!nero_nfc_store_u8(out, (size_t)(cap),
-                         (size_t)(WRITER_NDEF_SR_URI_ID_OFFSET),
-                         (uint8_t)(WRITER_NDEF_TEXT_STATUS_UTF8_LANG2))) {
+  if (!nero_nfc_store_u8(out, (size_t)cap, (size_t)WRITER_NDEF_SR_URI_ID_OFFSET,
+                         (uint8_t)WRITER_NDEF_TEXT_STATUS_UTF8_LANG2)) {
     return 0u;
   }
   if (!nero_nfc_copy_bytes(
@@ -198,25 +196,25 @@ static uint16_t ndef_emit_mime_sr(uint8_t* out, uint16_t cap, const char* mime,
   size_t ml = 0u;
   if ((out == NERO_NFC_NULL) || (mime == NERO_NFC_NULL) ||
       ((payload == NERO_NFC_NULL) && (payload_len != 0u)) ||
-      !nero_nfc_bounded_strlen(mime, (size_t)(WRITER_RTD_MIME_TYPE_MAX) + 1u,
+      !nero_nfc_bounded_strlen(mime, (size_t)WRITER_RTD_MIME_TYPE_MAX + 1u,
                                &ml) ||
       (ml > WRITER_RTD_MIME_TYPE_MAX) || (ml == 0u) ||
       (payload_len > WRITER_RTD_VCARD_BODY_MAX)) {
     return 0u;
   }
   uint16_t need =
-      (uint16_t)(WRITER_NDEF_SR_RECORD_HDR_LEN + (uint16_t)(ml) + payload_len);
+      (uint16_t)(WRITER_NDEF_SR_RECORD_HDR_LEN + (uint16_t)ml + payload_len);
   if ((payload_len >= NERO_NFC_NDEF_SR_PAYLOAD_MAX) || (need > cap)) {
     return 0u;
   }
   /* SR MIME */
-  if (!nero_nfc_store_u8(out, (size_t)(cap), (size_t)(0),
+  if (!nero_nfc_store_u8(out, (size_t)cap, (size_t)0,
                          (uint8_t)(NFC_NDEF_HDR_MB | NFC_NDEF_HDR_ME |
                                    NFC_NDEF_HDR_SR | NFC_NDEF_TNF_MIME)) ||
-      !nero_nfc_store_u8(out, (size_t)(cap), (size_t)(1), (uint8_t)(ml)) ||
-      !nero_nfc_store_u8(out, (size_t)(cap),
-                         (size_t)(WRITER_NDEF_SR_PAYLOAD_LEN_OFFSET),
-                         (uint8_t)(payload_len))) {
+      !nero_nfc_store_u8(out, (size_t)cap, (size_t)1, (uint8_t)ml) ||
+      !nero_nfc_store_u8(out, (size_t)cap,
+                         (size_t)WRITER_NDEF_SR_PAYLOAD_LEN_OFFSET,
+                         (uint8_t)payload_len)) {
     return 0u;
   }
   if (!nero_nfc_copy_bytes(out, cap, WRITER_NDEF_SR_RECORD_HDR_LEN, mime, ml) ||
@@ -238,24 +236,24 @@ static bool wps_put_attr(uint8_t* buf, uint16_t buf_cap, uint16_t* pos_io,
     return false;
   }
   pos = *pos_io;
-  if (!nero_nfc_try_add_size((size_t)(pos), WRITER_WPS_ATTR_HDR_LEN, &needed) ||
-      !nero_nfc_try_add_size(needed, (size_t)(dlen), &needed) ||
-      (needed > (size_t)(buf_cap))) {
+  if (!nero_nfc_try_add_size((size_t)pos, WRITER_WPS_ATTR_HDR_LEN, &needed) ||
+      !nero_nfc_try_add_size(needed, (size_t)dlen, &needed) ||
+      (needed > (size_t)buf_cap)) {
     return false;
   }
-  if (!nero_nfc_store_u8(buf, (size_t)(buf_cap), (size_t)(pos++),
+  if (!nero_nfc_store_u8(buf, (size_t)buf_cap, (size_t)(pos++),
                          (uint8_t)(attr >> WRITER_WSC_BYTE_SHIFT8))) {
     return 0u;
   }
-  if (!nero_nfc_store_u8(buf, (size_t)(buf_cap), (size_t)(pos++),
+  if (!nero_nfc_store_u8(buf, (size_t)buf_cap, (size_t)(pos++),
                          (uint8_t)(attr & WRITER_WSC_BYTE_MASK))) {
     return 0u;
   }
-  if (!nero_nfc_store_u8(buf, (size_t)(buf_cap), (size_t)(pos++),
+  if (!nero_nfc_store_u8(buf, (size_t)buf_cap, (size_t)(pos++),
                          (uint8_t)(dlen >> WRITER_WSC_BYTE_SHIFT8))) {
     return 0u;
   }
-  if (!nero_nfc_store_u8(buf, (size_t)(buf_cap), (size_t)(pos++),
+  if (!nero_nfc_store_u8(buf, (size_t)buf_cap, (size_t)(pos++),
                          (uint8_t)(dlen & WRITER_WSC_BYTE_MASK))) {
     return 0u;
   }
@@ -270,9 +268,9 @@ static bool build_wifi_wsc(uint8_t* blob, uint16_t blob_cap, uint16_t* out_len,
                            const char* ssid, const char* psk) {
   size_t sl = 0u;
   size_t kl = 0u;
-  if (!nero_nfc_bounded_strlen(ssid, (size_t)(WRITER_WSC_SSID_MAX_LEN) + 1u,
+  if (!nero_nfc_bounded_strlen(ssid, (size_t)WRITER_WSC_SSID_MAX_LEN + 1u,
                                &sl) ||
-      !nero_nfc_bounded_strlen(psk, (size_t)(NFC_WSC_PSK_MAX_LEN) + 1u, &kl) ||
+      !nero_nfc_bounded_strlen(psk, (size_t)NFC_WSC_PSK_MAX_LEN + 1u, &kl) ||
       (sl == 0u) || (sl > WRITER_WSC_SSID_MAX_LEN) ||
       (kl < NFC_WSC_PSK_MIN_LEN) || (kl > NFC_WSC_PSK_MAX_LEN)) {
     return false;
@@ -284,7 +282,7 @@ static bool build_wifi_wsc(uint8_t* blob, uint16_t blob_cap, uint16_t* out_len,
   if (!wps_put_attr(inner, (uint16_t)(sizeof(inner)), &q,
                     NFC_WSC_ATTR_NETWORK_INDEX, &idx, 1u) ||
       !wps_put_attr(inner, (uint16_t)(sizeof(inner)), &q, NFC_WSC_ATTR_SSID,
-                    (const uint8_t*)(ssid), (uint16_t)(sl))) {
+                    (const uint8_t*)ssid, (uint16_t)sl)) {
     return false;
   }
   const uint8_t auth[WRITER_WPS_U16_FIELD_LEN] = NFC_WSC_AUTH_WPA2_PSK_INIT;
@@ -296,17 +294,17 @@ static bool build_wifi_wsc(uint8_t* blob, uint16_t blob_cap, uint16_t* out_len,
   if (!wps_put_attr(inner, (uint16_t)(sizeof(inner)), &q,
                     NFC_WSC_ATTR_ENCR_TYPE, enc, WRITER_WPS_U16_FIELD_LEN) ||
       !wps_put_attr(inner, (uint16_t)(sizeof(inner)), &q,
-                    NFC_WSC_ATTR_NETWORK_KEY, (const uint8_t*)(psk),
-                    (uint16_t)(kl))) {
+                    NFC_WSC_ATTR_NETWORK_KEY, (const uint8_t*)psk,
+                    (uint16_t)kl)) {
     return false;
   }
   const uint8_t mac[WRITER_BT_MAC_OCTET_COUNT] = {
-      (uint8_t)(WRITER_WSC_AP_MAC_PLACEHOLDER),
-      (uint8_t)(WRITER_WSC_AP_MAC_PLACEHOLDER),
-      (uint8_t)(WRITER_WSC_AP_MAC_PLACEHOLDER),
-      (uint8_t)(WRITER_WSC_AP_MAC_PLACEHOLDER),
-      (uint8_t)(WRITER_WSC_AP_MAC_PLACEHOLDER),
-      (uint8_t)(WRITER_WSC_AP_MAC_PLACEHOLDER)};
+      (uint8_t)WRITER_WSC_AP_MAC_PLACEHOLDER,
+      (uint8_t)WRITER_WSC_AP_MAC_PLACEHOLDER,
+      (uint8_t)WRITER_WSC_AP_MAC_PLACEHOLDER,
+      (uint8_t)WRITER_WSC_AP_MAC_PLACEHOLDER,
+      (uint8_t)WRITER_WSC_AP_MAC_PLACEHOLDER,
+      (uint8_t)WRITER_WSC_AP_MAC_PLACEHOLDER};
   if (!wps_put_attr(inner, (uint16_t)(sizeof(inner)), &q,
                     NFC_WSC_ATTR_MAC_ADDRESS, mac, sizeof(mac))) {
     return false;
@@ -324,9 +322,9 @@ static bool build_wifi_wsc(uint8_t* blob, uint16_t blob_cap, uint16_t* out_len,
       sizeof(WSC_VERSION) + sizeof(cred) <= WRITER_WIFI_WSC_BLOB_MAX,
       "WSC credential blob fits WRITER_WIFI_WSC_BLOB_MAX stack buffer");
   size_t blob_need = 0u;
-  if (!nero_nfc_try_add_size((size_t)(cred_len), sizeof(WSC_VERSION),
+  if (!nero_nfc_try_add_size((size_t)cred_len, sizeof(WSC_VERSION),
                              &blob_need) ||
-      (blob_need > (size_t)(blob_cap))) {
+      (blob_need > (size_t)blob_cap)) {
     return false;
   }
   if (!nero_nfc_copy_bytes(blob, blob_cap, 0u, WSC_VERSION,
@@ -349,7 +347,8 @@ static bool parse_bt_mac(const char* s,
     if ((hi < 0) || (lo < 0)) {
       return false;
     }
-    mac[i] = (uint8_t)((hi << WRITER_HEX_NIBBLE_SHIFT) | lo);
+    mac[i] =
+        (uint8_t)(((unsigned)hi << WRITER_HEX_NIBBLE_SHIFT) | (unsigned)lo);
     if ((i < WRITER_BT_MAC_LAST_OCTET_INDEX) && (*s++ != ':')) {
       return false;
     }
@@ -360,22 +359,22 @@ static bool parse_bt_mac(const char* s,
 static bool writer_copy_cstr_from_span(char* dst, size_t dst_cap,
                                        const char* src, size_t src_cap) {
   if (src == NERO_NFC_NULL) {
-    if ((dst != NERO_NFC_NULL) && (dst_cap > 0u)) {
-      if (!nero_nfc_store_u8((uint8_t*)(dst), dst_cap, (size_t)(0),
-                             (uint8_t)('\0'))) {
-        return false;
-      }
+    if (((dst != NERO_NFC_NULL) && (dst_cap > 0u)) &&
+        (!nero_nfc_store_u8((uint8_t*)dst, dst_cap, (size_t)0,
+                            (uint8_t)'\0'))) {
+      return false;
     }
+
     return false;
   }
   size_t len = 0u;
   if (!nero_nfc_bounded_strlen(src, src_cap, &len)) {
-    if ((dst != NERO_NFC_NULL) && (dst_cap > 0u)) {
-      if (!nero_nfc_store_u8((uint8_t*)(dst), dst_cap, (size_t)(0),
-                             (uint8_t)('\0'))) {
-        return false;
-      }
+    if (((dst != NERO_NFC_NULL) && (dst_cap > 0u)) &&
+        (!nero_nfc_store_u8((uint8_t*)dst, dst_cap, (size_t)0,
+                            (uint8_t)'\0'))) {
+      return false;
     }
+
     return false;
   }
   if (len >= dst_cap) {
@@ -384,7 +383,7 @@ static bool writer_copy_cstr_from_span(char* dst, size_t dst_cap,
   if (!nero_nfc_copy_bytes(dst, dst_cap, 0u, src, len)) {
     return false;
   }
-  if (!nero_nfc_store_u8((uint8_t*)(dst), dst_cap, len, (uint8_t)('\0'))) {
+  if (!nero_nfc_store_u8((uint8_t*)dst, dst_cap, len, (uint8_t)'\0')) {
     return false;
   }
   return true;
@@ -398,7 +397,7 @@ static bool nero_nfc_snprintf_fits(int n, size_t cap) {
   if (n < 0) {
     return false;
   }
-  const size_t written = (size_t)(n);
+  const size_t written = (size_t)n;
   return written < cap;
 }
 
@@ -414,7 +413,7 @@ static bool writer_cstr_has_control_char(const char* s) {
     return true; /* unterminated within the sanity bound; treat as unsafe */
   }
   for (size_t i = 0u; i < len; ++i) {
-    if ((uint8_t)(s[i]) < NFC_RFC6350_ASCII_FIRST_PRINTABLE) {
+    if ((uint8_t)s[i] < NFC_RFC6350_ASCII_FIRST_PRINTABLE) {
       return true;
     }
   }
@@ -434,7 +433,7 @@ bool writer_payload_configured(const writer_payload_config_t* cfg) {
 }
 
 const char* writer_payload_kind_name(writer_payload_kind_t k) {
-  const int ind_bits = (int)(k);
+  const int ind_bits = (int)k;
   switch (ind_bits) {
     case WRITER_PAYLOAD_NONE:
       return "none";
@@ -474,7 +473,7 @@ static uint16_t build_ndef_message(const writer_payload_config_t* cfg,
   if (cfg == NERO_NFC_NULL) {
     return 0u;
   }
-  const int ind_bits = (int)(cfg->kind);
+  const int ind_bits = (int)cfg->kind;
   if (!nero_nfc_bounded_strlen(cfg->str1, sizeof(cfg->str1), &cfg_str1_len) ||
       !nero_nfc_bounded_strlen(cfg->str2, sizeof(cfg->str2), &cfg_str2_len)) {
     return 0u;
@@ -483,7 +482,7 @@ static uint16_t build_ndef_message(const writer_payload_config_t* cfg,
     case WRITER_PAYLOAD_NONE:
       return 0u;
     case WRITER_PAYLOAD_URL_HTTPS:
-      return ndef_emit_uri(dst, cap_use, (uint8_t)(NFC_NDEF_URI_PREFIX_HTTPS),
+      return ndef_emit_uri(dst, cap_use, (uint8_t)NFC_NDEF_URI_PREFIX_HTTPS,
                            cfg->str1);
 
     case WRITER_PAYLOAD_PLAIN_TEXT:
@@ -516,7 +515,7 @@ static uint16_t build_ndef_message(const writer_payload_config_t* cfg,
       if (!nero_nfc_snprintf_fits(n, sizeof(uri))) {
         return 0u;
       }
-      return ndef_emit_uri(dst, cap_use, (uint8_t)(WRITER_NDEF_URI_PREFIX_NONE),
+      return ndef_emit_uri(dst, cap_use, (uint8_t)WRITER_NDEF_URI_PREFIX_NONE,
                            uri);
     }
 
@@ -526,7 +525,7 @@ static uint16_t build_ndef_message(const writer_payload_config_t* cfg,
       char body[WRITER_STR2_MAX];
       subj[0] = '\0';
       body[0] = '\0';
-      const char* sep = (const char*)(memchr(cfg->str2, '|', cfg_str2_len));
+      const char* sep = (const char*)memchr(cfg->str2, '|', cfg_str2_len);
       if (sep != NERO_NFC_NULL) {
         /* `cfg->str2` is `WRITER_STR2_MAX` bytes; `|` cannot land at index >=
          * sizeof(subj)-1. */
@@ -558,7 +557,7 @@ static uint16_t build_ndef_message(const writer_payload_config_t* cfg,
       if (!nero_nfc_snprintf_fits(n, sizeof(uri))) {
         return 0u;
       }
-      return ndef_emit_uri(dst, cap_use, (uint8_t)(WRITER_NDEF_URI_PREFIX_NONE),
+      return ndef_emit_uri(dst, cap_use, (uint8_t)WRITER_NDEF_URI_PREFIX_NONE,
                            uri);
     }
 
@@ -568,7 +567,7 @@ static uint16_t build_ndef_message(const writer_payload_config_t* cfg,
       if (!nero_nfc_snprintf_fits(n, sizeof(uri))) {
         return 0u;
       }
-      return ndef_emit_uri(dst, cap_use, (uint8_t)(WRITER_NDEF_URI_PREFIX_NONE),
+      return ndef_emit_uri(dst, cap_use, (uint8_t)WRITER_NDEF_URI_PREFIX_NONE,
                            uri);
     }
 
@@ -578,7 +577,7 @@ static uint16_t build_ndef_message(const writer_payload_config_t* cfg,
       char email[WRITER_STR2_MAX];
       tel[0] = '\0';
       email[0] = '\0';
-      const char* sep = (const char*)(memchr(cfg->str2, '|', cfg_str2_len));
+      const char* sep = (const char*)memchr(cfg->str2, '|', cfg_str2_len);
       if (sep != NERO_NFC_NULL) {
         size_t tl = (size_t)(sep - cfg->str2);
         if ((tl >= sizeof(tel)) ||
@@ -612,8 +611,8 @@ static uint16_t build_ndef_message(const writer_payload_config_t* cfg,
         return 0u;
       }
       static const char VCARD_MIME[] = NFC_NDEF_MIME_VCARD;
-      return ndef_emit_mime_sr(dst, cap_use, VCARD_MIME,
-                               (const uint8_t*)(vcard), (uint16_t)(n));
+      return ndef_emit_mime_sr(dst, cap_use, VCARD_MIME, (const uint8_t*)vcard,
+                               (uint16_t)n);
     }
 
     case WRITER_PAYLOAD_WIFI_WSC: {
@@ -637,7 +636,7 @@ static uint16_t build_ndef_message(const writer_payload_config_t* cfg,
       /* [BT-OOB] Bluetooth SSP-over-NFC OOB block: 2-byte OOB Data Length (LSB
        * first, total length including itself) followed by the 6-byte BD_ADDR in
        * little-endian (LSB first) order. */
-      payload[0] = (uint8_t)(WRITER_BT_OOB_PAYLOAD_LEN);
+      payload[0] = (uint8_t)WRITER_BT_OOB_PAYLOAD_LEN;
       payload[1] = 0u;
       payload[WRITER_BT_OOB_MAC_DEST_START] =
           mac[WRITER_BT_MAC_LAST_OCTET_INDEX];

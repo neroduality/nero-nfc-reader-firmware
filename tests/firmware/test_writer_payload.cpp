@@ -44,6 +44,7 @@ enum {
 #include "nero_nfc_mem_util.h"
 #include "writer_payload.h"
 #include "writer_payload_utest_hook.h"
+#include "test_bounds.hpp"
 
 #include <cstdio>
 #include <cstring>
@@ -67,14 +68,10 @@ void PoisonWriterKind(writer_payload_config_t* cfg, int bits) {
                             sizeof(cfg->kind));
 }
 
-#if defined(__GNUC__) || defined(__clang__)
-__attribute__((no_sanitize("undefined")))
-#endif
-const char* KindNameFromRawBitsForTest(unsigned bits) {
-  writer_payload_kind_t k{};
-  (void)nero_nfc_copy_bytes(&k, sizeof(k), 0u, &bits, sizeof(k));
-  return writer_payload_kind_name(k);
-}
+// Unnamed but inside the enum's value range (enumerators fit in 4 bits).
+// Converting a value outside that range is undefined in C++.
+constexpr int kUnnamedWriterKind = 15;
+static_assert(static_cast<int>(WRITER_PAYLOAD_RAW_NDEF) < kUnnamedWriterKind);
 
 void FillChar(char* dest, size_t cap, char ch) {
   ASSERT_NE(dest, NERO_NFC_NULL);
@@ -112,7 +109,9 @@ TEST(WriterPayload, DefaultAndKindNames) {
   EXPECT_STREQ(writer_payload_kind_name(WRITER_PAYLOAD_WIFI_WSC), "wifi");
   EXPECT_STREQ(writer_payload_kind_name(WRITER_PAYLOAD_URI_RAW), "uri");
   EXPECT_STREQ(writer_payload_kind_name(WRITER_PAYLOAD_BT_OOB), "bt");
-  EXPECT_STREQ(KindNameFromRawBitsForTest(999u), "?");
+  EXPECT_STREQ(writer_payload_kind_name(
+                   static_cast<writer_payload_kind_t>(kUnnamedWriterKind)),
+               "?");
 }
 
 TEST(WriterPayload, NullArgsReturnZero) {
@@ -137,7 +136,7 @@ TEST(WriterPayload, UrlHttpsWellKnownTlv) {
   ASSERT_GT(n, 0u);
   EXPECT_EQ(tlv[0], 0x03u);
   ASSERT_NE(tlv[1], 0xFFu);
-  const uint8_t ndef_len = std::span{tlv}[1];
+  const uint8_t ndef_len = nero_nfc_test::At(tlv, 1);
   ASSERT_EQ(nero_nfc_u8_at(&tlv[0], n, 2u + ndef_len), 0xFEu);
   EXPECT_EQ(nero_nfc_u8_at(&tlv[0], n, 2u), 0xD1u);
   EXPECT_EQ(nero_nfc_u8_at(&tlv[0], n, 3u), 0x01u);
@@ -317,8 +316,8 @@ TEST(WriterPayload, LongNdefUsesLongTlvHeader) {
   EXPECT_EQ(tlv[0], 0x03u);
   ASSERT_EQ(tlv[1], 0xFFu)
       << "expected long TLV length form once NDEF exceeds 254 bytes";
-  auto inner = static_cast<uint16_t>(
-      (static_cast<uint16_t>(tlv[kTestLit2]) << kTestLit8) | tlv[kTestLit3]);
+  const auto inner = static_cast<uint16_t>(
+      (static_cast<uint32_t>(tlv[kTestLit2]) << kTestLit8) | tlv[kTestLit3]);
   EXPECT_GT(inner, 254u);
   EXPECT_EQ(nero_nfc_u8_at(&tlv[0], n, 4u + inner), 0xFEu);
 }

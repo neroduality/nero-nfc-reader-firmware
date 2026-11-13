@@ -22,8 +22,8 @@
 # end via `NFC_FRONTEND` (see `make/nfc-frontends.mk`).
 
 # Third-party pins (exact versions; ST ZIPs also have SHA256 under make/*.sha256):
-#   arduino-cli 1.5.1 | arduino:renesas_uno 1.6.0 | NFC-RFAL 2.0.2 | ST25R3916 2.0.2
-ARDUINO_MIN_CLI_VERSION ?= 1.5.1
+#   arduino-cli 1.6.0 | arduino:renesas_uno 1.6.0 | NFC-RFAL 2.0.2 | ST25R3916 2.1.0
+ARDUINO_MIN_CLI_VERSION ?= 1.6.0
 ARDUINO_CLI_VERSION ?= $(ARDUINO_MIN_CLI_VERSION)
 ARDUINO_MIN_RENESAS_CORE ?= 1.6.0
 
@@ -105,7 +105,7 @@ else ifeq ($(BOARD_SKIP_HOST_HARDENING),1)
 else
   COMMON_HARDENING_FLAGS ?= $(COMMON_HARDENING_FLAGS_DEFAULT)
 endif
-COMMON_WARNING_FLAGS ?= -Wformat=2 -Wformat-security -Wformat-overflow=2 -Wformat-truncation=2 -Wnull-dereference -Warray-bounds=2 -Wstringop-overflow=4 -Wvla -Walloca -Wstack-protector -Wshadow -Wcast-qual -Wundef -Wdouble-promotion -Wshift-overflow=2 -Wswitch-enum -Wunused-result -Wno-error
+COMMON_WARNING_FLAGS ?= -Wformat=2 -Wformat-security -Wformat-overflow=2 -Wformat-truncation=2 -Wnull-dereference -Warray-bounds=2 -Wstringop-overflow=4 -Wvla -Walloca -Wstack-protector -Wshadow -Wcast-qual -Wundef -Wdouble-promotion -Wshift-overflow=2 -Wswitch-enum -Wunused-result
 C_WARNING_FLAGS ?= $(COMMON_WARNING_FLAGS) -Wstrict-overflow=2 -Wstrict-prototypes -Wwrite-strings
 CPP_WARNING_FLAGS ?= $(COMMON_WARNING_FLAGS) -Wstrict-overflow=2 -Wwrite-strings
 
@@ -177,6 +177,8 @@ BOARD_UPLOAD_READY_BANNER ?=
 BOARD_UPLOAD_WAIT_MESSAGE ?= Processing -- wait
 INSTALL_DEPS ?= 0
 AUTO_INSTALL_LINUX_DEPS ?= $(INSTALL_DEPS)
+NERO_NFC_LLVM_PIN ?= 0
+lint: NERO_NFC_LLVM_PIN=1
 FORCE_EXTERNAL ?=
 
 # Distro dev packages (cmake, valgrind, ...) -- opt-in via INSTALL_DEPS=1.
@@ -186,10 +188,11 @@ FIRMWARE_DIR  = firmware
 
 .DEFAULT_GOAL := all
 
-.PHONY: all build help clean install install-userspace require-userspace-binaries install-udev install-pcsc-driver test verify asan ubsan tsan valgrind require-lint-kit lint lint-self-test security-lint ci-local codeql-local lima userspace deps maybe-deps check-architecture
+.PHONY: all build help clean install install-userspace require-userspace-binaries install-udev install-pcsc-driver test verify asan ubsan tsan valgrind require-lint-kit lint lint-self-test security-lint ci-local codeql-local lima userspace deps maybe-deps check-architecture refuse-root ensure-build-owner
 
 define RUN_LINUX_DEPS
 @INSTALL_DEPS=1 AUTO_INSTALL_LINUX_DEPS=1 \
+	NERO_NFC_LLVM_PIN="$(NERO_NFC_LLVM_PIN)" \
 	FIRMWARE_ROOT="$(CURDIR)" \
 	bash "$(CURDIR)/make/install-linux-deps.sh"
 endef
@@ -199,7 +202,8 @@ deps:
 
 maybe-deps:
 	@if [ "$(INSTALL_DEPS)" != "0" ]; then \
-	  $(MAKE) deps INSTALL_DEPS="$(INSTALL_DEPS)" AUTO_INSTALL_LINUX_DEPS="$(AUTO_INSTALL_LINUX_DEPS)" TARGET="$(TARGET)"; \
+	  $(MAKE) deps INSTALL_DEPS="$(INSTALL_DEPS)" AUTO_INSTALL_LINUX_DEPS="$(AUTO_INSTALL_LINUX_DEPS)" TARGET="$(TARGET)" \
+	    NERO_NFC_LLVM_PIN="$(NERO_NFC_LLVM_PIN)"; \
 	fi
 
 define UPLOAD_C_SKETCH
@@ -237,14 +241,14 @@ USERSPACE_BIN_DIR     = $(USERSPACE_BUILD_DIR)/bin
 
 INSTALL_PREFIX ?= $(HOME)/.local
 INSTALL_BINDIR ?= $(INSTALL_PREFIX)/bin
-USERSPACE_TOOLS := nero_nfc_uart reader writer
+USERSPACE_TOOLS := nero_nfc_uart reader writer fido_token
 
 # `make install userspace` -> install only (same as install-userspace). Without this,
 # Make runs both goals and parallel -j rebuilds (rm -rf) while copying binaries.
 _INSTALL_WITH_USERSPACE := $(and $(filter install,$(MAKECMDGOALS)),$(filter userspace,$(MAKECMDGOALS)))
 
 ifeq ($(_INSTALL_WITH_USERSPACE),)
-userspace: maybe-deps
+userspace: ensure-build-owner maybe-deps
 	@rm -rf $(USERSPACE_BUILD_DIR)
 	@cmake -S $(CURDIR)/$(USERSPACE_DIR) -B $(USERSPACE_BUILD_DIR) \
 	  -DCMAKE_BUILD_TYPE=$(USERSPACE_BUILD_TYPE) -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=$(CURDIR)/$(USERSPACE_BIN_DIR) --log-level=WARNING \
@@ -294,28 +298,28 @@ install-pcsc-driver:
 check-architecture:
 	@python3 "$(CURDIR)/scripts/check-firmware-architecture.py" --repo-root "$(CURDIR)"
 
-test: maybe-deps third-party-nfc-libs check-architecture
+test: ensure-build-owner maybe-deps third-party-nfc-libs check-architecture
 	@bash "$(CURDIR)/make/wipe-host-build-trees.sh" test
 	@INSTALL_DEPS="$(INSTALL_DEPS)" AUTO_INSTALL_LINUX_DEPS="$(AUTO_INSTALL_LINUX_DEPS)" \
 	  SANITIZE_ADDRESS=0 SANITIZE_UNDEFINED=0 NERO_TESTS_BUILD_TYPE=Release \
 	  bash "$(CURDIR)/make/run-unit-tests.sh"
 
-asan: maybe-deps third-party-nfc-libs
+asan: ensure-build-owner maybe-deps third-party-nfc-libs
 	@bash "$(CURDIR)/make/wipe-host-build-trees.sh" test
 	@INSTALL_DEPS="$(INSTALL_DEPS)" AUTO_INSTALL_LINUX_DEPS="$(AUTO_INSTALL_LINUX_DEPS)" \
 	  SANITIZE_ADDRESS=1 SANITIZE_UNDEFINED=0 bash "$(CURDIR)/make/run-unit-tests.sh"
 
-ubsan: maybe-deps third-party-nfc-libs
+ubsan: ensure-build-owner maybe-deps third-party-nfc-libs
 	@bash "$(CURDIR)/make/wipe-host-build-trees.sh" test
 	@INSTALL_DEPS="$(INSTALL_DEPS)" AUTO_INSTALL_LINUX_DEPS="$(AUTO_INSTALL_LINUX_DEPS)" \
 	  SANITIZE_ADDRESS=0 SANITIZE_UNDEFINED=1 bash "$(CURDIR)/make/run-unit-tests.sh"
 
-tsan: maybe-deps third-party-nfc-libs
+tsan: ensure-build-owner maybe-deps third-party-nfc-libs
 	@bash "$(CURDIR)/make/wipe-host-build-trees.sh" test
 	@INSTALL_DEPS="$(INSTALL_DEPS)" AUTO_INSTALL_LINUX_DEPS="$(AUTO_INSTALL_LINUX_DEPS)" \
 	  SANITIZE_THREAD=1 bash "$(CURDIR)/make/run-unit-tests.sh"
 
-valgrind: maybe-deps third-party-nfc-libs
+valgrind: ensure-build-owner maybe-deps third-party-nfc-libs
 	@if ! command -v valgrind >/dev/null 2>&1; then \
 	  printf 'error: valgrind not found (install via: make deps or INSTALL_DEPS=1 make valgrind)\n' >&2; \
 	  exit 1; \
@@ -324,19 +328,19 @@ valgrind: maybe-deps third-party-nfc-libs
 	@INSTALL_DEPS="$(INSTALL_DEPS)" AUTO_INSTALL_LINUX_DEPS="$(AUTO_INSTALL_LINUX_DEPS)" \
 	  VALGRIND=1 bash "$(CURDIR)/make/run-unit-tests.sh"
 
-coverage: maybe-deps third-party-nfc-libs
+coverage: ensure-build-owner maybe-deps third-party-nfc-libs
 	@bash "$(CURDIR)/make/wipe-host-build-trees.sh" test
 	@INSTALL_DEPS="$(INSTALL_DEPS)" AUTO_INSTALL_LINUX_DEPS="$(AUTO_INSTALL_LINUX_DEPS)" \
 	  COVERAGE=1 bash "$(CURDIR)/make/run-unit-tests.sh"
 
-verify: maybe-deps third-party-nfc-libs
+verify: ensure-build-owner maybe-deps third-party-nfc-libs
 	@bash "$(CURDIR)/make/wipe-host-build-trees.sh" verify
 	@NERO_KEEP_HOST_BUILDS=1 $(MAKE) asan INSTALL_DEPS=0
 	@NERO_KEEP_HOST_BUILDS=1 $(MAKE) ubsan INSTALL_DEPS=0
 	@NERO_KEEP_HOST_BUILDS=1 $(MAKE) tsan INSTALL_DEPS=0
 	@NERO_KEEP_HOST_BUILDS=1 $(MAKE) valgrind INSTALL_DEPS=0
 	@NERO_KEEP_HOST_BUILDS=1 INSTALL_DEPS=0 AUTO_INSTALL_LINUX_DEPS=0 \
-	  bash "$(CURDIR)/make/scan-build-tests.sh"
+	  bash "$(CURDIR)/.github/scripts/ci-scan-build.sh"
 	@NERO_KEEP_HOST_BUILDS=1 $(MAKE) userspace USERSPACE_BUILD_TYPE=Release INSTALL_DEPS=0
 	@bash "$(CURDIR)/make/verify-host-binary-hardening.sh"
 
@@ -349,12 +353,28 @@ ifeq ($(origin CI_LOCAL_FLAGS),command line)
 endif
 LINT_FLAGS ?=
 
+# Org C/C++ lint kit (neroduality/.github -> lint-c-cpp). Cloned on demand into
+# .lint-kit-org via .github/scripts/lint-kit-config.sh (ref from lint-c-cpp.yaml).
+# Override with `make lint LINT_KIT=/path/to/lint-c-cpp` for local kit iteration.
+# LINT_KIT may point either at the kit dir (contains lint-c-cpp.sh) or at a
+# checkout of neroduality/.github (contains lint-c-cpp/lint-c-cpp.sh).
 DEFAULT_LINT_KIT := $(CURDIR)/.lint-kit-org/lint-c-cpp
 LINT_KIT ?= $(DEFAULT_LINT_KIT)
-# Capture before := below (which would reset origin to "file").
+# Capture before override below (which would reset origin to "file").
 _LINT_KIT_ORIGIN := $(origin LINT_KIT)
-export LINT_KIT := $(abspath $(LINT_KIT))
-export NERO_LINT_REPO_ROOT := $(CURDIR)
+_LINT_KIT_RAW := $(abspath $(LINT_KIT))
+override LINT_KIT := $(if $(wildcard $(_LINT_KIT_RAW)/lint-c-cpp.sh),$(_LINT_KIT_RAW),$(if $(wildcard $(_LINT_KIT_RAW)/lint-c-cpp/lint-c-cpp.sh),$(_LINT_KIT_RAW)/lint-c-cpp,$(_LINT_KIT_RAW)))
+export LINT_KIT
+export LINT_REPO_ROOT := $(CURDIR)
+
+# Build/test/lint targets must not run as root -- keeps build/ user-owned.
+BUILD_TREES ?= $(BUILD_DIR) tests/build tests/build-scan tests/build-codeql tests/scan-build-report .lint-kit-org
+
+refuse-root:
+	@bash "$(CURDIR)/.github/scripts/helper-build-tree-ownership.sh" refuse-root-make
+
+ensure-build-owner: refuse-root
+	@bash "$(CURDIR)/.github/scripts/helper-ensure-build-tree-owner.sh" $(BUILD_TREES)
 
 require-lint-kit:
 	@bash "$(CURDIR)/.github/scripts/lint-kit-config.sh" --prepare-writable "$(CURDIR)" || true
@@ -371,7 +391,7 @@ require-lint-kit:
 	  exit 1; \
 	fi
 
-lint: require-lint-kit maybe-deps third-party-nfc-libs lint-self-test
+lint: require-lint-kit ensure-build-owner maybe-deps third-party-nfc-libs lint-self-test
 	@case ' $(LINT_FLAGS) ' in \
 	  *' --custom-lints-only '*) ;; \
 	  *) \
@@ -381,6 +401,7 @@ lint: require-lint-kit maybe-deps third-party-nfc-libs lint-self-test
 	      bash "$(CURDIR)/make/wipe-host-build-trees.sh" lint; \
 	    fi ;; \
 	esac
+	@bash "$(CURDIR)/.github/scripts/verify-script-callers.sh"
 	@bash "$(LINT_KIT)/lint-c-cpp.sh" precheck
 	@bash "$(LINT_KIT)/lint-c-cpp.sh" lint $(LINT_FLAGS)
 
@@ -394,20 +415,20 @@ security-lint:
 # unset Make's default so scripts clone toolchain.lint_kit from lint-c-cpp.yaml.
 _CI_LOCAL_LINT_ENV := $(if $(filter command line environment,$(_LINT_KIT_ORIGIN)),LINT_KIT=$(LINT_KIT),env -u LINT_KIT)
 
-ci-local:
+ci-local: ensure-build-owner
 	@$(_CI_LOCAL_LINT_ENV) bash "$(CURDIR)/.github/scripts/run-ci-locally.sh" $(_CI_LOCAL_FLAGS)
 
 codeql-local:
 	@bash "$(CURDIR)/.github/scripts/run-codeql-locally.sh" $(_CI_LOCAL_FLAGS)
 
-lima:
+lima: ensure-build-owner
 	@$(_CI_LOCAL_LINT_ENV) bash "$(CURDIR)/.github/scripts/run-ci-locally.sh" --lima $(_CI_LOCAL_FLAGS)
 
 help:
 	@printf '\nnero-nfc\n\n'
 	@printf '  %-38s %s\n' 'make' 'Compile nfc firmware + userspace (no upload; use make flash or make flash-cdc)'
 	@printf '  %-38s %s\n' 'make nfc' 'Compile combined reader/writer CDC firmware'
-	@printf '  %-38s %s\n' 'make userspace' 'Compile Linux host CLIs only (reader, writer, nero_nfc_uart)'
+	@printf '  %-38s %s\n' 'make userspace' 'Compile Linux host CLIs only (reader, writer, nero_nfc_uart, fido_token)'
 	@printf '  %-38s %s\n' 'make install-userspace' 'Install built userspace CLIs to ~/.local/bin (no rebuild; aliases: make install, make install userspace)'
 	@printf '  %-38s %s\n' 'make flash' 'Build + upload USB CCID reader on any supported board (NFC_USB_MODE=ccid)'
 	@printf '  %-38s %s\n' 'make flash-cdc' 'Build + upload serial reader/writer shell (NFC_USB_MODE=cdc)'
@@ -452,7 +473,7 @@ help:
 	@printf '  %-38s %s\n' 'NERO_KEEP_HOST_BUILDS=1' 'Skip wipe for make test/lint/verify only (CI always wipes CMake trees)'
 	@printf '\n'
 
-clean:
+clean: refuse-root
 	@echo "Releasing serial ports..."
 	@for p in /dev/ttyACM*; do \
 	   [ -e "$$p" ] && fuser -k "$$p" >/dev/null 2>&1 && echo "  killed process on $$p" || true; \

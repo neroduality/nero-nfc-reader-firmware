@@ -87,7 +87,7 @@ reader --no-open-url
 writer --uri=https://example.test/ --uri=https://example2.test/
 ```
 
-**Optional -- WebAuthn** with an NFC FIDO security key: follow [TUTORIAL_WEBAUTHN_CCID.md](docs/TUTORIAL_WEBAUTHN_CCID.md). Not required for tag read/write.
+**Optional -- WebAuthn** with an NFC FIDO security key: follow [TUTORIAL_WEBAUTHN_CCID.md](docs/TUTORIAL_WEBAUTHN_CCID.md). Not required for tag read/write. To wipe a key and set a new PIN, see [FIDO_TOKEN.md](docs/FIDO_TOKEN.md).
 
 Developers: `make help`.
 

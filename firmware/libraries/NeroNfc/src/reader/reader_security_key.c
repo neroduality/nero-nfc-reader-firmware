@@ -34,12 +34,12 @@
 #include "nero_nfc_format.h"
 
 enum {
-  READER_SECURITY_KEY_ABORT_SW1 = (uint8_t)(NFC_CCID_MSG_PC_TO_RDR_SECURE),
+  READER_SECURITY_KEY_ABORT_SW1 = (uint8_t)NFC_CCID_MSG_PC_TO_RDR_SECURE,
   READER_SECURITY_KEY_ABORT_SW2 = 0x17u,
   READER_SECURITY_KEY_DEBUG_APDU_PREVIEW_LEN =
-      (uint16_t)(NFC_ISO7816_SELECT_AID_MAX),
+      (uint16_t)NFC_ISO7816_SELECT_AID_MAX,
   READER_SECURITY_KEY_SELECT_APDU_BUF_LEN = 24u,
-  READER_SECURITY_KEY_SELECT_RESP_BUF_LEN = (uint16_t)(NFC_ISO14443_ATS_MAX),
+  READER_SECURITY_KEY_SELECT_RESP_BUF_LEN = (uint16_t)NFC_ISO14443_ATS_MAX,
 };
 
 bool reader_security_key_select_app_ex(const uint8_t* aid, uint8_t aid_len,
@@ -97,9 +97,9 @@ bool reader_security_key_select_app_ex(const uint8_t* aid, uint8_t aid_len,
   if (!verbose) {
     if ((rlen >= NFC_ISO7816_SW_STATUS_WORD_LEN) &&
         (rsp_out != NERO_NFC_NULL) && (rsp_len_out != NERO_NFC_NULL) &&
-        ((uint16_t)(rlen) <= rsp_cap)) {
-      (void)nero_nfc_copy_bytes(rsp_out, rsp_cap, 0u, resp, (uint16_t)(rlen));
-      *rsp_len_out = (uint16_t)(rlen);
+        ((uint16_t)rlen <= rsp_cap)) {
+      (void)nero_nfc_copy_bytes(rsp_out, rsp_cap, 0u, resp, (uint16_t)rlen);
+      *rsp_len_out = (uint16_t)rlen;
     }
     return ok;
   }
@@ -115,12 +115,12 @@ bool reader_security_key_select_app_ex(const uint8_t* aid, uint8_t aid_len,
     if (nfc_iso7816_response_sw(resp, rlen, &sw1, &sw2)) {
       {
         char nhx[NERO_NFC_FORMAT_SNPRINTF_HEX_BYTE_CAP];
-        (void)nero_nfc_snprintf(nhx, sizeof nhx, "%02X", (unsigned)(sw1));
+        (void)nero_nfc_snprintf(nhx, sizeof nhx, "%02X", (unsigned)sw1);
         nero_nfc_log_write(nhx);
       }
       {
         char nhx[NERO_NFC_FORMAT_SNPRINTF_HEX_BYTE_CAP];
-        (void)nero_nfc_snprintf(nhx, sizeof nhx, "%02X", (unsigned)(sw2));
+        (void)nero_nfc_snprintf(nhx, sizeof nhx, "%02X", (unsigned)sw2);
         nero_nfc_log_write(nhx);
       }
     }
@@ -143,8 +143,8 @@ bool reader_security_key_select_app_ex(const uint8_t* aid, uint8_t aid_len,
       nero_nfc_log_putc(' ');
     }
     nero_nfc_log_write("apdu_rx=");
-    for (di = 0u; di < (uint16_t)(rlen) &&
-                  di < READER_SECURITY_KEY_DEBUG_APDU_PREVIEW_LEN;
+    for (di = 0u;
+         di < (uint16_t)rlen && di < READER_SECURITY_KEY_DEBUG_APDU_PREVIEW_LEN;
          di++) {
       nero_nfc_log_hex_u8(resp[di]);
       nero_nfc_log_putc(' ');
@@ -165,9 +165,9 @@ bool reader_security_key_select_app_ex(const uint8_t* aid, uint8_t aid_len,
     nero_nfc_log_write("\r\n");
   }
   if ((rlen >= NFC_ISO7816_SW_STATUS_WORD_LEN) && (rsp_out != NERO_NFC_NULL) &&
-      (rsp_len_out != NERO_NFC_NULL) && ((uint16_t)(rlen) <= rsp_cap)) {
-    (void)nero_nfc_copy_bytes(rsp_out, rsp_cap, 0u, resp, (uint16_t)(rlen));
-    *rsp_len_out = (uint16_t)(rlen);
+      (rsp_len_out != NERO_NFC_NULL) && ((uint16_t)rlen <= rsp_cap)) {
+    (void)nero_nfc_copy_bytes(rsp_out, rsp_cap, 0u, resp, (uint16_t)rlen);
+    *rsp_len_out = (uint16_t)rlen;
   }
   return ok;
 }
@@ -180,7 +180,7 @@ bool reader_iso_dep_select_app(const uint8_t* aid, uint8_t aid_len,
 }
 
 bool reader_iso_dep_select_ndef_app(void) {
-  for (uint8_t i = 0u; i < (uint8_t)(NFC_PCSC_NDEF_APP_SELECT_VARIANT_COUNT);
+  for (uint8_t i = 0u; i < (uint8_t)NFC_PCSC_NDEF_APP_SELECT_VARIANT_COUNT;
        ++i) {
     nfc_pcsc_ndef_app_select_variant_t variant;
 
@@ -200,7 +200,7 @@ bool reader_security_key_select_fido_probe(bool verbose,
                                            bool follow_get_response,
                                            uint8_t* rsp_out, uint16_t rsp_cap,
                                            uint16_t* rsp_len_out) {
-  for (uint8_t i = 0u; i < (uint8_t)(NFC_CTAP_FIDO_APP_SELECT_VARIANT_COUNT);
+  for (uint8_t i = 0u; i < (uint8_t)NFC_CTAP_FIDO_APP_SELECT_VARIANT_COUNT;
        ++i) {
     nfc_ctap_fido_app_select_variant_t variant;
 

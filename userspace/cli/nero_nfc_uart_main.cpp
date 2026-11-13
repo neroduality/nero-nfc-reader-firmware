@@ -34,6 +34,7 @@
 #include "nero_nfc_cli_exit.hpp"
 #include "nero_nfc_driver.hpp"
 #include "nero_nfc_io.hpp"
+#include "nero_nfc_bounds.hpp"
 
 namespace {
 
@@ -143,15 +144,15 @@ int main(int argc, char** argv) {
         command = optarg;
         break;
       case 'h':
-        Usage(args[0]);
+        Usage(nero_nfc::At(args, 0));
         return nero_nfc::kCliExitSuccess;
       default:
-        Usage(args[0]);
+        Usage(nero_nfc::At(args, 0));
         return nero_nfc::kCliExitUsageError;
     }
   }
   for (auto i = static_cast<std::size_t>(optind); i < args.size(); ++i) {
-    extra_args.emplace_back(args[i]);
+    extra_args.emplace_back(nero_nfc::At(args, i));
   }
 
   switch (mode) {

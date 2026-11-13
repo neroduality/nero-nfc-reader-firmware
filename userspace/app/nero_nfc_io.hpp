@@ -26,6 +26,8 @@ void NeroNfcStderrLine(const char* s);
 void NeroNfcStderrLine(std::string_view s);
 void NeroNfcStdoutLine(const char* s);
 void NeroNfcStdoutLine(std::string_view s);
+/** Write an interactive prompt to stderr without a newline, then flush. */
+void NeroNfcStderrPrompt(std::string_view s);
 /** Flush stdout (for tests that redirect STDOUT_FILENO). Returns fflush status.
  */
 [[nodiscard]] int NeroNfcStdoutFlush();

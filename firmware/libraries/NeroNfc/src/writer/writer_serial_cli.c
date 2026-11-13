@@ -34,16 +34,11 @@
 #include "writer_payload.h"
 #include "writer_context.h"
 
+#define WRITER_CLI_HEX_NIBBLE_SHIFT 4u
+
 enum {
-  WRITER_CLI_HEX_NIBBLE_SHIFT = 4u,
   WRITER_CLI_LONG_OPT_PREFIX_LEN = 2u,
 };
-
-#if defined(__GNUC__) || defined(__clang__)
-#define CLI_PRINTF_LIKE __attribute__((format(printf, 2, 3)))
-#else
-#define CLI_PRINTF_LIKE
-#endif
 
 static char* writer_serial_cli_line_buf(void) {
   if (writer_context_active() == NERO_NFC_NULL) {
@@ -53,6 +48,10 @@ static char* writer_serial_cli_line_buf(void) {
 }
 
 static bool writer_serial_cli_snprintf_buf(char* dst, size_t dst_cap,
+                                           const char* fmt, ...)
+    NERO_NFC_PRINTF_LIKE(3, 4);
+
+static bool writer_serial_cli_snprintf_buf(char* dst, size_t dst_cap,
                                            const char* fmt, ...) {
   va_list ap;
   int n;
@@ -60,18 +59,10 @@ static bool writer_serial_cli_snprintf_buf(char* dst, size_t dst_cap,
     return false;
   }
   va_start(ap, fmt);
-#if defined(__clang__)
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wformat-nonliteral"
-#endif
   n = nero_nfc_vsnprintf(dst, dst_cap, fmt, ap);
-#if defined(__clang__)
-#pragma clang diagnostic pop
-#endif
   va_end(ap);
-  if ((n < 0) || ((size_t)(n) >= dst_cap)) {
-    if (!nero_nfc_store_u8((uint8_t*)(dst), dst_cap, (size_t)(0),
-                           (uint8_t)('\0'))) {
+  if ((n < 0) || ((size_t)n >= dst_cap)) {
+    if (!nero_nfc_store_u8((uint8_t*)dst, dst_cap, (size_t)0, (uint8_t)'\0')) {
       return false;
     }
     return false;
@@ -96,9 +87,9 @@ static void trim(char* s, size_t cap) {
     n -= consumed;
   }
   while ((n > 0u) && nero_nfc_span_ok(n - 1u, 1u, cap) &&
-         ((unsigned char)(s[n - 1u]) <= ' ')) {
+         ((unsigned char)s[n - 1u] <= ' ')) {
     n--;
-    if (!nero_nfc_store_u8((uint8_t*)(s), cap, n, (uint8_t)('\0'))) {
+    if (!nero_nfc_store_u8((uint8_t*)s, cap, n, (uint8_t)'\0')) {
       return;
     }
   }
@@ -150,13 +141,13 @@ static bool copy_field(char* dst, size_t dst_sz, const char* src) {
     return false;
   }
   if (src == NERO_NFC_NULL) {
-    if (!nero_nfc_store_u8((uint8_t*)(dst), dst_sz, 0u, (uint8_t)('\0'))) {
+    if (!nero_nfc_store_u8((uint8_t*)dst, dst_sz, 0u, (uint8_t)'\0')) {
       return false;
     }
     return true;
   }
   if (!nero_nfc_bounded_strlen(src, WRITER_CLI_LINE_CAP, &n)) {
-    if (!nero_nfc_store_u8((uint8_t*)(dst), dst_sz, 0u, (uint8_t)('\0'))) {
+    if (!nero_nfc_store_u8((uint8_t*)dst, dst_sz, 0u, (uint8_t)'\0')) {
       return false;
     }
     return false;
@@ -165,12 +156,12 @@ static bool copy_field(char* dst, size_t dst_sz, const char* src) {
     n = dst_sz - 1u;
   }
   if (!nero_nfc_copy_bytes(dst, dst_sz, 0u, src, n)) {
-    if (!nero_nfc_store_u8((uint8_t*)(dst), dst_sz, 0u, (uint8_t)('\0'))) {
+    if (!nero_nfc_store_u8((uint8_t*)dst, dst_sz, 0u, (uint8_t)'\0')) {
       return false;
     }
     return false;
   }
-  if (!nero_nfc_store_u8((uint8_t*)(dst), dst_sz, n, (uint8_t)('\0'))) {
+  if (!nero_nfc_store_u8((uint8_t*)dst, dst_sz, n, (uint8_t)'\0')) {
     return false;
   }
   trim(dst, dst_sz);
@@ -227,7 +218,7 @@ static void print_show(const writer_payload_config_t* cfg) {
     {
       char ndc[NERO_NFC_FORMAT_SNPRINTF_DEC_CAP];
       (void)nero_nfc_snprintf(ndc, sizeof ndc, "%u",
-                              (unsigned)((uint32_t)(cfg->raw_ndef_len)));
+                              (unsigned)((uint32_t)cfg->raw_ndef_len));
       nero_nfc_log_write(ndc);
     }
     nero_nfc_log_write("\r\n");
@@ -272,11 +263,11 @@ static bool hex_nibble(char c, uint8_t* out) {
   if (out == NERO_NFC_NULL) {
     return false;
   }
-  const int v = nfc_hex_nibble((uint8_t)(c));
+  const int v = nfc_hex_nibble((uint8_t)c);
   if (v < 0) {
     return false;
   }
-  *out = (uint8_t)(v);
+  *out = (uint8_t)v;
   return true;
 }
 
@@ -314,8 +305,8 @@ static bool parse_hex_bytes(const char* text, uint8_t* out, uint16_t out_cap,
     }
     if (out != NERO_NFC_NULL) {
       if (!nero_nfc_store_u8(
-              out, (size_t)(out_cap), (size_t)(n),
-              (uint8_t)((hi << WRITER_CLI_HEX_NIBBLE_SHIFT) | v))) {
+              out, (size_t)out_cap, (size_t)n,
+              (uint8_t)(((uint32_t)hi << WRITER_CLI_HEX_NIBBLE_SHIFT) | v))) {
         return false;
       }
     }
@@ -342,7 +333,7 @@ static bool writer_cli_apply_command(writer_payload_config_t* cfg,
   }
 
   if (starts_ci(cmd, "url")) {
-    cfg->uri_id = (uint8_t)(NFC_NDEF_URI_PREFIX_HTTPS);
+    cfg->uri_id = (uint8_t)NFC_NDEF_URI_PREFIX_HTTPS;
     if (!copy_field(cfg->str1, sizeof(cfg->str1), rest)) {
       nero_nfc_log_write("  url: missing path/host\r\n");
       updated = false;
@@ -429,8 +420,7 @@ static bool writer_cli_apply_command(writer_payload_config_t* cfg,
       nero_nfc_log_write("  vcard: missing display name\r\n");
       updated = false;
     } else {
-      char combo[WRITER_STR2_MAX];
-      combo[0] = '\0';
+      char combo[WRITER_STR2_MAX] = {0};
       if ((tel != NERO_NFC_NULL) && (email != NERO_NFC_NULL)) {
         (void)writer_serial_cli_snprintf_buf(combo, sizeof(combo), "%s|%s", tel,
                                              email);
@@ -535,14 +525,14 @@ static bool writer_cli_apply_command(writer_payload_config_t* cfg,
 
 static bool handle_line(writer_payload_config_t* cfg, char* line) {
   trim(line, WRITER_CLI_LINE_CAP);
-  if (nero_nfc_u8_at((const uint8_t*)(line), (size_t)(WRITER_CLI_LINE_CAP),
-                     0u) == (uint8_t)('\0')) {
+  if (nero_nfc_u8_at((const uint8_t*)line, (size_t)(WRITER_CLI_LINE_CAP), 0u) ==
+      (uint8_t)'\0') {
     return false;
   }
-  if ((nero_nfc_u8_at((const uint8_t*)(line), (size_t)(WRITER_CLI_LINE_CAP),
-                      0u) == (uint8_t)('-')) &&
-      (nero_nfc_u8_at((const uint8_t*)(line), (size_t)(WRITER_CLI_LINE_CAP),
-                      1u) == (uint8_t)('-'))) {
+  if ((nero_nfc_u8_at((const uint8_t*)line, (size_t)(WRITER_CLI_LINE_CAP),
+                      0u) == (uint8_t)'-') &&
+      (nero_nfc_u8_at((const uint8_t*)line, (size_t)(WRITER_CLI_LINE_CAP),
+                      1u) == (uint8_t)'-')) {
     line += WRITER_CLI_LONG_OPT_PREFIX_LEN;
     char* eq = strchr(line, '=');
     if (eq != NERO_NFC_NULL) {
@@ -602,8 +592,8 @@ void writer_serial_cli_init(void) {
   ctx->cli_line_overflow = false;
 #if defined(NERO_RAM_CONSTRAINED)
   if (line != NERO_NFC_NULL) {
-    if (!nero_nfc_store_u8((uint8_t*)(line), (size_t)(WRITER_CLI_LINE_CAP), 0u,
-                           (uint8_t)('\0'))) {
+    if (!nero_nfc_store_u8((uint8_t*)line, (size_t)(WRITER_CLI_LINE_CAP), 0u,
+                           (uint8_t)'\0')) {
       return;
     }
   }
@@ -648,7 +638,7 @@ bool writer_serial_cli_poll(writer_payload_config_t* cfg) {
   if (c < 0) {
     return changed;
   }
-  char ch = (char)(c);
+  char ch = (char)c;
   if ((ch == '\r') || (ch == '\n')) {
     if (ctx->cli_line_overflow) {
       nero_nfc_log_write("  ERROR: serial command too long; discarded.\r\n");
@@ -667,7 +657,7 @@ bool writer_serial_cli_poll(writer_payload_config_t* cfg) {
     }
     return changed;
   }
-  if ((unsigned char)(ch) < ' ') {
+  if ((unsigned char)ch < ' ') {
     return changed;
   }
   if (ctx->cli_line_len < (WRITER_CLI_LINE_CAP - 1u)) {

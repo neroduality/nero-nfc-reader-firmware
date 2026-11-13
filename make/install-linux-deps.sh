@@ -27,16 +27,21 @@
 #   WBA65:    autoconf, automake, libtool, libusb-1.0 (compile project-local OpenOCD on WBA65 build)
 #   Runtime:  util-linux, psmisc (fuser), procps (timeout/pgrep), bash
 #   PC/SC:    libpcsclite-dev (userspace lint/build with NERO_USERSPACE_HAVE_PCSC)
+#   Crypto:   libssl-dev / openssl-devel (required: fido_token PIN protocol)
 #   Fetch:    tar, unzip, coreutils (sha256sum)
 #   Test:     lcov >= 2.0 / genhtml, valgrind, libgtest-dev, libasan, libubsan
-#   Analysis: clang-tools (scan-build), clang-tidy (>=21.0.0), clang-format (>=20.0.0), cppcheck (>=2.19.1), perf
-#   Lint:    shellcheck, shfmt, codespell (>=2.4.0), markdownlint-cli (>=0.48.0; Node.js >=20), uv (ruff/mypy via uvx)
+#   Analysis: clang-tidy, clang-format, clang-tools (scan-build), cppcheck, perf
+#   Lint:    shellcheck, shfmt, codespell, markdownlint-cli (Node.js), uv (ruff/mypy via uvx)
+#   Minimum lint tool versions come from the lint kit's config/tool-versions.yaml.
 #
 # Environment (all optional):
 #   AUTO_INSTALL_LINUX_DEPS=0   skip this script entirely (Makefile default via INSTALL_DEPS=0)
 #   INSTALL_DEPS=0              alias for AUTO_INSTALL_LINUX_DEPS
 #   INSTALL_LINT_DEPS=0         test/CI containers: build + unit-test tools only (no clang-tidy/cppcheck/...)
 #   FIRMWARE_ROOT               repo root (default: parent of make/)
+#   NERO_NFC_LLVM_PIN=1         install exactly the toolchain.llvm_major LLVM (lint-c-cpp.yaml) for
+#                               clang-format and clang-tidy (make lint, CI lint). Unset: distro
+#                               LLVM, any version.
 # Legacy skip aliases (any one =0 also disables install):
 #   AUTO_INSTALL_LINUX_HOST_DEPS, AUTO_INSTALL_LINUX_UNIT_TEST_DEPS
 
@@ -69,6 +74,8 @@ fi
 # ---------------------------------------------------------------------------
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 : "${FIRMWARE_ROOT:=$(cd "${SCRIPT_DIR}/.." && pwd)}"
+# shellcheck source=../.github/scripts/llvm-version.sh
+source "${FIRMWARE_ROOT}/.github/scripts/llvm-version.sh"
 
 # Resolve the org lint kit (neroduality/.github -> lint-c-cpp); its toolchain
 # helpers replace the retired .github/linters/helper-*.sh install helpers.
@@ -161,6 +168,10 @@ load_lint_kit_toolchains() {
   }
   : "${LINT_KIT:=$(resolve_lint_kit_root)}"
   export LINT_KIT
+  if [[ ${NERO_NFC_LLVM_PIN} == 1 ]]; then
+    # The kit's clang-tidy/clang-format lookups accept only this major.
+    export LINT_KIT_LLVM_MAJOR="${NERO_NFC_LLVM_MAJOR}"
+  fi
   # shellcheck source=../../.github/lint-c-cpp/lib/helpers/toolchain/cppcheck_toolchain.sh
   source "${LINT_KIT}/lib/helpers/toolchain/cppcheck_toolchain.sh"
   # shellcheck source=../../.github/lint-c-cpp/lib/helpers/toolchain/codespell.sh
@@ -198,10 +209,7 @@ load_lint_kit_toolchains() {
   NERO_NFC_CODESPELL_MIN_VERSION="${LINT_KIT_CODESPELL_MIN_VERSION}"
   NERO_NFC_MARKDOWNLINT_MIN_VERSION="${LINT_KIT_MARKDOWNLINT_MIN_VERSION}"
   NERO_NFC_NODE_MIN_MAJOR="${LINT_KIT_NODE_MIN_MAJOR}"
-  NERO_NFC_CLANG_TIDY_MIN_VERSION="${LINT_KIT_CLANG_TIDY_MIN_VERSION}"
-  NERO_NFC_CLANG_FORMAT_MIN_VERSION="${LINT_KIT_CLANG_FORMAT_MIN_VERSION}"
-  NERO_NFC_SCAN_BUILD_MIN_VERSION="${LINT_KIT_SCAN_BUILD_MIN_VERSION}"
-  NERO_NFC_CLANG_TIDY_PREFERRED_MAJOR="${LINT_KIT_CLANG_TIDY_PREFERRED_MAJOR}"
+
   LINT_KIT_TOOLCHAINS_LOADED=1
 }
 
@@ -395,6 +403,79 @@ install_codespell() {
   return 1
 }
 
+# Fedora/RHEL do not package shfmt; apt does. Fall back to the upstream release
+# binary when the distro package is absent (min version: lint kit tool-versions).
+# Bump the version and both sha256 values in install_shfmt together.
+NERO_NFC_SHFMT_RELEASE_VERSION=3.14.1
+
+install_shfmt() {
+  if have shfmt; then
+    return 0
+  fi
+  if ! fetch_tool_ok; then
+    printf 'warning: need curl or wget to install shfmt\n' >&2
+    return 1
+  fi
+  if ! have sha256sum; then
+    printf 'warning: need sha256sum to verify shfmt\n' >&2
+    return 1
+  fi
+  local arch sha256
+  case "$(uname -m)" in
+    x86_64 | amd64)
+      arch=amd64
+      sha256=76e77641faa025814b77f153b29796b8e6fa2fca03e0c76a691608b86c7ea7bf
+      ;;
+    aarch64 | arm64)
+      arch=arm64
+      sha256=5f2db09dae91fca848f7adbdd014632e921a383863a2ad7e0450ad3aba0c6489
+      ;;
+    *)
+      printf 'warning: unsupported arch for shfmt binary: %s\n' "$(uname -m)" >&2
+      return 1
+      ;;
+  esac
+  local install_dir
+  if [[ "$(id -u)" -eq 0 ]]; then
+    install_dir=/usr/local/bin
+  else
+    install_dir="${HOME}/.local/bin"
+    mkdir -p "${install_dir}"
+  fi
+  local ver="${NERO_NFC_SHFMT_RELEASE_VERSION}"
+  local url="https://github.com/mvdan/sh/releases/download/v${ver}/shfmt_v${ver}_linux_${arch}"
+  local dest="${install_dir}/shfmt"
+  local tmp
+  tmp="$(mktemp "${install_dir}/.shfmt.XXXXXX")" || return 1
+  echo "── install shfmt v${ver} -> ${dest} ──" >&2
+  if have curl; then
+    curl -fsSL -o "${tmp}" "${url}" || {
+      rm -f "${tmp}"
+      return 1
+    }
+  else
+    wget -q -O "${tmp}" "${url}" || {
+      rm -f "${tmp}"
+      return 1
+    }
+  fi
+  if ! printf '%s  %s\n' "${sha256}" "${tmp}" | sha256sum -c --status -; then
+    printf 'error: shfmt v%s checksum mismatch (%s)\n' "${ver}" "${url}" >&2
+    rm -f "${tmp}"
+    return 1
+  fi
+  chmod +x "${tmp}"
+  mv -f "${tmp}" "${dest}"
+  case ":${PATH}:" in
+    *":${install_dir}:"*) : ;;
+    *)
+      PATH="${install_dir}:${PATH}"
+      export PATH
+      ;;
+  esac
+  have shfmt
+}
+
 # uv provides `uvx`, used by the lint kit's format job to run ruff + mypy.
 # Root installs go to /usr/local/bin so they remain on PATH after CI drops from
 # root to the bind-mount host user (HOME becomes /tmp/...; ~/.local/bin is lost).
@@ -460,8 +541,9 @@ install_node() {
   fi
   if have apt-get; then
     echo "── apt-get: Node.js ${NERO_NFC_NODE_MIN_MAJOR} (markdownlint-cli) ──" >&2
-    if [[ ! -f /etc/apt/sources.list.d/nodesource.list ]]; then
-      curl -fsSL https://deb.nodesource.com/setup_20.x | priv bash -
+    if [[ ! -f /etc/apt/sources.list.d/nodesource.list &&
+      ! -f /etc/apt/sources.list.d/nodesource.sources ]]; then
+      curl -fsSL "https://deb.nodesource.com/setup_${NERO_NFC_NODE_MIN_MAJOR}.x" | priv bash -
     fi
     priv apt-get install -y nodejs
     nero_nfc_ensure_node_symlink || true
@@ -536,7 +618,6 @@ apt_pkg_installable() {
 
 apt_codename() {
   if [[ -f /etc/os-release ]]; then
-    # shellcheck disable=SC1091
     . /etc/os-release
     if [[ -n ${VERSION_CODENAME:-} ]]; then
       printf '%s\n' "${VERSION_CODENAME}"
@@ -612,7 +693,7 @@ install_llvm_apt_repo() {
 }
 
 install_clang_tidy_via_distro() {
-  local ver="${NERO_NFC_CLANG_TIDY_PREFERRED_MAJOR}"
+  local ver="${NERO_NFC_LLVM_MAJOR}"
   apt_enable_universe
   if ! apt_pkg_installable "clang-tidy-${ver}" "clang-tools-${ver}"; then
     return 1
@@ -623,7 +704,7 @@ install_clang_tidy_via_distro() {
 }
 
 install_clang_tidy_via_llvm_apt() {
-  local ver="${NERO_NFC_CLANG_TIDY_PREFERRED_MAJOR}"
+  local ver="${NERO_NFC_LLVM_MAJOR}"
   install_llvm_apt_repo "${ver}" || return 1
   echo "── apt-get: clang-tidy-${ver} + clang-tools-${ver} (apt.llvm.org) ──" >&2
   priv apt-get install -y --no-install-recommends \
@@ -631,21 +712,17 @@ install_clang_tidy_via_llvm_apt() {
 }
 
 install_clang_format_via_distro() {
-  local ver
+  local ver="${NERO_NFC_LLVM_MAJOR}"
   apt_enable_universe
-  for ver in "${NERO_NFC_CLANG_TIDY_PREFERRED_MAJOR}" 20; do
-    if ! apt_pkg_installable "clang-format-${ver}"; then
-      continue
-    fi
-    echo "── apt-get: clang-format-${ver} ──" >&2
-    priv apt-get install -y --no-install-recommends "clang-format-${ver}"
-    return 0
-  done
-  return 1
+  if ! apt_pkg_installable "clang-format-${ver}"; then
+    return 1
+  fi
+  echo "── apt-get: clang-format-${ver} ──" >&2
+  priv apt-get install -y --no-install-recommends "clang-format-${ver}"
 }
 
 install_clang_format_via_llvm_apt() {
-  local ver="${NERO_NFC_CLANG_TIDY_PREFERRED_MAJOR}"
+  local ver="${NERO_NFC_LLVM_MAJOR}"
   install_llvm_apt_repo "${ver}" || return 1
   if ! apt_pkg_installable "clang-format-${ver}"; then
     return 1
@@ -658,12 +735,17 @@ install_clang_format() {
   if nero_nfc_ensure_clang_format; then
     return 0
   fi
-  if have apt-get; then
+  if have apt-get && [[ ${NERO_NFC_LLVM_PIN} != 1 ]]; then
+    priv apt-get install -y --no-install-recommends clang-format || true
+  elif have apt-get; then
     install_clang_format_via_distro || true
     if nero_nfc_ensure_clang_format; then
       return 0
     fi
     install_clang_format_via_llvm_apt || true
+  elif have dnf && [[ ${NERO_NFC_LLVM_PIN} == 1 ]]; then
+    priv dnf install -y "clang${NERO_NFC_LLVM_MAJOR}-tools-extra" ||
+      priv dnf install -y clang-tools-extra clang
   elif have dnf; then
     priv dnf install -y clang-tools-extra clang
   elif have microdnf; then
@@ -680,12 +762,12 @@ install_clang_format() {
   if nero_nfc_ensure_clang_format; then
     return 0
   fi
-  if ! have clang-format; then
-    printf 'warning: clang-format not installed\n' >&2
-  else
-    printf 'warning: clang-format >= %s required; found %s\n' \
-      "$NERO_NFC_CLANG_FORMAT_MIN_VERSION" \
+  if [[ ${NERO_NFC_LLVM_PIN} == 1 ]] && have clang-format; then
+    printf 'warning: clang-format %s required; found %s\n' \
+      "${NERO_NFC_LLVM_MAJOR}" \
       "$(nero_nfc_clang_format_version_raw 2>/dev/null || echo unknown)" >&2
+  else
+    printf 'warning: clang-format not installed\n' >&2
   fi
   nero_nfc_clang_format_hint
   return 1
@@ -695,7 +777,9 @@ install_clang_tidy() {
   if nero_nfc_ensure_clang_tidy; then
     return 0
   fi
-  if have apt-get; then
+  if have apt-get && [[ ${NERO_NFC_LLVM_PIN} != 1 ]]; then
+    priv apt-get install -y --no-install-recommends clang-tidy clang-tools || true
+  elif have apt-get; then
     install_clang_tidy_via_distro || true
     if nero_nfc_ensure_clang_tidy; then
       return 0
@@ -707,12 +791,12 @@ install_clang_tidy() {
   if nero_nfc_ensure_clang_tidy; then
     return 0
   fi
-  if ! have clang-tidy; then
-    printf 'warning: clang-tidy not installed\n' >&2
-  else
-    printf 'warning: clang-tidy >= %s required; found %s\n' \
-      "$NERO_NFC_CLANG_TIDY_MIN_VERSION" \
+  if [[ ${NERO_NFC_LLVM_PIN} == 1 ]] && have clang-tidy; then
+    printf 'warning: clang-tidy %s required; found %s\n' \
+      "${NERO_NFC_LLVM_MAJOR}" \
       "$(nero_nfc_clang_tidy_version_raw 2>/dev/null || echo unknown)" >&2
+  else
+    printf 'warning: clang-tidy not installed\n' >&2
   fi
   nero_nfc_clang_tidy_hint
   return 1
@@ -771,11 +855,11 @@ install_packages() {
       # libtool-bin: Debian splits /usr/bin/libtool out of the libtool package.
       priv apt-get install -y \
         cmake ninja-build g++ make git pkg-config \
-        autoconf automake libtool libtool-bin patch libusb-1.0-0-dev libpcsclite-dev \
+        autoconf automake libtool libtool-bin patch libusb-1.0-0-dev libpcsclite-dev libssl-dev \
         curl ca-certificates \
         util-linux psmisc procps bash tar unzip coreutils \
         lcov valgrind libgtest-dev \
-        clang-tools cppcheck \
+        clang-tools clang-format cppcheck \
         shellcheck codespell shfmt nodejs npm python3 python3-pip python3-yaml \
         "${apt_perf_pkg}"
     else
@@ -783,7 +867,7 @@ install_packages() {
       priv apt-get install -y \
         cmake ninja-build g++ make git pkg-config \
         autoconf automake libtool libtool-bin patch libusb-1.0-0-dev \
-        libpcsclite-dev curl ca-certificates \
+        libpcsclite-dev libssl-dev curl ca-certificates \
         util-linux psmisc procps bash tar unzip coreutils \
         lcov valgrind libgtest-dev python3
     fi
@@ -799,18 +883,18 @@ install_packages() {
       echo "── dnf: build + lint dev tools ──" >&2
       priv dnf install -y \
         cmake ninja-build gcc-c++ make git pkgconf-pkg-config \
-        autoconf automake libtool patch libusb1-devel pcsc-lite-devel \
+        autoconf automake libtool patch libusb1-devel pcsc-lite-devel openssl-devel \
         curl ca-certificates \
         util-linux psmisc procps-ng bash tar unzip coreutils \
         lcov valgrind gtest-devel libasan libubsan \
         clang-analyzer clang-tools-extra clang clang-format cppcheck perf \
-        ShellCheck codespell shfmt nodejs npm python3 python3-pip python3-pyyaml
+        ShellCheck codespell nodejs npm python3 python3-pip python3-pyyaml
     else
       echo "── dnf: build + unit-test dev tools ──" >&2
       priv dnf install -y \
         cmake ninja-build gcc-c++ make git pkgconf-pkg-config \
         autoconf automake libtool patch libusb1-devel \
-        pcsc-lite-devel curl ca-certificates \
+        pcsc-lite-devel openssl-devel curl ca-certificates \
         util-linux psmisc procps-ng bash tar unzip coreutils \
         lcov valgrind gtest-devel libasan libubsan python3
     fi
@@ -933,15 +1017,15 @@ openocd_build_tools_ok || {
 }
 if lint_deps_enabled; then
   scan_build_ok || {
-    echo "ERROR: scan-build >= ${NERO_NFC_SCAN_BUILD_MIN_VERSION} required after install." >&2
+    echo "ERROR: scan-build required after install." >&2
     exit 1
   }
   install_clang_tidy || {
-    echo "ERROR: clang-tidy >= ${NERO_NFC_CLANG_TIDY_MIN_VERSION} required after install." >&2
+    echo "ERROR: clang-tidy required after install." >&2
     exit 1
   }
   install_clang_format || {
-    echo "ERROR: clang-format >= ${NERO_NFC_CLANG_FORMAT_MIN_VERSION} required after install." >&2
+    echo "ERROR: clang-format required after install." >&2
     exit 1
   }
   install_llvm_tool_shims || {
@@ -960,7 +1044,7 @@ if lint_deps_enabled; then
     echo "ERROR: shellcheck required after install." >&2
     exit 1
   }
-  have shfmt || {
+  install_shfmt || {
     echo "ERROR: shfmt required after install." >&2
     exit 1
   }

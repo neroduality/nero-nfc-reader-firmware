@@ -131,7 +131,7 @@ TEST(NeroNfcPlatformApp, QuiescesOnlyInitializedFrontendOnModeChange) {
   ASSERT_NE(frontend, NERO_NFC_NULL);
   ASSERT_NE(frontend->ops, NERO_NFC_NULL);
   ASSERT_NE(frontend->state, NERO_NFC_NULL);
-  auto* st25 = static_cast<st25r3916_t*>(frontend->state);
+  const auto* st25 = static_cast<st25r3916_t*>(frontend->state);
 
   nero_nfc_app_set_runtime_mode(app, NERO_NFC_RUNTIME_MODE_WRITER);
   EXPECT_EQ(st25->quiesce_count, 0u);

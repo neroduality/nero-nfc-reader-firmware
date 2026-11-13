@@ -26,6 +26,9 @@
 extern "C" {
 #endif
 
+#define NFC_NDEF_TLV_LEN_SHIFT 8u
+#define NFC_NDEF_TLV_BYTE_MASK 0xFFu
+
 enum {
   NFC_NDEF_TLV_NULL = 0x00u,
   NFC_NDEF_TLV_MESSAGE = 0x03u,
@@ -38,8 +41,6 @@ enum {
   NFC_NDEF_TLV_EXTENDED_LEN_FIELD_BYTES = 3u,
   NFC_NDEF_TLV_EXTENDED_LEN_MSB_OFFSET = 1u,
   NFC_NDEF_TLV_EXTENDED_LEN_LSB_OFFSET = 2u,
-  NFC_NDEF_TLV_LEN_SHIFT = 8u,
-  NFC_NDEF_TLV_BYTE_MASK = 0xFFu,
   NFC_NDEF_TLV_NEED_LEN_CLAMP_MAX = 0xFFFFu,
 };
 
@@ -128,7 +129,7 @@ static inline nfc_ndef_tlv_status_t nfc_ndef_tlv_next(
         return NFC_NDEF_TLV_TRUNCATED;
       }
       len =
-          (uint16_t)(((uint16_t)data[pos + NFC_NDEF_TLV_EXTENDED_LEN_MSB_OFFSET]
+          (uint16_t)(((uint32_t)data[pos + NFC_NDEF_TLV_EXTENDED_LEN_MSB_OFFSET]
                       << NFC_NDEF_TLV_LEN_SHIFT) |
                      data[pos + NFC_NDEF_TLV_EXTENDED_LEN_LSB_OFFSET]);
       pos = (uint16_t)(pos + NFC_NDEF_TLV_EXTENDED_LEN_FIELD_BYTES);

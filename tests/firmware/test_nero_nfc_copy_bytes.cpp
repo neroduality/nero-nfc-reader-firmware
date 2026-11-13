@@ -153,9 +153,11 @@ TEST(NeroNfcFormat, TrySnprintfRejectsNullAndTruncation) {
   EXPECT_FALSE(nero_nfc_try_snprintf(NERO_NFC_NULL, sizeof(buf), "%u", 1u));
   EXPECT_FALSE(nero_nfc_try_snprintf(&buf[0], 0u, "%u", 1u));
   EXPECT_FALSE(nero_nfc_try_snprintf(&buf[0], sizeof(buf), NERO_NFC_NULL));
-  ASSERT_TRUE(nero_nfc_try_snprintf(&buf[0], sizeof(buf), "%u", kTestLit42u));
+  ASSERT_TRUE(nero_nfc_try_snprintf(&buf[0], sizeof(buf), "%u",
+                                    static_cast<unsigned>(kTestLit42u)));
   EXPECT_STREQ(&buf[0], "42");
-  EXPECT_FALSE(nero_nfc_try_snprintf(&buf[0], kTestLit2, "%u", kTestLit12345u));
+  EXPECT_FALSE(nero_nfc_try_snprintf(&buf[0], kTestLit2, "%u",
+                                     static_cast<unsigned>(kTestLit12345u)));
   EXPECT_STREQ(&buf[0], "");
   EXPECT_EQ(nero_nfc_snprintf(NERO_NFC_NULL, sizeof(buf), "%u", 1u), -1);
 }

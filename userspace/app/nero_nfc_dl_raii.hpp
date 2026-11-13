@@ -40,17 +40,20 @@ class DlHandle {
 
   NERO_NFC_NODISCARD void* Open(const char* path, int flags) {
     size_t path_len = 0u;
+    auto mode = static_cast<unsigned>(flags);
     Close();
     if (path == NERO_NFC_NULL ||
         !nero_nfc_bounded_strlen(path, NERO_NFC_HOST_SERIAL_LINE_MAX,
                                  &path_len) ||
         path_len == 0u ||
-        (((flags & RTLD_LAZY) != 0) == ((flags & RTLD_NOW) != 0))) {
+        (((mode & static_cast<unsigned>(RTLD_LAZY)) != 0u) ==
+         ((mode & static_cast<unsigned>(RTLD_NOW)) != 0u))) {
       return NERO_NFC_NULL;
     }
     /* Never export dynamically loaded symbols into the global namespace. */
-    flags = (flags & ~RTLD_GLOBAL) | RTLD_LOCAL;
-    handle_ = ::dlopen(path, flags);
+    mode = (mode & ~static_cast<unsigned>(RTLD_GLOBAL)) |
+           static_cast<unsigned>(RTLD_LOCAL);
+    handle_ = ::dlopen(path, static_cast<int>(mode));
     return handle_;
   }
 

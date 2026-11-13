@@ -41,20 +41,21 @@ typedef struct reader_iso_dep_ats_profile_t {
   uint8_t historical_len;
 } reader_iso_dep_ats_profile_t;
 
+#define READER_ISO_DEP_ATS_T0_FSCI_MASK 0x0Fu
+#define READER_ISO_DEP_ATS_T0_TA_MASK 0x10u
+#define READER_ISO_DEP_ATS_T0_TB_MASK 0x20u
+#define READER_ISO_DEP_ATS_T0_TC_MASK 0x40u
+#define READER_ISO_DEP_ATS_TB_FWI_SHIFT 4u
+#define READER_ISO_DEP_ATS_TB_FWI_MASK 0x0Fu
+#define READER_ISO_DEP_ATS_TC_CID_BIT 0x02u
+#define READER_ISO_DEP_ATS_TC_NAD_BIT 0x01u
+
 enum {
   READER_ISO_DEP_FSCI_TABLE_LEN = 9u,
   READER_ISO_DEP_ATS_MIN_LEN = 2u,
   READER_ISO_DEP_ATS_T0_OFFSET = 1u,
   READER_ISO_DEP_ATS_HEADER_LEN = 2u,
   READER_ISO_DEP_ATS_POS_AFTER_T0 = 2u,
-  READER_ISO_DEP_ATS_T0_FSCI_MASK = 0x0Fu,
-  READER_ISO_DEP_ATS_T0_TA_MASK = 0x10u,
-  READER_ISO_DEP_ATS_T0_TB_MASK = 0x20u,
-  READER_ISO_DEP_ATS_T0_TC_MASK = 0x40u,
-  READER_ISO_DEP_ATS_TB_FWI_SHIFT = 4u,
-  READER_ISO_DEP_ATS_TB_FWI_MASK = 0x0Fu,
-  READER_ISO_DEP_ATS_TC_CID_BIT = 0x02u,
-  READER_ISO_DEP_ATS_TC_NAD_BIT = 0x01u,
 };
 
 static inline void reader_iso_dep_ats_profile_reset(
@@ -117,8 +118,9 @@ NERO_NFC_NODISCARD static inline bool reader_iso_dep_parse_ats_profile(
   if (((t0 & READER_ISO_DEP_ATS_T0_TB_MASK) != 0u) && (pos < ats_len)) {
     profile->has_tb = true;
     profile->tb = ats[pos++];
-    profile->fwi = (uint8_t)((profile->tb >> READER_ISO_DEP_ATS_TB_FWI_SHIFT) &
-                             READER_ISO_DEP_ATS_TB_FWI_MASK);
+    profile->fwi =
+        (uint8_t)(((uint32_t)profile->tb >> READER_ISO_DEP_ATS_TB_FWI_SHIFT) &
+                  READER_ISO_DEP_ATS_TB_FWI_MASK);
     if (profile->fwi > ISO_DEP_FWI_MAX) {
       /* [ISO14443-4] §5.3.5 -- FWI 15 is RFU. NFC Forum Digital Protocol
        * requires substituting the default FWI (4) for RFU values instead of

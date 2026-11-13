@@ -61,7 +61,7 @@ BOARD_CCID_BUILD_EXTRA_FLAGS := \
 # Bulk wMaxPacketSize must be 512 at HS; ccid_usb_desc.h stays 64 for UNO.
 
 ARDUINO_CORE_PACKAGE := STMicroelectronics:stm32
-ARDUINO_MIN_BOARD_CORE_VERSION ?= 2.12.0
+ARDUINO_MIN_BOARD_CORE_VERSION ?= 3.1.0
 WBA65_STM32_CORE_VERSION ?= $(ARDUINO_MIN_BOARD_CORE_VERSION)
 WBA65_STM32_BOARD_MANAGER_URLS := https://github.com/stm32duino/BoardManagerFiles/raw/main/package_stmicroelectronics_index.json
 ARDUINO_BOARD_MANAGER_URLS := $(WBA65_STM32_BOARD_MANAGER_URLS)

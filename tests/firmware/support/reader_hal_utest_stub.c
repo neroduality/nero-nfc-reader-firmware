@@ -169,12 +169,11 @@ uint8_t reader_hal_spi_transfer(uint8_t data) { return data; }
 
 bool reader_hal_ccid_recv(uint8_t* buf, uint16_t* len_io) {
   if (len_io != NERO_NFC_NULL) {
-    if ((buf != NERO_NFC_NULL) && (*len_io > 0u)) {
-      if (!nero_nfc_store_u8(buf, (size_t)(*len_io), (size_t)(0),
-                             (uint8_t)(0u))) {
-        return false;
-      }
+    if (((buf != NERO_NFC_NULL) && (*len_io > 0u)) &&
+        (!nero_nfc_store_u8(buf, (size_t)(*len_io), (size_t)0, (uint8_t)0u))) {
+      return false;
     }
+
     *len_io = 0u;
   }
   return false;
@@ -209,7 +208,7 @@ bool reader_hal_ccid_send(const uint8_t* buf, uint16_t len,
   g_last_send_len = len;
   if ((len >= NFC_CCID_BULK_HEADER_LEN) &&
       ((nero_nfc_u8_at(buf, (size_t)len,
-                       (size_t)(NFC_CCID_BULK_LEVEL_PARAM_OFFSET)) &
+                       (size_t)NFC_CCID_BULK_LEVEL_PARAM_OFFSET) &
         NFC_CCID_ICC_CMD_TIME_EXTENSION) != 0u)) {
     g_time_extension_send_count++;
   }

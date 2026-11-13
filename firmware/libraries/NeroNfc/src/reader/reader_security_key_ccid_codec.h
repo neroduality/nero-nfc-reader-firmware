@@ -32,13 +32,15 @@ enum {
   READER_SECURITY_KEY_CTAP_MAKE_CREDENTIAL = NFC_CTAP_CMD_MAKE_CREDENTIAL,
   READER_SECURITY_KEY_CTAP_GET_ASSERTION = NFC_CTAP_CMD_GET_ASSERTION,
   READER_SECURITY_KEY_CTAP_CLIENT_PIN = NFC_CTAP_CMD_CLIENT_PIN,
+  READER_SECURITY_KEY_CTAP_RESET = NFC_CTAP_CMD_RESET,
 };
 
 static inline uint16_t reader_security_key_ctap_timeout_for_command(
     uint8_t ctap_cmd, uint16_t long_frame_ms, uint16_t short_frame_ms) {
   return ((ctap_cmd == READER_SECURITY_KEY_CTAP_MAKE_CREDENTIAL) ||
           (ctap_cmd == READER_SECURITY_KEY_CTAP_GET_ASSERTION) ||
-          (ctap_cmd == READER_SECURITY_KEY_CTAP_CLIENT_PIN))
+          (ctap_cmd == READER_SECURITY_KEY_CTAP_CLIENT_PIN) ||
+          (ctap_cmd == READER_SECURITY_KEY_CTAP_RESET))
              ? long_frame_ms
              : short_frame_ms;
 }
@@ -54,7 +56,7 @@ NERO_NFC_NODISCARD static inline bool reader_security_key_copy_ats_as_pcsc_atr(
 
   if ((ats == NERO_NFC_NULL) || (dst == NERO_NFC_NULL) ||
       (alen_io == NERO_NFC_NULL) || (ats_len == 0u) ||
-      (ats_len > (uint16_t)(NFC_ISO7816_BYTE_MASK))) {
+      (ats_len > (uint16_t)NFC_ISO7816_BYTE_MASK)) {
     return false;
   }
 
@@ -62,7 +64,7 @@ NERO_NFC_NODISCARD static inline bool reader_security_key_copy_ats_as_pcsc_atr(
    * 3B 8N 80 01 [T1..Tk] TCK, where T1..Tk are the ATS *historical bytes*
    * only (not the full ATS). A parse failure yields an empty historical
    * field, which is still a valid PC/SC contactless ATR (3B 80 80 01 TCK). */
-  if (reader_iso_dep_parse_ats_profile(ats, (uint8_t)(ats_len), &ats_profile) &&
+  if (reader_iso_dep_parse_ats_profile(ats, (uint8_t)ats_len, &ats_profile) &&
       (ats_profile.historical_len != 0u)) {
     hist = &ats[ats_profile.historical_offset];
     hist_len = ats_profile.historical_len;
@@ -116,12 +118,12 @@ static inline uint16_t reader_security_key_relay_failure_response(
   if ((rsp == NERO_NFC_NULL) || (rsp_cap < NFC_ISO7816_SW_STATUS_WORD_LEN)) {
     return 0u;
   }
-  if (!nero_nfc_store_u8(rsp, (size_t)(rsp_cap), (size_t)(0),
-                         (uint8_t)(NFC_ISO7816_SW1_GENERAL_ERROR))) {
+  if (!nero_nfc_store_u8(rsp, (size_t)rsp_cap, (size_t)0,
+                         (uint8_t)NFC_ISO7816_SW1_GENERAL_ERROR)) {
     return 0u;
   }
-  if (!nero_nfc_store_u8(rsp, (size_t)(rsp_cap), (size_t)(1),
-                         (uint8_t)(NFC_ISO7816_SW2_SUCCESS))) {
+  if (!nero_nfc_store_u8(rsp, (size_t)rsp_cap, (size_t)1,
+                         (uint8_t)NFC_ISO7816_SW2_SUCCESS)) {
     return 0u;
   }
   return NFC_ISO7816_SW_STATUS_WORD_LEN;

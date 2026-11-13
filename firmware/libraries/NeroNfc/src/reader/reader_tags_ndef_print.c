@@ -38,6 +38,9 @@
 #include <string.h>
 #include "nero_nfc_format.h"
 
+#define READER_NDEF_HEX_HIGH_NIBBLE_SHIFT 4u
+#define READER_NDEF_HEX_NIBBLE_MASK 0x0Fu
+
 enum {
   READER_NDEF_PRINTABLE_MIN = 0x20u,
   READER_NDEF_PRINTABLE_MAX = 0x7Eu,
@@ -51,8 +54,6 @@ enum {
   READER_NDEF_WSC_WPA2_PSK_LSB = 0x20u,
   READER_NDEF_WSC_AES_LSB = 0x08u,
   READER_NDEF_HEX_TEXT_CAP = 3u,
-  READER_NDEF_HEX_HIGH_NIBBLE_SHIFT = 4u,
-  READER_NDEF_HEX_NIBBLE_MASK = 0x0Fu,
   READER_NDEF_HEX_NUL_INDEX = 2u,
 };
 
@@ -119,8 +120,8 @@ static bool payload_is_display_text(const uint8_t* payload, uint32_t len) {
   }
   for (uint32_t i = 0u; i < len; i++) {
     const uint8_t ch = payload[i];
-    if ((ch != (uint8_t)('\r')) && (ch != (uint8_t)('\n')) &&
-        (ch != (uint8_t)('\t')) &&
+    if ((ch != (uint8_t)'\r') && (ch != (uint8_t)'\n') &&
+        (ch != (uint8_t)'\t') &&
         ((ch < READER_NDEF_PRINTABLE_MIN) ||
          (ch > READER_NDEF_PRINTABLE_MAX))) {
       return false;
@@ -143,8 +144,7 @@ static bool append_text(char* out, uint16_t out_cap, size_t* pos,
     return false;
   }
   *pos += len;
-  if (!nero_nfc_store_u8((uint8_t*)(out), (size_t)(out_cap), *pos,
-                         (uint8_t)('\0'))) {
+  if (!nero_nfc_store_u8((uint8_t*)out, (size_t)out_cap, *pos, (uint8_t)'\0')) {
     return false;
   }
   return true;
@@ -161,8 +161,7 @@ static bool append_span(char* out, uint16_t out_cap, size_t* pos,
     return false;
   }
   *pos += len;
-  if (!nero_nfc_store_u8((uint8_t*)(out), (size_t)(out_cap), *pos,
-                         (uint8_t)('\0'))) {
+  if (!nero_nfc_store_u8((uint8_t*)out, (size_t)out_cap, *pos, (uint8_t)'\0')) {
     return false;
   }
   return true;
@@ -193,8 +192,8 @@ static bool vcard_property(const uint8_t* payload, uint32_t len,
   *value_len = 0u;
   while (line_start < len) {
     uint32_t line_end = line_start;
-    while ((line_end < len) && (payload[line_end] != (uint8_t)('\r')) &&
-           (payload[line_end] != (uint8_t)('\n'))) {
+    while ((line_end < len) && (payload[line_end] != (uint8_t)'\r') &&
+           (payload[line_end] != (uint8_t)'\n')) {
       line_end++;
     }
     uint8_t name_suffix = 0u;
@@ -202,12 +201,12 @@ static bool vcard_property(const uint8_t* payload, uint32_t len,
         byte_at(payload, len, (uint32_t)(line_start + name_len),
                 &name_suffix) &&
         (memcmp(payload + line_start, name, name_len) == 0) &&
-        ((name_suffix == (uint8_t)(':')) || (name_suffix == (uint8_t)(';')))) {
+        ((name_suffix == (uint8_t)':') || (name_suffix == (uint8_t)';'))) {
       uint32_t value_start = (uint32_t)(line_start + name_len + 1u);
       uint8_t value_prev = 0u;
       while ((value_start < line_end) &&
              byte_at(payload, len, value_start - 1u, &value_prev) &&
-             (value_prev != (uint8_t)(':'))) {
+             (value_prev != (uint8_t)':')) {
         value_start++;
       }
       if ((value_start > line_end) || ((line_end - value_start) > UINT16_MAX)) {
@@ -226,8 +225,7 @@ static bool vcard_property(const uint8_t* payload, uint32_t len,
     uint8_t line_start_ch = 0u;
     if ((line_start < len) && byte_at(payload, len, line_end, &line_end_ch) &&
         byte_at(payload, len, line_start, &line_start_ch) &&
-        (line_end_ch == (uint8_t)('\r')) &&
-        (line_start_ch == (uint8_t)('\n'))) {
+        (line_end_ch == (uint8_t)'\r') && (line_start_ch == (uint8_t)'\n')) {
       line_start++;
     }
   }
@@ -266,10 +264,9 @@ static bool be16_at(const uint8_t* payload, uint32_t len, uint32_t offset,
     return false;
   }
   *value =
-      (uint16_t)(((uint16_t)nero_nfc_u8_at(payload, (size_t)(len),
-                                           (size_t)(offset))
+      (uint16_t)(((uint32_t)nero_nfc_u8_at(payload, (size_t)len, (size_t)offset)
                   << NFC_BYTE_SHIFT_8) |
-                 nero_nfc_u8_at(payload, (size_t)(len), (size_t)(offset + 1u)));
+                 nero_nfc_u8_at(payload, (size_t)len, (size_t)(offset + 1u)));
   return true;
 }
 
@@ -310,8 +307,8 @@ static const char* wsc_u16_name(const uint8_t* value, uint16_t value_len,
                                 uint8_t lsb, const char* known) {
   if ((value != NERO_NFC_NULL) &&
       (value_len == READER_NDEF_WSC_U16_VALUE_LEN) &&
-      (nero_nfc_u8_at(value, (size_t)(value_len), (size_t)(0)) == 0x00u) &&
-      (nero_nfc_u8_at(value, (size_t)(value_len), (size_t)(1)) == lsb)) {
+      (nero_nfc_u8_at(value, (size_t)value_len, (size_t)0) == 0x00u) &&
+      (nero_nfc_u8_at(value, (size_t)value_len, (size_t)1) == lsb)) {
     return known;
   }
   return "unknown";
@@ -378,10 +375,10 @@ static bool decode_bluetooth_oob_payload(const uint8_t* payload, uint32_t len,
 
   if ((payload == NERO_NFC_NULL) ||
       (len < READER_NDEF_BT_OOB_MIN_PAYLOAD_LEN) ||
-      (nero_nfc_u8_at(payload, (size_t)(len), (size_t)(0)) <
+      (nero_nfc_u8_at(payload, (size_t)len, (size_t)0) <
        READER_NDEF_BT_OOB_MIN_PAYLOAD_LEN) ||
-      (nero_nfc_u8_at(payload, (size_t)(len),
-                      (size_t)(READER_NDEF_BT_OOB_LENGTH_MSB_INDEX)) != 0u)) {
+      (nero_nfc_u8_at(payload, (size_t)len,
+                      (size_t)READER_NDEF_BT_OOB_LENGTH_MSB_INDEX) != 0u)) {
     return false;
   }
   if (!append_text(out, out_cap, &pos, "Bluetooth OOB: address=")) {
@@ -442,29 +439,27 @@ static void print_ndef_record_summary(const uint8_t* rec,
     return;
   }
   payload_len = parsed->payload_len;
-  if (!nero_nfc_span_ok((size_t)(parsed->type_offset),
-                        (size_t)(parsed->type_len),
-                        (size_t)(parsed->record_len)) ||
-      ((parsed->payload_offset > parsed->record_len))) {
+  if (!nero_nfc_span_ok((size_t)parsed->type_offset, (size_t)parsed->type_len,
+                        (size_t)parsed->record_len) ||
+      (parsed->payload_offset > parsed->record_len)) {
     return;
   }
-  if (!nero_nfc_span_ok((size_t)(parsed->payload_offset), (size_t)(payload_len),
-                        (size_t)(parsed->record_len))) {
-    payload_len =
-        (uint32_t)(parsed->record_len - (uint32_t)(parsed->payload_offset));
+  if (!nero_nfc_span_ok((size_t)parsed->payload_offset, (size_t)payload_len,
+                        (size_t)parsed->record_len)) {
+    payload_len = parsed->record_len - (uint32_t)parsed->payload_offset;
   }
   nero_nfc_log_write("  Record #");
   {
     char ndc[NERO_NFC_FORMAT_SNPRINTF_DEC_CAP];
     (void)nero_nfc_snprintf(ndc, sizeof ndc, "%u",
-                            (unsigned)((uint32_t)(record_num)));
+                            (unsigned)((uint32_t)record_num));
     nero_nfc_log_write(ndc);
   }
   nero_nfc_log_write(": TNF=");
   {
     char ndc[NERO_NFC_FORMAT_SNPRINTF_DEC_CAP];
     (void)nero_nfc_snprintf(ndc, sizeof ndc, "%u",
-                            (unsigned)((uint32_t)(parsed->tnf)));
+                            (unsigned)((uint32_t)parsed->tnf));
     nero_nfc_log_write(ndc);
   }
   nero_nfc_log_write(" Type=");
@@ -472,7 +467,7 @@ static void print_ndef_record_summary(const uint8_t* rec,
   nero_nfc_log_write(" Payload=");
   {
     char ndc[NERO_NFC_FORMAT_SNPRINTF_DEC_CAP];
-    (void)nero_nfc_snprintf(ndc, sizeof ndc, "%u", (unsigned)(payload_len));
+    (void)nero_nfc_snprintf(ndc, sizeof ndc, "%u", (unsigned)payload_len);
     nero_nfc_log_write(ndc);
   }
   nero_nfc_log_write("B");
@@ -559,11 +554,11 @@ void reader_tags_parse_ndef_tlv_area(const uint8_t* data, uint16_t len,
       {
         char ndc[NERO_NFC_FORMAT_SNPRINTF_DEC_CAP];
         (void)nero_nfc_snprintf(ndc, sizeof ndc, "%u",
-                                (unsigned)((uint32_t)(tlv.value_len)));
+                                (unsigned)((uint32_t)tlv.value_len));
         nero_nfc_log_write(ndc);
       }
       nero_nfc_log_line(" bytes");
-      if (!nero_nfc_span_ok((size_t)(tlv.value_offset), (size_t)(tlv.value_len),
+      if (!nero_nfc_span_ok((size_t)tlv.value_offset, (size_t)tlv.value_len,
                             len)) {
         return;
       }

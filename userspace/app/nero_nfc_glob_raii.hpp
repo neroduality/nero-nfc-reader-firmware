@@ -22,6 +22,7 @@
 #include "nero_nfc_null.h"
 
 #include <cstddef>
+#include <iterator>
 #include <glob.h>
 #include <span>
 
@@ -77,7 +78,7 @@ class GlobResult {
     }
     const auto paths =
         std::span<char* const>{g_.gl_pathv, static_cast<size_t>(g_.gl_pathc)};
-    return paths[index];
+    return *std::next(paths.begin(), static_cast<std::ptrdiff_t>(index));
   }
 
  private:

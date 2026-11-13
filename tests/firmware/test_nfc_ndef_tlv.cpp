@@ -106,8 +106,8 @@ TEST(NfcNdefTlv, RejectsWrappedExtendedLengthHeader) {
   nfc_ndef_tlv_t tlv{};
   uint16_t next = 0u;
 
-  k_area[UINT16_MAX - kTestLit2u] = NFC_NDEF_TLV_MESSAGE;
-  k_area[UINT16_MAX - 1u] = NFC_NDEF_TLV_EXTENDED_LEN;
+  k_area.at(UINT16_MAX - kTestLit2u) = NFC_NDEF_TLV_MESSAGE;
+  k_area.at(UINT16_MAX - 1u) = NFC_NDEF_TLV_EXTENDED_LEN;
 
   EXPECT_EQ(nfc_ndef_tlv_next(k_area.data(), (uint16_t)k_area.size(),
                               UINT16_MAX - 2u, &tlv, &next),
@@ -149,10 +149,10 @@ TEST(NfcNdefTlv, AcceptsLargestExtendedTlvThatFitsUint16Buffer) {
   nfc_ndef_tlv_t tlv{};
   uint16_t next = 0u;
 
-  k_area[0] = NFC_NDEF_TLV_MESSAGE;
-  k_area[1] = NFC_NDEF_TLV_EXTENDED_LEN;
-  k_area[kTestLit2] = kTestLit0xFFu;
-  k_area[kTestLit3] = kTestLit0xFBu;
+  k_area.at(0) = NFC_NDEF_TLV_MESSAGE;
+  k_area.at(1) = NFC_NDEF_TLV_EXTENDED_LEN;
+  k_area.at(kTestLit2) = kTestLit0xFFu;
+  k_area.at(kTestLit3) = kTestLit0xFBu;
 
   ASSERT_EQ(nfc_ndef_tlv_next(k_area.data(), (uint16_t)k_area.size(), 0u, &tlv,
                               &next),

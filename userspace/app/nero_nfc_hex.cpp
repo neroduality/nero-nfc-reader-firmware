@@ -44,9 +44,9 @@ std::string HexBytes(const std::vector<std::uint8_t>& bytes, char separator) {
       out.push_back(separator);
     }
     out.push_back(
-        At(kHex, static_cast<std::size_t>(bytes[i] >> kHexNibbleShift)));
+        At(kHex, static_cast<std::size_t>(bytes.at(i) >> kHexNibbleShift)));
     out.push_back(
-        At(kHex, static_cast<std::size_t>(bytes[i] & kHexNibbleMask)));
+        At(kHex, static_cast<std::size_t>(bytes.at(i) & kHexNibbleMask)));
   }
   return out;
 }
@@ -72,7 +72,7 @@ bool ParseHexBytes(std::string_view text, std::vector<std::uint8_t>& out) {
   out.clear();
   out.reserve(byte_len);
   for (std::size_t i = 0; i < compact.size(); i += kHexDigitsPerByte) {
-    auto nibble = [](char c) -> int {
+    const auto nibble = [](char c) -> int {
       if (c >= '0' && c <= '9') {
         return static_cast<int>(c - '0');
       }
@@ -84,8 +84,8 @@ bool ParseHexBytes(std::string_view text, std::vector<std::uint8_t>& out) {
       }
       return -1;
     };
-    const int hi = nibble(compact[i]);
-    const int lo = nibble(compact[i + 1u]);
+    const int hi = nibble(compact.at(i));
+    const int lo = nibble(compact.at(i + 1u));
     if (hi < 0 || lo < 0) {
       return false;
     }

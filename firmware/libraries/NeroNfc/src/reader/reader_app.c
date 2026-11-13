@@ -51,6 +51,7 @@
 #if defined(NERO_CCID_USB_BUILD)
 #include "nfc_ccid_frame.h"
 #include "reader_ccid.h"
+#include "reader_ccid_xfr.h"
 #endif
 #include "nero_nfc_format.h"
 #include "nero_nfc_frontend.h"
@@ -128,8 +129,8 @@ static bool ensure_reader_app(void) {
          (nero_nfc_app_product(app) != NERO_NFC_PRODUCT_WRITER);
 }
 
-bool reader_ccid_prepare_tag_for_power_on(reader_tag_kind_t tag_kind) {
 #if defined(NERO_CCID_USB_BUILD)
+bool reader_ccid_prepare_tag_for_power_on(reader_tag_kind_t tag_kind) {
   nfc_frontend_quiesce(READER_FRONTEND);
   if ((tag_kind == READER_TAG_KIND_TYPE2) ||
       (tag_kind == READER_TAG_KIND_TYPE4)) {
@@ -146,11 +147,9 @@ bool reader_ccid_prepare_tag_for_power_on(reader_tag_kind_t tag_kind) {
     reader_protocol_configure_iso15693();
     return reader_tags_iso15693_inventory_step();
   }
-#else
-  (void)tag_kind;
-#endif
   return true;
 }
+#endif
 
 static uint8_t measure_amplitude(void) {
   return nfc_frontend_measure_amplitude(READER_FRONTEND);
@@ -181,7 +180,7 @@ static void print_field_strength(uint8_t amp, uint8_t baseline) {
   }
   {
     char ndc[NERO_NFC_FORMAT_SNPRINTF_DEC_CAP];
-    (void)nero_nfc_snprintf(ndc, sizeof ndc, "%u", (unsigned)(uint32_t)(amp));
+    (void)nero_nfc_snprintf(ndc, sizeof ndc, "%u", (unsigned)(uint32_t)amp);
     nero_nfc_log_write(ndc);
   }
   nero_nfc_log_write("/255 |");
@@ -197,7 +196,7 @@ static void print_field_strength(uint8_t amp, uint8_t baseline) {
     }
     {
       char ndc[NERO_NFC_FORMAT_SNPRINTF_DEC_CAP];
-      (void)nero_nfc_snprintf(ndc, sizeof ndc, "%d", (int)(int32_t)(coupling));
+      (void)nero_nfc_snprintf(ndc, sizeof ndc, "%d", (int)(int32_t)coupling);
       nero_nfc_log_write(ndc);
     }
     nero_nfc_log_write(" | ");
@@ -252,8 +251,7 @@ static bool init_chip(void) {
   nero_nfc_log_write(" OK\r\n  VDD: ");
   {
     char ndc[NERO_NFC_FORMAT_SNPRINTF_DEC_CAP];
-    (void)nero_nfc_snprintf(ndc, sizeof ndc, "%u",
-                            (unsigned)(uint32_t)(vdd_mv));
+    (void)nero_nfc_snprintf(ndc, sizeof ndc, "%u", (unsigned)(uint32_t)vdd_mv);
     nero_nfc_log_write(ndc);
   }
   nero_nfc_log_line(" mV\r\n  Init complete!");

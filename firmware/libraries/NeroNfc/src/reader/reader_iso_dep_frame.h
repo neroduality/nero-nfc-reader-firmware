@@ -27,30 +27,31 @@
 /* Manifest prefixes in this ISO-DEP frame parser:
  *   [ISO14443-3] CRC-A trailer length.
  *   [ISO14443-4] PCB/CID/NAD frame layout and block-control values. */
+#define ISO_DEP_PCB_CLASS_MASK 0xC0u
+#define ISO_DEP_PCB_CID_BIT 0x08u
+#define ISO_DEP_PCB_NAD_BIT 0x04u
+#define ISO_DEP_PCB_CHAIN_BIT 0x10u
+#define ISO_DEP_PCB_I_BLOCK_BASE 0x02u
+#define ISO_DEP_PCB_R_BLOCK_BASE 0xA2u
+/* [DERIVED] R-block recognition mask; not a standalone ISO14443-4 SPEC entry.
+ */
+#define ISO_DEP_PCB_R_BLOCK_EXPECT_MASK 0xE6u
+#define ISO_DEP_WTXM_MASK 0x3Fu
+#define ISO_DEP_BLOCK_NUM_MASK 0x01u
+#define ISO_DEP_BYTE_MASK_LOW 0x00FFu
+#define ISO_DEP_BYTE_SHIFT_8 8u
+#define ISO_DEP_BYTE_SHIFT_4 4u
+#define ISO_DEP_CRC_MUL_SHL 3u
 enum {
   ISO_DEP_CRC_A_INIT = 0x6363u,
   ISO_DEP_CRC_LEN = 2u,
-  ISO_DEP_PCB_CLASS_MASK = 0xC0u,
   ISO_DEP_PCB_CLASS_I_BLOCK = 0x00u,
   ISO_DEP_PCB_CLASS_R_BLOCK = 0x80u,
   ISO_DEP_PCB_CLASS_S_BLOCK = 0xC0u,
-  ISO_DEP_PCB_CID_BIT = 0x08u,
-  ISO_DEP_PCB_NAD_BIT = 0x04u,
-  ISO_DEP_PCB_CHAIN_BIT = 0x10u,
-  ISO_DEP_PCB_I_BLOCK_BASE = 0x02u,
-  ISO_DEP_PCB_R_BLOCK_BASE = 0xA2u,
-  /* [DERIVED] R-block recognition mask; not a standalone ISO14443-4 SPEC entry.
-   */
-  ISO_DEP_PCB_R_BLOCK_EXPECT_MASK = 0xE6u,
   ISO_DEP_PCB_S_WTX = 0xF2u,
-  ISO_DEP_WTXM_MASK = 0x3Fu,
-  ISO_DEP_BLOCK_NUM_MASK = 0x01u,
   ISO_DEP_HDR_BASE_LEN = 1u,
   ISO_DEP_CID_HDR_OFFSET = 2u,
   ISO_DEP_INF_MIN_FRAME_LEN = 3u,
-  ISO_DEP_BYTE_MASK_LOW = 0x00FFu,
-  ISO_DEP_BYTE_SHIFT_8 = 8u,
-  ISO_DEP_BYTE_SHIFT_4 = 4u,
   ISO_DEP_SW_CONFIDENCE_NONE = 0u,
   ISO_DEP_SW_CONFIDENCE_LOW = 1u,
   ISO_DEP_SW_CONFIDENCE_HIGH = 3u,
@@ -64,7 +65,6 @@ enum {
   ISO_DEP_INF_STATUS_BEFORE_OFFSET = 3u,
   ISO_DEP_INF_STATUS_BEFORE_TAIL_OFFSET = 4u,
   ISO_DEP_ACK_PCB_BASE_LEN = 1u,
-  ISO_DEP_CRC_MUL_SHL = 3u,
   ISO_DEP_SELECT_RESP_TAG_D = 0x64u,
   ISO_DEP_SELECT_RESP_TAG_S = 0x53u,
   ISO_DEP_SELECT_RESP_SW1_MIN = 0x63u,
@@ -81,10 +81,10 @@ static inline uint16_t reader_iso_dep_crc_a(const uint8_t* buf, uint16_t len) {
   for (uint16_t i = 0u; i < len; i++) {
     uint8_t b = (uint8_t)(buf[i] ^ (uint8_t)(crc & ISO_DEP_BYTE_MASK_LOW));
     b = (uint8_t)(b ^ (uint8_t)(b << ISO_DEP_BYTE_SHIFT_4));
-    crc = (uint16_t)((crc >> ISO_DEP_BYTE_SHIFT_8) ^
-                     ((uint16_t)b << ISO_DEP_BYTE_SHIFT_8) ^
-                     ((uint16_t)b << ISO_DEP_CRC_MUL_SHL) ^
-                     ((uint16_t)b >> ISO_DEP_BYTE_SHIFT_4));
+    crc = (uint16_t)(((uint32_t)crc >> ISO_DEP_BYTE_SHIFT_8) ^
+                     ((uint32_t)b << ISO_DEP_BYTE_SHIFT_8) ^
+                     ((uint32_t)b << ISO_DEP_CRC_MUL_SHL) ^
+                     ((uint32_t)b >> ISO_DEP_BYTE_SHIFT_4));
   }
   return crc;
 }
@@ -97,10 +97,9 @@ NERO_NFC_NODISCARD static inline bool reader_iso_dep_has_crc_a_suffix(
     return false;
   }
   crc = reader_iso_dep_crc_a(frame, (uint16_t)(len - ISO_DEP_CRC_LEN));
-  return (nero_nfc_u8_at(frame, (size_t)(len),
-                         (size_t)(len - ISO_DEP_CRC_LEN)) ==
+  return (nero_nfc_u8_at(frame, (size_t)len, (size_t)(len - ISO_DEP_CRC_LEN)) ==
           (uint8_t)(crc & ISO_DEP_BYTE_MASK_LOW)) &&
-         (nero_nfc_u8_at(frame, (size_t)(len),
+         (nero_nfc_u8_at(frame, (size_t)len,
                          (size_t)(len - ISO_DEP_HDR_BASE_LEN)) ==
           (uint8_t)(crc >> ISO_DEP_BYTE_SHIFT_8));
 }
@@ -147,28 +146,28 @@ static inline uint16_t reader_iso_dep_trim_crc_suffix(const uint8_t* buf,
   }
 
   tail_confidence = reader_iso_dep_sw16_confidence(
-      nero_nfc_u8_at(buf, (size_t)(len),
+      nero_nfc_u8_at(buf, (size_t)len,
                      (size_t)(len - ISO_DEP_INF_STATUS_TAIL_OFFSET)),
-      nero_nfc_u8_at(buf, (size_t)(len), (size_t)(len - ISO_DEP_HDR_BASE_LEN)));
+      nero_nfc_u8_at(buf, (size_t)len, (size_t)(len - ISO_DEP_HDR_BASE_LEN)));
   before_tail_confidence = reader_iso_dep_sw16_confidence(
-      nero_nfc_u8_at(buf, (size_t)(len),
+      nero_nfc_u8_at(buf, (size_t)len,
                      (size_t)(len - ISO_DEP_INF_STATUS_BEFORE_TAIL_OFFSET)),
-      nero_nfc_u8_at(buf, (size_t)(len),
+      nero_nfc_u8_at(buf, (size_t)len,
                      (size_t)(len - ISO_DEP_INF_STATUS_BEFORE_OFFSET)));
   /* CRC-A can resemble a 6xxx status. If a terminal success or continuation
    * status is immediately before it, keep that status unless the tail is the
    * host-visible 61xx continuation itself. */
-  if (((nero_nfc_u8_at(buf, (size_t)(len),
+  if (((nero_nfc_u8_at(buf, (size_t)len,
                        (size_t)(len - ISO_DEP_INF_STATUS_BEFORE_TAIL_OFFSET)) ==
         (uint8_t)NFC_ISO7816_SW1_MORE_DATA) ||
        ((nero_nfc_u8_at(
-             buf, (size_t)(len),
+             buf, (size_t)len,
              (size_t)(len - ISO_DEP_INF_STATUS_BEFORE_TAIL_OFFSET)) ==
          (uint8_t)NFC_ISO7816_SW1_SUCCESS) &&
-        (nero_nfc_u8_at(buf, (size_t)(len),
+        (nero_nfc_u8_at(buf, (size_t)len,
                         (size_t)(len - ISO_DEP_INF_STATUS_BEFORE_OFFSET)) ==
          (uint8_t)NFC_ISO7816_SW2_SUCCESS))) &&
-      (nero_nfc_u8_at(buf, (size_t)(len),
+      (nero_nfc_u8_at(buf, (size_t)len,
                       (size_t)(len - ISO_DEP_INF_STATUS_TAIL_OFFSET)) !=
        (uint8_t)NFC_ISO7816_SW1_MORE_DATA)) {
     return (uint16_t)(len - ISO_DEP_CRC_LEN);
@@ -232,8 +231,7 @@ static inline uint8_t reader_iso_dep_pick_inf_offset(const uint8_t* rx,
 
   if ((cid != 0u) && (rlen >= ISO_DEP_MIN_TRIM_LEN) &&
       ((pcb & ISO_DEP_PCB_CID_BIT) == 0u) &&
-      (nero_nfc_u8_at(rx, (size_t)(rlen), (size_t)(ISO_DEP_HDR_BASE_LEN)) ==
-       cid)) {
+      (nero_nfc_u8_at(rx, (size_t)rlen, (size_t)ISO_DEP_HDR_BASE_LEN) == cid)) {
     return ISO_DEP_CID_HDR_OFFSET;
   }
 
@@ -430,14 +428,14 @@ NERO_NFC_NODISCARD static inline bool reader_iso_dep_build_chained_ack(
     ack_pcb = (uint8_t)(ack_pcb | ISO_DEP_PCB_CID_BIT);
   }
 
-  if (!nero_nfc_store_u8(ack_out, (size_t)(ack_cap), (size_t)(0), ack_pcb)) {
+  if (!nero_nfc_store_u8(ack_out, (size_t)ack_cap, (size_t)0, ack_pcb)) {
     return false;
   }
   if (pcb_has_cid) {
     if (ack_pos >= ack_cap) {
       return false;
     }
-    if (!nero_nfc_store_u8(ack_out, (size_t)(ack_cap), (size_t)(ack_pos++),
+    if (!nero_nfc_store_u8(ack_out, (size_t)ack_cap, (size_t)(ack_pos++),
                            cid)) {
       return false;
     }
@@ -452,19 +450,19 @@ reader_iso_dep_apdu_response_has_status_word(const uint8_t* rsp,
   if ((rsp == NERO_NFC_NULL) || (rsp_len < NFC_ISO7816_SW_STATUS_WORD_LEN)) {
     return false;
   }
-  return (nero_nfc_u8_at(rsp, (size_t)(rsp_len),
+  return (nero_nfc_u8_at(rsp, (size_t)rsp_len,
                          (size_t)(rsp_len - ISO_DEP_INF_STATUS_TAIL_OFFSET)) ==
           NFC_ISO7816_SW1_SUCCESS) ||
-         ((nero_nfc_u8_at(rsp, (size_t)(rsp_len),
+         ((nero_nfc_u8_at(rsp, (size_t)rsp_len,
                           (size_t)(rsp_len - ISO_DEP_INF_STATUS_TAIL_OFFSET)) ==
            NFC_ISO7816_SW1_MORE_DATA_VENDOR) &&
-          (nero_nfc_u8_at(rsp, (size_t)(rsp_len),
+          (nero_nfc_u8_at(rsp, (size_t)rsp_len,
                           (size_t)(rsp_len - ISO_DEP_HDR_BASE_LEN)) ==
            NFC_ISO7816_SW2_SUCCESS)) ||
-         ((nero_nfc_u8_at(rsp, (size_t)(rsp_len),
+         ((nero_nfc_u8_at(rsp, (size_t)rsp_len,
                           (size_t)(rsp_len - ISO_DEP_INF_STATUS_TAIL_OFFSET)) >=
            NFC_ISO7816_SW1_MORE_DATA) &&
-          (nero_nfc_u8_at(rsp, (size_t)(rsp_len),
+          (nero_nfc_u8_at(rsp, (size_t)rsp_len,
                           (size_t)(rsp_len - ISO_DEP_INF_STATUS_TAIL_OFFSET)) <=
            NFC_ISO7816_SW1_GENERAL_ERROR));
 }

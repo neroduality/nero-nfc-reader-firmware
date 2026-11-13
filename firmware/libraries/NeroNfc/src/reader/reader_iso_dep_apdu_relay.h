@@ -98,7 +98,7 @@ NERO_NFC_NODISCARD static inline bool reader_iso_dep_build_i_block_tx(
     pcb = (uint8_t)(pcb | ISO_DEP_PCB_CHAIN_BIT);
   }
 
-  if (!nero_nfc_store_u8(tx, (size_t)(tx_cap), 0u, pcb)) {
+  if (!nero_nfc_store_u8(tx, (size_t)tx_cap, 0u, pcb)) {
     return false;
   }
   tx_pos = 1u;
@@ -145,13 +145,12 @@ NERO_NFC_NODISCARD static inline bool reader_iso_dep_build_wtx_echo(
   if (!nero_nfc_copy_bytes(wtx_out, wtx_cap, 0u, rx, wtx_len)) {
     return false;
   }
-  wtxm = (uint8_t)(nero_nfc_u8_at(rx, (size_t)(rlen), (size_t)(hdr_skip)) &
+  wtxm = (uint8_t)(nero_nfc_u8_at(rx, (size_t)rlen, (size_t)hdr_skip) &
                    ISO_DEP_WTXM_MASK);
   if ((wtxm < ISO_DEP_WTXM_MIN) || (wtxm > ISO_DEP_WTXM_MAX)) {
     return false;
   }
-  if (!nero_nfc_store_u8(wtx_out, (size_t)(wtx_cap), (size_t)(hdr_skip),
-                         wtxm)) {
+  if (!nero_nfc_store_u8(wtx_out, (size_t)wtx_cap, (size_t)hdr_skip, wtxm)) {
     return false;
   }
   *wtx_len_out = wtx_len;

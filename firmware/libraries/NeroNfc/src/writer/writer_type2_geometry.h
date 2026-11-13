@@ -69,7 +69,7 @@ static inline uint16_t writer_type2_physical_cap_last_page(
     const uint8_t* tag_version) {
   if (cc_valid && (cc_page3 != NERO_NFC_NULL) &&
       (cc_page3[0] == NFC_FORUM_CC_MAGIC)) {
-    if (!nero_nfc_span_ok((size_t)(0), 1u, NFC_TAG_T2T_PAGE_SIZE_BYTES)) {
+    if (!nero_nfc_span_ok((size_t)0, 1u, NFC_TAG_T2T_PAGE_SIZE_BYTES)) {
       return 0u;
     }
     return writer_type2_cap_last_page_from_mlen(

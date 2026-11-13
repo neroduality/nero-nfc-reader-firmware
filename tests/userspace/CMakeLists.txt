@@ -18,6 +18,7 @@
 
 set(_nero_userspace_test_sources
   test_userspace_bridge.cpp
+  test_userspace_ctap.cpp
   test_userspace_detect.cpp
   test_userspace_line_pump.cpp
   test_userspace_serial.cpp

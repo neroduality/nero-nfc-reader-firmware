@@ -51,7 +51,7 @@ int RunSendThenInteractive(const DriverOptions& opts,
 void DriverDispatchLineForTest(const std::string& line,
                                const DriverOptions& opts);
 void ReaderThreadForTest(int fd, const DriverOptions& opts,
-                         std::atomic<bool>* stop);
+                         std::atomic<bool> const* stop);
 #endif
 
 }  // namespace nero_nfc

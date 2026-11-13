@@ -153,57 +153,52 @@ static inline void nfc_tag_print_type2_debug(
     nero_nfc_emit_write(emit, nfc_tag_type2_family_name(type2->family));
     nero_nfc_emit_write(emit, "\r\n");
   }
-  if (type2->cc_valid) {
-    if (nero_nfc_span_ok(NFC_TAG_T2T_CC_ACCESS_INDEX, 1u,
-                         NFC_TAG_T2T_PAGE_SIZE_BYTES)) {
-      nfc_tag_print_line_prefix(emit);
-      nero_nfc_emit_write(emit, "CC: ");
-      nfc_tag_print_hex_bytes(emit, type2->cc, NFC_TAG_T2T_PAGE_SIZE_BYTES,
-                              ' ');
-      nero_nfc_emit_write(emit, "\r\n");
-      nfc_tag_print_line_prefix(emit);
-      nero_nfc_emit_write(emit, "CC file: E1 ");
-      nero_nfc_emit_hex_u8(emit, type2->cc[1]);
-      emit(' ');
-      nero_nfc_emit_hex_u8(emit, type2->cc[NFC_TAG_T2T_CC_MLEN_INDEX]);
-      emit(' ');
-      nero_nfc_emit_hex_u8(emit, type2->cc[NFC_TAG_T2T_CC_ACCESS_INDEX]);
-      nero_nfc_emit_write(emit, "\r\n");
-      nfc_tag_print_line_prefix(emit);
-      nero_nfc_emit_write(emit,
-                          "Data format: NFC Forum Type 2 Tag / NDEF TLV\r\n");
-      nfc_tag_print_line_prefix(emit);
-      nero_nfc_emit_write(emit, "NDEF mapping: ");
-      nero_nfc_emit_dec_u32(emit, type2->mapping_major);
-      emit('.');
-      nero_nfc_emit_dec_u32(emit, type2->mapping_minor);
-      nero_nfc_emit_write(emit, "  Data area: ");
-      nero_nfc_emit_dec_u32(emit, type2->data_area_size_bytes);
-      nero_nfc_emit_write(emit, " bytes\r\n");
-      nfc_tag_print_line_prefix(emit);
-      nero_nfc_emit_write(emit, "T2T area size: ");
-      nero_nfc_emit_dec_u32(emit, type2->data_area_size_bytes);
-      nero_nfc_emit_write(emit, " bytes  TLV area size: ");
-      nero_nfc_emit_dec_u32(emit, type2->data_area_size_bytes);
-      nero_nfc_emit_write(emit, " bytes\r\n");
-      nfc_tag_print_line_prefix(emit);
-      nero_nfc_emit_write(emit, "Read access: ");
-      nero_nfc_emit_write(emit,
-                          type2->read_access_open ? "open" : "restricted");
-      nero_nfc_emit_write(emit, "  Write access: ");
-      nero_nfc_emit_write(emit,
-                          type2->write_access_open ? "open" : "restricted");
-      nero_nfc_emit_write(emit, "\r\n");
-      nfc_tag_print_line_prefix(emit);
-      nero_nfc_emit_write(emit, "Writable: ");
-      nero_nfc_emit_write(emit, type2->write_access_open ? "yes" : "no");
-      nero_nfc_emit_write(emit, "  Can be made read-only: ");
-      nero_nfc_emit_write(emit, type2->write_access_open
-                                    ? "yes"
-                                    : "already restricted/unknown");
-      nero_nfc_emit_write(emit, "\r\n");
-    }
+  if (type2->cc_valid && nero_nfc_span_ok(NFC_TAG_T2T_CC_ACCESS_INDEX, 1u,
+                                          NFC_TAG_T2T_PAGE_SIZE_BYTES)) {
+    nfc_tag_print_line_prefix(emit);
+    nero_nfc_emit_write(emit, "CC: ");
+    nfc_tag_print_hex_bytes(emit, type2->cc, NFC_TAG_T2T_PAGE_SIZE_BYTES, ' ');
+    nero_nfc_emit_write(emit, "\r\n");
+    nfc_tag_print_line_prefix(emit);
+    nero_nfc_emit_write(emit, "CC file: E1 ");
+    nero_nfc_emit_hex_u8(emit, type2->cc[1]);
+    emit(' ');
+    nero_nfc_emit_hex_u8(emit, type2->cc[NFC_TAG_T2T_CC_MLEN_INDEX]);
+    emit(' ');
+    nero_nfc_emit_hex_u8(emit, type2->cc[NFC_TAG_T2T_CC_ACCESS_INDEX]);
+    nero_nfc_emit_write(emit, "\r\n");
+    nfc_tag_print_line_prefix(emit);
+    nero_nfc_emit_write(emit,
+                        "Data format: NFC Forum Type 2 Tag / NDEF TLV\r\n");
+    nfc_tag_print_line_prefix(emit);
+    nero_nfc_emit_write(emit, "NDEF mapping: ");
+    nero_nfc_emit_dec_u32(emit, type2->mapping_major);
+    emit('.');
+    nero_nfc_emit_dec_u32(emit, type2->mapping_minor);
+    nero_nfc_emit_write(emit, "  Data area: ");
+    nero_nfc_emit_dec_u32(emit, type2->data_area_size_bytes);
+    nero_nfc_emit_write(emit, " bytes\r\n");
+    nfc_tag_print_line_prefix(emit);
+    nero_nfc_emit_write(emit, "T2T area size: ");
+    nero_nfc_emit_dec_u32(emit, type2->data_area_size_bytes);
+    nero_nfc_emit_write(emit, " bytes  TLV area size: ");
+    nero_nfc_emit_dec_u32(emit, type2->data_area_size_bytes);
+    nero_nfc_emit_write(emit, " bytes\r\n");
+    nfc_tag_print_line_prefix(emit);
+    nero_nfc_emit_write(emit, "Read access: ");
+    nero_nfc_emit_write(emit, type2->read_access_open ? "open" : "restricted");
+    nero_nfc_emit_write(emit, "  Write access: ");
+    nero_nfc_emit_write(emit, type2->write_access_open ? "open" : "restricted");
+    nero_nfc_emit_write(emit, "\r\n");
+    nfc_tag_print_line_prefix(emit);
+    nero_nfc_emit_write(emit, "Writable: ");
+    nero_nfc_emit_write(emit, type2->write_access_open ? "yes" : "no");
+    nero_nfc_emit_write(emit, "  Can be made read-only: ");
+    nero_nfc_emit_write(
+        emit, type2->write_access_open ? "yes" : "already restricted/unknown");
+    nero_nfc_emit_write(emit, "\r\n");
   }
+
   if (type2->auth0_valid) {
     nfc_tag_print_line_prefix(emit);
     nero_nfc_emit_write(emit, "Protected by password: ");

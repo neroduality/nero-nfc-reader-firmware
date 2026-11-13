@@ -28,9 +28,9 @@ extern "C" {
  * tag, SAK continuation bit, cascade-level UID CLn width (4 bytes),
  * and assembled UID lengths. SEL_RESP_LEN names the per-level UID CLn
  * buffer, not the SELECT SAK response. */
+#define K_S_T25_ISO14443_A_SAK_CASCADE_BIT 0x04u
 enum {
   K_S_T25_ISO14443_A_CASCADE_TAG = 0x88u,
-  K_S_T25_ISO14443_A_SAK_CASCADE_BIT = 0x04u,
   K_S_T25_ISO14443_A_UID_LEN_SINGLE = 4u,
   K_S_T25_ISO14443_A_UID_LEN_DOUBLE = 7u,
   K_S_T25_ISO14443_A_UID_LEN_TRIPLE = 10u,

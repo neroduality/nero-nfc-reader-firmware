@@ -53,8 +53,8 @@ static inline uint32_t reader_iso_dep_fwt_us_from_fwi(uint8_t fwi) {
   if (fwi > ISO_DEP_FWI_MAX) {
     fwi = ISO_DEP_FWI_DEFAULT;
   }
-  return (uint32_t)((((uint64_t)ISO_DEP_FWT_SCALE_NUM) * (1ull << fwi) *
-                         ISO_DEP_US_PER_SECOND +
+  return (uint32_t)(((((uint64_t)ISO_DEP_FWT_SCALE_NUM) * (1ull << fwi) *
+                      ISO_DEP_US_PER_SECOND) +
                      ISO_DEP_FWT_SCALE_DEN - 1ull) /
                     ISO_DEP_FWT_SCALE_DEN);
 }

@@ -87,12 +87,12 @@ void st25_iso14443a_configure_defaults(st25_cmd_fn_t direct_cmd,
   write_reg(ST25R3916_REG_MASK_RX_TIMER, 0x01u);
 
   write_reg(ST25R3916_REG_IRQ_MASK_MAIN,
-            (uint8_t)(~(IRQ_MAIN_TXE | IRQ_MAIN_RXE | IRQ_MAIN_RXS |
+            (uint8_t)(~((uint32_t)IRQ_MAIN_TXE | IRQ_MAIN_RXE | IRQ_MAIN_RXS |
                         IRQ_MAIN_COL | IRQ_MAIN_FWL)));
   write_reg(ST25R3916_REG_IRQ_MASK_TIMER_NFC, (uint8_t)(~IRQ_TIMER_NRE));
   write_reg(ST25R3916_REG_IRQ_MASK_ERROR_WUP,
-            (uint8_t)(~(IRQ_ERROR_CRC | IRQ_ERROR_PAR | IRQ_ERROR_ERR1 |
-                        IRQ_ERROR_ERR2)));
+            (uint8_t)(~((uint32_t)IRQ_ERROR_CRC | IRQ_ERROR_PAR |
+                        IRQ_ERROR_ERR1 | IRQ_ERROR_ERR2)));
   write_reg(ST25R3916_REG_IRQ_MASK_TARGET, K_ST25_A_IRQ_MASK_ALL);
 }
 
@@ -130,7 +130,7 @@ NERO_NFC_NODISCARD bool st25_iso14443a_send_short_frame(
 
   delay_ms(K_ST25_A_WUP_SETTLE_MS);
   rx_irqs = read_irq_regs();
-  if ((irq_main(rx_irqs) & (IRQ_MAIN_RXE | IRQ_MAIN_COL)) == 0u) {
+  if ((irq_main(rx_irqs) & ((uint32_t)IRQ_MAIN_RXE | IRQ_MAIN_COL)) == 0u) {
     return false;
   }
 
@@ -149,8 +149,8 @@ int st25_iso14443a_anticollision_select(uint8_t sel_cmd, uint8_t* uid_out,
 
   if (uid_out != NERO_NFC_NULL) {
     for (unsigned i = 0u; i < (unsigned)K_ST25_A_CASCADE_UID_FRAME_LEN; i++) {
-      if (!nero_nfc_store_u8(uid_out, (size_t)(K_ST25_A_CASCADE_UID_FRAME_LEN),
-                             (size_t)(i), (uint8_t)(0u))) {
+      if (!nero_nfc_store_u8(uid_out, (size_t)K_ST25_A_CASCADE_UID_FRAME_LEN,
+                             (size_t)i, (uint8_t)0u)) {
         return -1;
       }
     }
@@ -168,20 +168,20 @@ int st25_iso14443a_anticollision_select(uint8_t sel_cmd, uint8_t* uid_out,
     return -1;
   }
 
-  bcc = (uint8_t)(rx_buffer[K_IDX0] ^ rx_buffer[K_IDX1] ^ rx_buffer[K_IDX2] ^
-                  rx_buffer[K_IDX3]);
+  bcc = (uint8_t)((uint32_t)rx_buffer[K_IDX0] ^ rx_buffer[K_IDX1] ^
+                  rx_buffer[K_IDX2] ^ rx_buffer[K_IDX3]);
   if (bcc != rx_buffer[K_ST25_A_BCC_INDEX]) {
     return -1;
   }
 
-  if (!nero_nfc_store_u8(uid_out, (size_t)(K_ST25_A_CASCADE_UID_FRAME_LEN),
-                         (size_t)(K_IDX0), rx_buffer[K_IDX0]) ||
-      !nero_nfc_store_u8(uid_out, (size_t)(K_ST25_A_CASCADE_UID_FRAME_LEN),
-                         (size_t)(K_IDX1), rx_buffer[K_IDX1]) ||
-      !nero_nfc_store_u8(uid_out, (size_t)(K_ST25_A_CASCADE_UID_FRAME_LEN),
-                         (size_t)(K_IDX2), rx_buffer[K_IDX2]) ||
-      !nero_nfc_store_u8(uid_out, (size_t)(K_ST25_A_CASCADE_UID_FRAME_LEN),
-                         (size_t)(K_IDX3), rx_buffer[K_IDX3])) {
+  if (!nero_nfc_store_u8(uid_out, (size_t)K_ST25_A_CASCADE_UID_FRAME_LEN,
+                         (size_t)K_IDX0, rx_buffer[K_IDX0]) ||
+      !nero_nfc_store_u8(uid_out, (size_t)K_ST25_A_CASCADE_UID_FRAME_LEN,
+                         (size_t)K_IDX1, rx_buffer[K_IDX1]) ||
+      !nero_nfc_store_u8(uid_out, (size_t)K_ST25_A_CASCADE_UID_FRAME_LEN,
+                         (size_t)K_IDX2, rx_buffer[K_IDX2]) ||
+      !nero_nfc_store_u8(uid_out, (size_t)K_ST25_A_CASCADE_UID_FRAME_LEN,
+                         (size_t)K_IDX3, rx_buffer[K_IDX3])) {
     return -1;
   }
 
@@ -216,8 +216,8 @@ NERO_NFC_NODISCARD bool st25_iso14443a_activate_tag(
   if ((uid_out != NERO_NFC_NULL) &&
       (uid_out_capacity >= K_ST25_A_UID_LEN_DOUBLE)) {
     for (unsigned i = 0u; i < (unsigned)K_ST25_A_UID_LEN_DOUBLE; i++) {
-      if (!nero_nfc_store_u8(uid_out, (size_t)(uid_out_capacity), (size_t)(i),
-                             (uint8_t)(0u))) {
+      if (!nero_nfc_store_u8(uid_out, (size_t)uid_out_capacity, (size_t)i,
+                             (uint8_t)0u)) {
         return false;
       }
     }
@@ -260,13 +260,13 @@ NERO_NFC_NODISCARD bool st25_iso14443a_activate_tag(
     int sak3 = -1;
     uint8_t levels = 1u;
 
-    if ((sak1 & K_S_T25_ISO14443_A_SAK_CASCADE_BIT) != 0) {
+    if (((unsigned)sak1 & K_S_T25_ISO14443_A_SAK_CASCADE_BIT) != 0u) {
       sak2 = select_uid(context, ISO14443_CMD_SEL_CL2, cl2_uid);
       if (sak2 < 0) {
         return false;
       }
       levels = K_ST25_A_UID_LEVELS_DOUBLE;
-      if ((sak2 & K_S_T25_ISO14443_A_SAK_CASCADE_BIT) != 0) {
+      if (((unsigned)sak2 & K_S_T25_ISO14443_A_SAK_CASCADE_BIT) != 0u) {
         sak3 = select_uid(context, ISO14443_CMD_SEL_CL3, cl3_uid);
         if (sak3 < 0) {
           return false;

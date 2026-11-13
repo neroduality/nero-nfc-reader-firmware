@@ -261,11 +261,11 @@
 #define NFC_TAG_NT4H424_DEFAULT_MLC_MSB 0x00u
 #define NFC_TAG_NT4H424_DEFAULT_MLC_LSB 0xFFu
 #define NFC_TAG_NT4H424_DEFAULT_MLE                      \
-  ((uint16_t)(((uint16_t)NFC_TAG_NT4H424_DEFAULT_MLE_MSB \
+  ((uint16_t)(((uint32_t)NFC_TAG_NT4H424_DEFAULT_MLE_MSB \
                << NFC_BYTE_SHIFT_8) |                    \
               NFC_TAG_NT4H424_DEFAULT_MLE_LSB))
 #define NFC_TAG_NT4H424_DEFAULT_MLC                      \
-  ((uint16_t)(((uint16_t)NFC_TAG_NT4H424_DEFAULT_MLC_MSB \
+  ((uint16_t)(((uint32_t)NFC_TAG_NT4H424_DEFAULT_MLC_MSB \
                << NFC_BYTE_SHIFT_8) |                    \
               NFC_TAG_NT4H424_DEFAULT_MLC_LSB))
 /*
@@ -292,6 +292,9 @@
 #define NFC_CTAP_CMD_GET_ASSERTION 0x02u
 #define NFC_CTAP_CMD_GET_INFO 0x04u
 #define NFC_CTAP_CMD_CLIENT_PIN 0x06u
+/* [CTAP2.3] section 6.6 -- authenticatorReset; erases credentials, may take
+ * seconds under S(WTX). */
+#define NFC_CTAP_CMD_RESET 0x07u
 /* [CTAP2.3] CBOR text-string type + length bytes */
 #define NFC_CTAP_RP_ID_HEADROOM 2u
 #define NFC_CTAP_RP_ID_MAX (NFC_CBOR_ONE_BYTE_LEN_MAX - NFC_CTAP_RP_ID_HEADROOM)

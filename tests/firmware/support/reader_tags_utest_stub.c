@@ -22,6 +22,8 @@
 #include "nfc_storage_ndef.h"
 #include "nfc_tag_info.h"
 #include "reader_hal_utest.h"
+#include "reader_tags_internal.h"
+#include "reader_tags_utest.h"
 
 static bool g_typea_valid;
 static reader_tag_typea_info_t g_typea_info;

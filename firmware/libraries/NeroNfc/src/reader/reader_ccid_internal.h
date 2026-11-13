@@ -58,16 +58,16 @@ static inline uint16_t reader_ccid_append_success_status(uint8_t* dst,
                                                          uint16_t data_len,
                                                          uint16_t dst_cap) {
   return reader_ccid_append_status(dst, data_len, dst_cap,
-                                   (uint8_t)(NFC_ISO7816_SW1_SUCCESS),
-                                   (uint8_t)(NFC_ISO7816_SW2_SUCCESS));
+                                   (uint8_t)NFC_ISO7816_SW1_SUCCESS,
+                                   (uint8_t)NFC_ISO7816_SW2_SUCCESS);
 }
 
 /* ISO7816-4 general error when an internal bounds/copy invariant fails. */
 static inline uint16_t reader_ccid_apdu_failure_response(uint8_t* rsp,
                                                          uint16_t rsp_cap) {
   return reader_ccid_append_status(rsp, 0u, rsp_cap,
-                                   (uint8_t)(NFC_ISO7816_SW1_GENERAL_ERROR),
-                                   (uint8_t)(NFC_ISO7816_SW2_SUCCESS));
+                                   (uint8_t)NFC_ISO7816_SW1_GENERAL_ERROR,
+                                   (uint8_t)NFC_ISO7816_SW2_SUCCESS);
 }
 
 uint16_t reader_ccid_handle_get_data_apdu(const uint8_t* apdu,

@@ -26,12 +26,17 @@
 #include "reader_iso_dep_frame.h"
 #include "reader_iso_dep_timing.h"
 #include "reader_output.h"
+#include "reader_protocol.h"
 #include "reader_security_key_iso_dep_session.h"
 #include "reader_iso_dep_debug.h"
 
 #include <stdbool.h>
 #include <stdint.h>
 #include "nero_nfc_format.h"
+
+/* [DERIVED] S(WTX) recognition mask; not a standalone ISO14443-4 SPEC entry.
+ * File-local: only this TU matches PCB against ISO_DEP_PCB_S_WTX. */
+#define ISO_DEP_PCB_SWTX_MASK 0xF7u
 
 enum {
   READER_ISO_DEP_ERR_NONE = 0u,
@@ -68,9 +73,6 @@ enum {
   READER_ISO_DEP_WTX_ECHO_TX_CAP = 8u,
   READER_ISO_DEP_CHAIN_ACK_TX_CAP = 4u,
   ISO_DEP_WTX_LOG_MIN = 3u,
-  /* [DERIVED] S(WTX) recognition mask; not a standalone ISO14443-4 SPEC entry.
-   * File-local: only this TU matches PCB against ISO_DEP_PCB_S_WTX. */
-  ISO_DEP_PCB_SWTX_MASK = 0xF7u,
 };
 
 static void iso_dep_note_wtx_wait(uint16_t wtx_count, uint32_t total_start_ms) {
@@ -85,15 +87,15 @@ static void iso_dep_note_wtx_wait(uint16_t wtx_count, uint32_t total_start_ms) {
   {
     char ndc[NERO_NFC_FORMAT_SNPRINTF_DEC_CAP];
     (void)nero_nfc_snprintf(ndc, sizeof ndc, "%u",
-                            (unsigned)((uint32_t)(wtx_count)));
+                            (unsigned)((uint32_t)wtx_count));
     nero_nfc_log_write(ndc);
   }
   nero_nfc_log_write(" (~");
   {
     char ndc[NERO_NFC_FORMAT_SNPRINTF_DEC_CAP];
     (void)nero_nfc_snprintf(ndc, sizeof ndc, "%u",
-                            (unsigned)(reader_iso_dep_ms_to_seconds(
-                                reader_hal_millis() - total_start_ms)));
+                            (unsigned)reader_iso_dep_ms_to_seconds(
+                                reader_hal_millis() - total_start_ms));
     nero_nfc_log_write(ndc);
   }
   nero_nfc_log_write(
@@ -161,14 +163,14 @@ static int reader_security_key_send_i_block(const uint8_t* apdu,
     {
       char ndc[NERO_NFC_FORMAT_SNPRINTF_DEC_CAP];
       (void)nero_nfc_snprintf(ndc, sizeof ndc, "%u",
-                              (unsigned)((uint32_t)(apdu_len)));
+                              (unsigned)((uint32_t)apdu_len));
       nero_nfc_log_write(ndc);
     }
     nero_nfc_log_write(" tx_hdr=");
     {
       char ndc[NERO_NFC_FORMAT_SNPRINTF_DEC_CAP];
       (void)nero_nfc_snprintf(ndc, sizeof ndc, "%u",
-                              (unsigned)((uint32_t)(tx_hdr_len)));
+                              (unsigned)((uint32_t)tx_hdr_len));
       nero_nfc_log_write(ndc);
     }
     nero_nfc_log_write(" nad=");
@@ -177,7 +179,7 @@ static int reader_security_key_send_i_block(const uint8_t* apdu,
     {
       char ndc[NERO_NFC_FORMAT_SNPRINTF_DEC_CAP];
       (void)nero_nfc_snprintf(ndc, sizeof ndc, "%u",
-                              (unsigned)((uint32_t)(frag_cap)));
+                              (unsigned)((uint32_t)frag_cap));
       nero_nfc_log_write(ndc);
     }
     nero_nfc_log_write(" g_block_num=");
@@ -212,14 +214,14 @@ static int reader_security_key_send_i_block(const uint8_t* apdu,
       {
         char ndc[NERO_NFC_FORMAT_SNPRINTF_DEC_CAP];
         (void)nero_nfc_snprintf(ndc, sizeof ndc, "%u",
-                                (unsigned)((uint32_t)(apdu_off)));
+                                (unsigned)((uint32_t)apdu_off));
         nero_nfc_log_write(ndc);
       }
       nero_nfc_log_write(" frag_len=");
       {
         char ndc[NERO_NFC_FORMAT_SNPRINTF_DEC_CAP];
         (void)nero_nfc_snprintf(ndc, sizeof ndc, "%u",
-                                (unsigned)((uint32_t)(tx_info.frag_len)));
+                                (unsigned)((uint32_t)tx_info.frag_len));
         nero_nfc_log_write(ndc);
       }
       nero_nfc_log_write(" chain_more=");
@@ -228,21 +230,20 @@ static int reader_security_key_send_i_block(const uint8_t* apdu,
       {
         char ndc[NERO_NFC_FORMAT_SNPRINTF_DEC_CAP];
         (void)nero_nfc_snprintf(ndc, sizeof ndc, "%u",
-                                (unsigned)((uint32_t)(blk_sent)));
+                                (unsigned)((uint32_t)blk_sent));
         nero_nfc_log_write(ndc);
       }
       nero_nfc_log_write(" pcb_tx=0x");
       {
         char nhx[NERO_NFC_FORMAT_SNPRINTF_HEX_BYTE_CAP];
-        (void)nero_nfc_snprintf(nhx, sizeof nhx, "%02X",
-                                (unsigned)(tx_info.pcb));
+        (void)nero_nfc_snprintf(nhx, sizeof nhx, "%02X", (unsigned)tx_info.pcb);
         nero_nfc_log_write(nhx);
       }
       nero_nfc_log_write(" wire_len=");
       {
         char ndc[NERO_NFC_FORMAT_SNPRINTF_DEC_CAP];
         (void)nero_nfc_snprintf(ndc, sizeof ndc, "%u",
-                                (unsigned)((uint32_t)(tx_info.wire_len)));
+                                (unsigned)((uint32_t)tx_info.wire_len));
         nero_nfc_log_write(ndc);
       }
       nero_nfc_log_write("\r\n");
@@ -268,7 +269,7 @@ static int reader_security_key_send_i_block(const uint8_t* apdu,
       nero_nfc_log_write("[ISO-DEP] RX rlen=");
       {
         char ndc[NERO_NFC_FORMAT_SNPRINTF_DEC_CAP];
-        (void)nero_nfc_snprintf(ndc, sizeof ndc, "%d", (int)((int32_t)(rlen)));
+        (void)nero_nfc_snprintf(ndc, sizeof ndc, "%d", (int)((int32_t)rlen));
         nero_nfc_log_write(ndc);
       }
       nero_nfc_log_write(" cls=");
@@ -286,11 +287,11 @@ static int reader_security_key_send_i_block(const uint8_t* apdu,
       nero_nfc_log_write(" pcb=0x");
       {
         char nhx[NERO_NFC_FORMAT_SNPRINTF_HEX_BYTE_CAP];
-        (void)nero_nfc_snprintf(nhx, sizeof nhx, "%02X", (unsigned)(rx[0]));
+        (void)nero_nfc_snprintf(nhx, sizeof nhx, "%02X", (unsigned)rx[0]);
         nero_nfc_log_write(nhx);
       }
       nero_nfc_log_write("\r\n");
-      reader_iso_dep_debug_dump("RX raw", rx, (uint16_t)(rlen),
+      reader_iso_dep_debug_dump("RX raw", rx, (uint16_t)rlen,
                                 ISO_DEP_DUMP_RX_RAW);
     }
     if (tx_info.chain_more) {
@@ -305,7 +306,7 @@ static int reader_security_key_send_i_block(const uint8_t* apdu,
           uint8_t wtx_len;
 
           if ((reader_hal_millis() - total_start_ms) >
-              (uint32_t)(frame_timeout_ms)) {
+              (uint32_t)frame_timeout_ms) {
             if (G_ISO_DEP_TRACE != 0u) {
               nero_nfc_log_line(
                   "[ISO-DEP] TX-chain FAIL: total WTX deadline exceeded");
@@ -372,7 +373,7 @@ static int reader_security_key_send_i_block(const uint8_t* apdu,
               {
                 char ndc[NERO_NFC_FORMAT_SNPRINTF_DEC_CAP];
                 (void)nero_nfc_snprintf(ndc, sizeof ndc, "%u",
-                                        (unsigned)((uint32_t)(blk_sent)));
+                                        (unsigned)((uint32_t)blk_sent));
                 nero_nfc_log_write(ndc);
               }
               nero_nfc_log_write("\r\n");
@@ -388,14 +389,14 @@ static int reader_security_key_send_i_block(const uint8_t* apdu,
             {
               char ndc[NERO_NFC_FORMAT_SNPRINTF_DEC_CAP];
               (void)nero_nfc_snprintf(ndc, sizeof ndc, "%u",
-                                      (unsigned)((uint32_t)(rnak_retries)));
+                                      (unsigned)((uint32_t)rnak_retries));
               nero_nfc_log_write(ndc);
             }
             nero_nfc_log_write(" blk_sent=");
             {
               char ndc[NERO_NFC_FORMAT_SNPRINTF_DEC_CAP];
               (void)nero_nfc_snprintf(ndc, sizeof ndc, "%u",
-                                      (unsigned)((uint32_t)(blk_sent)));
+                                      (unsigned)((uint32_t)blk_sent));
               nero_nfc_log_write(ndc);
             }
             nero_nfc_log_write("\r\n");
@@ -424,7 +425,7 @@ static int reader_security_key_send_i_block(const uint8_t* apdu,
             {
               char ndc[NERO_NFC_FORMAT_SNPRINTF_DEC_CAP];
               (void)nero_nfc_snprintf(ndc, sizeof ndc, "%u",
-                                      (unsigned)((uint32_t)(ack_block)));
+                                      (unsigned)((uint32_t)ack_block));
               nero_nfc_log_write(ndc);
             }
             nero_nfc_log_write(" next_block=");
@@ -432,14 +433,14 @@ static int reader_security_key_send_i_block(const uint8_t* apdu,
               char ndc[NERO_NFC_FORMAT_SNPRINTF_DEC_CAP];
               (void)nero_nfc_snprintf(
                   ndc, sizeof ndc, "%u",
-                  (unsigned)((uint32_t)((blk_sent ^ ISO_DEP_BLOCK_NUM_MASK))));
+                  (unsigned)((uint32_t)(blk_sent ^ ISO_DEP_BLOCK_NUM_MASK)));
               nero_nfc_log_write(ndc);
             }
             nero_nfc_log_write(" after blk_sent=");
             {
               char ndc[NERO_NFC_FORMAT_SNPRINTF_DEC_CAP];
               (void)nero_nfc_snprintf(ndc, sizeof ndc, "%u",
-                                      (unsigned)((uint32_t)(blk_sent)));
+                                      (unsigned)((uint32_t)blk_sent));
               nero_nfc_log_write(ndc);
             }
             nero_nfc_log_write("\r\n");
@@ -478,14 +479,14 @@ static int reader_security_key_send_i_block(const uint8_t* apdu,
             char ndc[NERO_NFC_FORMAT_SNPRINTF_DEC_CAP];
             (void)nero_nfc_snprintf(
                 ndc, sizeof ndc, "%u",
-                (unsigned)((uint32_t)((blk_sent ^ ISO_DEP_BLOCK_NUM_MASK))));
+                (unsigned)((uint32_t)(blk_sent ^ ISO_DEP_BLOCK_NUM_MASK)));
             nero_nfc_log_write(ndc);
           }
           nero_nfc_log_write(" after blk_sent=");
           {
             char ndc[NERO_NFC_FORMAT_SNPRINTF_DEC_CAP];
             (void)nero_nfc_snprintf(ndc, sizeof ndc, "%u",
-                                    (unsigned)((uint32_t)(blk_sent)));
+                                    (unsigned)((uint32_t)blk_sent));
             nero_nfc_log_write(ndc);
           }
           nero_nfc_log_write(" CID=");
@@ -496,7 +497,7 @@ static int reader_security_key_send_i_block(const uint8_t* apdu,
             nero_nfc_log_write(ndc);
           }
           nero_nfc_log_write("\r\n");
-          reader_iso_dep_debug_dump("unexpected frame", rx, (uint16_t)(rlen),
+          reader_iso_dep_debug_dump("unexpected frame", rx, (uint16_t)rlen,
                                     ISO_DEP_DUMP_UNEXPECTED_FRAME);
         }
         reader_security_key_iso_dep_set_last_error(
@@ -522,8 +523,7 @@ static int reader_security_key_send_i_block(const uint8_t* apdu,
       uint8_t wtx_tx[READER_ISO_DEP_WTX_ECHO_TX_CAP];
       uint8_t wtx_len;
 
-      if ((reader_hal_millis() - total_start_ms) >
-          (uint32_t)(frame_timeout_ms)) {
+      if ((reader_hal_millis() - total_start_ms) > (uint32_t)frame_timeout_ms) {
         if (G_ISO_DEP_TRACE != 0u) {
           nero_nfc_log_line("[ISO-DEP] recv FAIL: total WTX deadline exceeded");
         }
@@ -580,12 +580,11 @@ static int reader_security_key_send_i_block(const uint8_t* apdu,
         nero_nfc_log_write("[ISO-DEP] recv after WTX echo rlen=");
         {
           char ndc[NERO_NFC_FORMAT_SNPRINTF_DEC_CAP];
-          (void)nero_nfc_snprintf(ndc, sizeof ndc, "%d",
-                                  (int)((int32_t)(rlen)));
+          (void)nero_nfc_snprintf(ndc, sizeof ndc, "%d", (int)((int32_t)rlen));
           nero_nfc_log_write(ndc);
         }
         nero_nfc_log_write("\r\n");
-        reader_iso_dep_debug_dump("RX post-WTX", rx, (uint16_t)(rlen),
+        reader_iso_dep_debug_dump("RX post-WTX", rx, (uint16_t)rlen,
                                   ISO_DEP_DUMP_RX_POST_WTX);
       }
       continue;
@@ -684,21 +683,21 @@ static int reader_security_key_send_i_block(const uint8_t* apdu,
         {
           char ndc[NERO_NFC_FORMAT_SNPRINTF_DEC_CAP];
           (void)nero_nfc_snprintf(ndc, sizeof ndc, "%u",
-                                  (unsigned)((uint32_t)(inf_off)));
+                                  (unsigned)((uint32_t)inf_off));
           nero_nfc_log_write(ndc);
         }
         nero_nfc_log_write(" inf_len=");
         {
           char ndc[NERO_NFC_FORMAT_SNPRINTF_DEC_CAP];
           (void)nero_nfc_snprintf(ndc, sizeof ndc, "%u",
-                                  (unsigned)((uint32_t)(inf_len)));
+                                  (unsigned)((uint32_t)inf_len));
           nero_nfc_log_write(ndc);
         }
         nero_nfc_log_write(" chained_accum=");
         {
           char ndc[NERO_NFC_FORMAT_SNPRINTF_DEC_CAP];
           (void)nero_nfc_snprintf(ndc, sizeof ndc, "%u",
-                                  (unsigned)((uint32_t)(total)));
+                                  (unsigned)((uint32_t)total));
           nero_nfc_log_write(ndc);
         }
         nero_nfc_log_write("\r\n");
@@ -718,11 +717,11 @@ static int reader_security_key_send_i_block(const uint8_t* apdu,
       nero_nfc_log_write(" pcb=0x");
       {
         char nhx[NERO_NFC_FORMAT_SNPRINTF_HEX_BYTE_CAP];
-        (void)nero_nfc_snprintf(nhx, sizeof nhx, "%02X", (unsigned)(pcb));
+        (void)nero_nfc_snprintf(nhx, sizeof nhx, "%02X", (unsigned)pcb);
         nero_nfc_log_write(nhx);
       }
       nero_nfc_log_write("\r\n");
-      reader_iso_dep_debug_dump("RX orphan", rx, (uint16_t)(rlen),
+      reader_iso_dep_debug_dump("RX orphan", rx, (uint16_t)rlen,
                                 ISO_DEP_DUMP_RX_ORPHAN);
     }
     break;
@@ -734,7 +733,7 @@ static int reader_security_key_send_i_block(const uint8_t* apdu,
     {
       char ndc[NERO_NFC_FORMAT_SNPRINTF_DEC_CAP];
       (void)nero_nfc_snprintf(ndc, sizeof ndc, "%u",
-                              (unsigned)((uint32_t)(total)));
+                              (unsigned)((uint32_t)total));
       nero_nfc_log_write(ndc);
     }
     nero_nfc_log_write("\r\n");
@@ -752,7 +751,7 @@ static int reader_security_key_send_i_block(const uint8_t* apdu,
     nero_nfc_log_write("[ISO-DEP] send_i_block exit total=");
     {
       char ndc[NERO_NFC_FORMAT_SNPRINTF_DEC_CAP];
-      (void)nero_nfc_snprintf(ndc, sizeof ndc, "%d", (int)((int32_t)(total)));
+      (void)nero_nfc_snprintf(ndc, sizeof ndc, "%d", (int)((int32_t)total));
       nero_nfc_log_write(ndc);
     }
     nero_nfc_log_write(" next_block_num=");
@@ -767,7 +766,7 @@ static int reader_security_key_send_i_block(const uint8_t* apdu,
                               ISO_DEP_DUMP_RESP_CHUNK);
   }
   nero_nfc_secure_clear(rx, sizeof(rx));
-  return (int)(total);
+  return (int)total;
 }
 
 int reader_security_key_send_apdu_timeout_ex(const uint8_t* apdu,
@@ -786,14 +785,14 @@ int reader_security_key_send_apdu_timeout_ex(const uint8_t* apdu,
     {
       char ndc[NERO_NFC_FORMAT_SNPRINTF_DEC_CAP];
       (void)nero_nfc_snprintf(ndc, sizeof ndc, "%u",
-                              (unsigned)((uint32_t)(apdu_len)));
+                              (unsigned)((uint32_t)apdu_len));
       nero_nfc_log_write(ndc);
     }
     nero_nfc_log_write(" frame_ms=");
     {
       char ndc[NERO_NFC_FORMAT_SNPRINTF_DEC_CAP];
       (void)nero_nfc_snprintf(ndc, sizeof ndc, "%u",
-                              (unsigned)((uint32_t)(frame_timeout_ms)));
+                              (unsigned)((uint32_t)frame_timeout_ms));
       nero_nfc_log_write(ndc);
     }
     nero_nfc_log_write("\r\n");
@@ -807,7 +806,7 @@ int reader_security_key_send_apdu_timeout_ex(const uint8_t* apdu,
     nero_nfc_log_write("[ISO-DEP] send_apdu_timeout after send_i_block total=");
     {
       char ndc[NERO_NFC_FORMAT_SNPRINTF_DEC_CAP];
-      (void)nero_nfc_snprintf(ndc, sizeof ndc, "%d", (int)((int32_t)(total)));
+      (void)nero_nfc_snprintf(ndc, sizeof ndc, "%d", (int)((int32_t)total));
       nero_nfc_log_write(ndc);
     }
     nero_nfc_log_write("\r\n");
@@ -815,12 +814,12 @@ int reader_security_key_send_apdu_timeout_ex(const uint8_t* apdu,
   if (total < NFC_ISO7816_SW_STATUS_WORD_LEN) {
     return total;
   }
-  total = (int)(reader_iso_dep_trim_crc_suffix(resp, (uint16_t)(total)));
+  total = (int)reader_iso_dep_trim_crc_suffix(resp, (uint16_t)total);
   if (G_ISO_DEP_TRACE != 0u) {
     nero_nfc_log_write("[ISO-DEP] after CRC-trim total=");
     {
       char ndc[NERO_NFC_FORMAT_SNPRINTF_DEC_CAP];
-      (void)nero_nfc_snprintf(ndc, sizeof ndc, "%d", (int)((int32_t)(total)));
+      (void)nero_nfc_snprintf(ndc, sizeof ndc, "%d", (int)((int32_t)total));
       nero_nfc_log_write(ndc);
     }
     nero_nfc_log_write("\r\n");
@@ -839,7 +838,7 @@ int reader_security_key_send_apdu_timeout_ex(const uint8_t* apdu,
           remaining};
       int more;
       tail_cap =
-          reader_security_key_resp_tail_cap(resp_buf_len, (uint16_t)(total));
+          reader_security_key_resp_tail_cap(resp_buf_len, (uint16_t)total);
       if (tail_cap < NFC_ISO7816_SW_STATUS_WORD_LEN) {
         break;
       }
@@ -848,7 +847,7 @@ int reader_security_key_send_apdu_timeout_ex(const uint8_t* apdu,
         {
           char ndc[NERO_NFC_FORMAT_SNPRINTF_DEC_CAP];
           (void)nero_nfc_snprintf(ndc, sizeof ndc, "%u",
-                                  (unsigned)((uint32_t)(remaining)));
+                                  (unsigned)((uint32_t)remaining));
           nero_nfc_log_write(ndc);
         }
         nero_nfc_log_write("\r\n");
@@ -860,8 +859,7 @@ int reader_security_key_send_apdu_timeout_ex(const uint8_t* apdu,
         nero_nfc_log_write("[ISO-DEP] GET RESPONSE more=");
         {
           char ndc[NERO_NFC_FORMAT_SNPRINTF_DEC_CAP];
-          (void)nero_nfc_snprintf(ndc, sizeof ndc, "%d",
-                                  (int)((int32_t)(more)));
+          (void)nero_nfc_snprintf(ndc, sizeof ndc, "%d", (int)((int32_t)more));
           nero_nfc_log_write(ndc);
         }
         nero_nfc_log_write("\r\n");
@@ -870,7 +868,7 @@ int reader_security_key_send_apdu_timeout_ex(const uint8_t* apdu,
         break;
       }
       total += more;
-      total = (int)(reader_iso_dep_trim_crc_suffix(resp, (uint16_t)(total)));
+      total = (int)reader_iso_dep_trim_crc_suffix(resp, (uint16_t)total);
     }
     while (follow_get_response && nfc_ctap_response_more_data(resp, total)) {
       uint16_t tail_cap;
@@ -884,7 +882,7 @@ int reader_security_key_send_apdu_timeout_ex(const uint8_t* apdu,
                                   NFC_ISO7816_GET_DATA_P2_DEFAULT};
       int more;
       tail_cap =
-          reader_security_key_resp_tail_cap(resp_buf_len, (uint16_t)(total));
+          reader_security_key_resp_tail_cap(resp_buf_len, (uint16_t)total);
       if (tail_cap < NFC_ISO7816_SW_STATUS_WORD_LEN) {
         break;
       }
@@ -898,8 +896,7 @@ int reader_security_key_send_apdu_timeout_ex(const uint8_t* apdu,
         nero_nfc_log_write("[ISO-DEP] NFCCTAP_GETRESPONSE more=");
         {
           char ndc[NERO_NFC_FORMAT_SNPRINTF_DEC_CAP];
-          (void)nero_nfc_snprintf(ndc, sizeof ndc, "%d",
-                                  (int)((int32_t)(more)));
+          (void)nero_nfc_snprintf(ndc, sizeof ndc, "%d", (int)((int32_t)more));
           nero_nfc_log_write(ndc);
         }
         nero_nfc_log_write("\r\n");
@@ -908,15 +905,15 @@ int reader_security_key_send_apdu_timeout_ex(const uint8_t* apdu,
         break;
       }
       total += more;
-      total = (int)(reader_iso_dep_trim_crc_suffix(resp, (uint16_t)(total)));
+      total = (int)reader_iso_dep_trim_crc_suffix(resp, (uint16_t)total);
     }
   }
-  total = (int)(reader_iso_dep_trim_crc_suffix(resp, (uint16_t)(total)));
+  total = (int)reader_iso_dep_trim_crc_suffix(resp, (uint16_t)total);
   if (G_ISO_DEP_TRACE != 0u) {
     nero_nfc_log_write("[ISO-DEP] send_apdu_timeout final total=");
     {
       char ndc[NERO_NFC_FORMAT_SNPRINTF_DEC_CAP];
-      (void)nero_nfc_snprintf(ndc, sizeof ndc, "%d", (int)((int32_t)(total)));
+      (void)nero_nfc_snprintf(ndc, sizeof ndc, "%d", (int)((int32_t)total));
       nero_nfc_log_write(ndc);
     }
     if ((total >= NFC_ISO7816_SW_STATUS_WORD_LEN)) {
@@ -926,19 +923,19 @@ int reader_security_key_send_apdu_timeout_ex(const uint8_t* apdu,
       if (nfc_iso7816_response_sw(resp, total, &sw1, &sw2)) {
         {
           char nhx[NERO_NFC_FORMAT_SNPRINTF_HEX_BYTE_CAP];
-          (void)nero_nfc_snprintf(nhx, sizeof nhx, "%02X", (unsigned)(sw1));
+          (void)nero_nfc_snprintf(nhx, sizeof nhx, "%02X", (unsigned)sw1);
           nero_nfc_log_write(nhx);
         }
         {
           char nhx[NERO_NFC_FORMAT_SNPRINTF_HEX_BYTE_CAP];
-          (void)nero_nfc_snprintf(nhx, sizeof nhx, "%02X", (unsigned)(sw2));
+          (void)nero_nfc_snprintf(nhx, sizeof nhx, "%02X", (unsigned)sw2);
           nero_nfc_log_write(nhx);
         }
       }
     }
     nero_nfc_log_write("\r\n");
     if ((total > 0)) {
-      reader_iso_dep_debug_dump("final resp", resp, (uint16_t)(total),
+      reader_iso_dep_debug_dump("final resp", resp, (uint16_t)total,
                                 ISO_DEP_DUMP_FINAL_RESP);
     }
   }

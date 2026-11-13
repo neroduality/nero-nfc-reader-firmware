@@ -17,46 +17,55 @@
 
 # Lint job container entry (after repo + .lint-kit-org checkout). Mirrors main-ci.yml lint job.
 #
-# GHA: run after checkouts with CI_SKIP_CHECKOUT_PREREQUISITES=1.
-# ci-local: bind-mounts repo + lint kit at .lint-kit-org/lint-c-cpp and runs full entry.
+# GHA: run after checkouts with CI_SKIP_CHECKOUT_PREREQUISITES=1 and the org lint
+#   kit checked out at .lint-kit-org (neroduality/.github -> lint-c-cpp).
+# ci-local: bind-mounts the repo and lint kit, then runs the full entry.
+#
+# Usage (from repo root):
+#   LINT_KIT=.lint-kit-org/lint-c-cpp bash .github/scripts/ci-run-lint.sh
 set -euo pipefail
 
 repo_root="${FIRMWARE_ROOT:-$(pwd)}"
+if [[ ! -f "${repo_root}/Makefile" ]] || [[ ! -d "${repo_root}/firmware" ]]; then
+  printf 'error: run from repo root (or set FIRMWARE_ROOT)\n' >&2
+  exit 1
+fi
+
 lint_kit="${LINT_KIT:-${repo_root}/.lint-kit-org/lint-c-cpp}"
 
-if [[ ! -f ${repo_root}/Makefile ]]; then
-  printf 'error: FIRMWARE_ROOT must point at firmware repo root (missing Makefile)\n' >&2
-  exit 1
-fi
-if [[ ! -x ${lint_kit}/lint-c-cpp.sh ]]; then
-  printf 'error: lint kit missing lint-c-cpp.sh: %s\n' "${lint_kit}" >&2
-  printf 'hint: GHA checks out neroduality/.github to .lint-kit-org; ci-local mounts or clones it\n' >&2
-  exit 1
-fi
-
 # shellcheck source=helper-container-bind-mount.sh
-# shellcheck disable=SC1091
 source "${repo_root}/.github/scripts/helper-container-bind-mount.sh"
 
 export FIRMWARE_ROOT="${repo_root}"
 export LINT_KIT="${lint_kit}"
 
 if [[ $(id -u) -eq 0 && -n ${HOST_UID:-} && ${NERO_NFC_CI_AS_USER:-0} != 1 ]]; then
-  INSTALL_DEPS=1 bash "${repo_root}/make/install-linux-deps.sh"
-  if [[ ${CI_SKIP_CHECKOUT_PREREQUISITES:-0} != 1 ]]; then
-    bash "${repo_root}/.github/scripts/ci-install-checkout-prerequisites.sh"
-  fi
+  INSTALL_DEPS=1 NERO_NFC_LLVM_PIN=1 bash "${repo_root}/make/install-linux-deps.sh"
   nero_nfc_prepare_bind_mount_paths "${repo_root}"
   nero_nfc_require_drop_to_host_user bash "${repo_root}/.github/scripts/ci-run-lint.sh"
 fi
 
 nero_nfc_refuse_root_bind_mount_writes
 
-if [[ ${CI_SKIP_CHECKOUT_PREREQUISITES:-0} != 1 && $(id -u) -eq 0 ]]; then
-  bash "${repo_root}/.github/scripts/ci-install-checkout-prerequisites.sh"
+if [[ "$(uname -s)" == "Linux" ]]; then
+  auto_install_linux_deps="${AUTO_INSTALL_LINUX_DEPS:-}"
+  if [[ -z ${auto_install_linux_deps} ]]; then
+    if [[ ${GITHUB_ACTIONS:-false} == true ]]; then
+      auto_install_linux_deps=1
+    else
+      auto_install_linux_deps=0
+    fi
+  fi
+  if [[ ${auto_install_linux_deps} != "0" ]]; then
+    INSTALL_DEPS=1 NERO_NFC_LLVM_PIN=1 bash "${repo_root}/make/install-linux-deps.sh"
+  fi
 fi
 
-if [[ $(id -u) -eq 0 ]]; then
-  INSTALL_DEPS=1 bash "${repo_root}/make/install-linux-deps.sh"
+if [[ ! -x "${lint_kit}/lint-c-cpp.sh" ]]; then
+  printf 'error: lint kit missing lint-c-cpp.sh: %s\n' "${lint_kit}" >&2
+  printf 'hint: GHA checks out neroduality/.github to .lint-kit-org; ci-local mounts or clones it\n' >&2
+  exit 1
 fi
-make -C "${repo_root}" lint INSTALL_DEPS=0 "LINT_KIT=${lint_kit}"
+
+cd "${repo_root}"
+make lint INSTALL_DEPS=0 "LINT_KIT=${lint_kit}"

@@ -15,6 +15,10 @@
 # limitations under the License.
 #
 # Consumer lint manifest for the org kit.
+#
+# toolchain.llvm_major pins clang-format and clang-tidy for make lint and CI.
+# clang-format majors wrap enumerator initializers differently, so one major
+# keeps the format gate stable across machines.
 
 compile_db:
   firmware:
@@ -125,7 +129,6 @@ policy:
     - reader_context.h
     - reader_tags_internal.h
     - writer_payload.h
-  nolint_allowed: null
   overrides:
     clang-format:
       add: null
@@ -167,6 +170,7 @@ policy:
             - -Wbidi-chars=any
             - -Werror
             - -Werror=format-security
+            - -Werror=vla
             - -Whardened
             - -fPIC
             - -fPIE
@@ -176,16 +180,19 @@ policy:
             - -fstack-clash-protection
             - -fstrict-flex-arrays=3
             - -ftrivial-auto-var-init=zero
+            - -fzero-call-used-regs=used-gpr
             - -fzero-init-padding-bits=all
-            - -fzero-init-padding-bits=union
+            - -fzero-init-padding-bits=unions
             - -mbranch-protection=standard
             - -pie
             - -shared
             - "LINKER:--as-needed"
+            - "LINKER:--gc-sections"
             - "LINKER:--no-copy-dt-needed-entries"
             - "LINKER:-z,nodlopen"
             - "LINKER:-z,noexecstack"
             - "LINKER:-z,now"
+            - "LINKER:-z,pack-relative-relocs"
             - "LINKER:-z,relro"
             - _GLIBCXX_ASSERTIONS
             - _GLIBCXX_DEBUG
@@ -201,6 +208,7 @@ policy:
             - -Wbidi-chars=any
             - -Werror
             - -Werror=format-security
+            - -Werror=vla
             - -Whardened
             - -fPIC
             - -fPIE
@@ -210,16 +218,19 @@ policy:
             - -fstack-clash-protection
             - -fstrict-flex-arrays=3
             - -ftrivial-auto-var-init=zero
+            - -fzero-call-used-regs=used-gpr
             - -fzero-init-padding-bits=all
-            - -fzero-init-padding-bits=union
+            - -fzero-init-padding-bits=unions
             - -mbranch-protection=standard
             - -pie
             - -shared
             - "LINKER:--as-needed"
+            - "LINKER:--gc-sections"
             - "LINKER:--no-copy-dt-needed-entries"
             - "LINKER:-z,nodlopen"
             - "LINKER:-z,noexecstack"
             - "LINKER:-z,now"
+            - "LINKER:-z,pack-relative-relocs"
             - "LINKER:-z,relro"
             - _GLIBCXX_ASSERTIONS
             - _GLIBCXX_DEBUG
@@ -235,6 +246,7 @@ policy:
             - -Wbidi-chars=any
             - -Werror
             - -Werror=format-security
+            - -Werror=vla
             - -Whardened
             - -fPIC
             - -fPIE
@@ -244,16 +256,19 @@ policy:
             - -fstack-clash-protection
             - -fstrict-flex-arrays=3
             - -ftrivial-auto-var-init=zero
+            - -fzero-call-used-regs=used-gpr
             - -fzero-init-padding-bits=all
-            - -fzero-init-padding-bits=union
+            - -fzero-init-padding-bits=unions
             - -mbranch-protection=standard
             - -pie
             - -shared
             - "LINKER:--as-needed"
+            - "LINKER:--gc-sections"
             - "LINKER:--no-copy-dt-needed-entries"
             - "LINKER:-z,nodlopen"
             - "LINKER:-z,noexecstack"
             - "LINKER:-z,now"
+            - "LINKER:-z,pack-relative-relocs"
             - "LINKER:-z,relro"
             - _GLIBCXX_ASSERTIONS
             - _GLIBCXX_DEBUG
@@ -269,6 +284,7 @@ policy:
             - -Wbidi-chars=any
             - -Werror
             - -Werror=format-security
+            - -Werror=vla
             - -Whardened
             - -fPIC
             - -fPIE
@@ -278,16 +294,19 @@ policy:
             - -fstack-clash-protection
             - -fstrict-flex-arrays=3
             - -ftrivial-auto-var-init=zero
+            - -fzero-call-used-regs=used-gpr
             - -fzero-init-padding-bits=all
-            - -fzero-init-padding-bits=union
+            - -fzero-init-padding-bits=unions
             - -mbranch-protection=standard
             - -pie
             - -shared
             - "LINKER:--as-needed"
+            - "LINKER:--gc-sections"
             - "LINKER:--no-copy-dt-needed-entries"
             - "LINKER:-z,nodlopen"
             - "LINKER:-z,noexecstack"
             - "LINKER:-z,now"
+            - "LINKER:-z,pack-relative-relocs"
             - "LINKER:-z,relro"
             - _GLIBCXX_ASSERTIONS
             - _GLIBCXX_DEBUG
@@ -303,6 +322,7 @@ policy:
             - -Wbidi-chars=any
             - -Werror
             - -Werror=format-security
+            - -Werror=vla
             - -fPIC
             - -fPIE
             - -fcf-protection=full
@@ -310,16 +330,19 @@ policy:
             - -fhardened
             - -fstack-clash-protection
             - -fstrict-flex-arrays=3
+            - -fzero-call-used-regs=used-gpr
             - -fzero-init-padding-bits=all
-            - -fzero-init-padding-bits=union
+            - -fzero-init-padding-bits=unions
             - -mbranch-protection=standard
             - -pie
             - -shared
             - "LINKER:--as-needed"
+            - "LINKER:--gc-sections"
             - "LINKER:--no-copy-dt-needed-entries"
             - "LINKER:-z,nodlopen"
             - "LINKER:-z,noexecstack"
             - "LINKER:-z,now"
+            - "LINKER:-z,pack-relative-relocs"
             - "LINKER:-z,relro"
             - _GLIBCXX_ASSERTIONS
             - _GLIBCXX_DEBUG
@@ -335,6 +358,7 @@ policy:
             - -Wbidi-chars=any
             - -Werror
             - -Werror=format-security
+            - -Werror=vla
             - -fPIC
             - -fPIE
             - -fcf-protection=full
@@ -342,16 +366,19 @@ policy:
             - -fhardened
             - -fstack-clash-protection
             - -fstrict-flex-arrays=3
+            - -fzero-call-used-regs=used-gpr
             - -fzero-init-padding-bits=all
-            - -fzero-init-padding-bits=union
+            - -fzero-init-padding-bits=unions
             - -mbranch-protection=standard
             - -pie
             - -shared
             - "LINKER:--as-needed"
+            - "LINKER:--gc-sections"
             - "LINKER:--no-copy-dt-needed-entries"
             - "LINKER:-z,nodlopen"
             - "LINKER:-z,noexecstack"
             - "LINKER:-z,now"
+            - "LINKER:-z,pack-relative-relocs"
             - "LINKER:-z,relro"
             - _GLIBCXX_ASSERTIONS
             - _GLIBCXX_DEBUG
@@ -367,6 +394,7 @@ policy:
             - -Wbidi-chars=any
             - -Werror
             - -Werror=format-security
+            - -Werror=vla
             - -fPIC
             - -fPIE
             - -fcf-protection=full
@@ -374,16 +402,19 @@ policy:
             - -fhardened
             - -fstack-clash-protection
             - -fstrict-flex-arrays=3
+            - -fzero-call-used-regs=used-gpr
             - -fzero-init-padding-bits=all
-            - -fzero-init-padding-bits=union
+            - -fzero-init-padding-bits=unions
             - -mbranch-protection=standard
             - -pie
             - -shared
             - "LINKER:--as-needed"
+            - "LINKER:--gc-sections"
             - "LINKER:--no-copy-dt-needed-entries"
             - "LINKER:-z,nodlopen"
             - "LINKER:-z,noexecstack"
             - "LINKER:-z,now"
+            - "LINKER:-z,pack-relative-relocs"
             - "LINKER:-z,relro"
             - _GLIBCXX_ASSERTIONS
             - _GLIBCXX_DEBUG
@@ -399,6 +430,7 @@ policy:
             - -Wbidi-chars=any
             - -Werror
             - -Werror=format-security
+            - -Werror=vla
             - -fPIC
             - -fPIE
             - -fcf-protection=full
@@ -406,16 +438,19 @@ policy:
             - -fhardened
             - -fstack-clash-protection
             - -fstrict-flex-arrays=3
+            - -fzero-call-used-regs=used-gpr
             - -fzero-init-padding-bits=all
-            - -fzero-init-padding-bits=union
+            - -fzero-init-padding-bits=unions
             - -mbranch-protection=standard
             - -pie
             - -shared
             - "LINKER:--as-needed"
+            - "LINKER:--gc-sections"
             - "LINKER:--no-copy-dt-needed-entries"
             - "LINKER:-z,nodlopen"
             - "LINKER:-z,noexecstack"
             - "LINKER:-z,now"
+            - "LINKER:-z,pack-relative-relocs"
             - "LINKER:-z,relro"
             - _GLIBCXX_ASSERTIONS
             - _GLIBCXX_DEBUG
@@ -454,8 +489,9 @@ spec_traceability:
 toolchain:
   lint_kit:
     path: lint-c-cpp
-    ref: v0.3.0
+    ref: v0.5.0
     repository: neroduality/.github
+  llvm_major: 23
   script: .github/scripts/helper-toolchain.sh
 
 workflow:

@@ -45,4 +45,13 @@ NERO_NFC_NODISCARD bool ChooseHostBridge(
     HostBridgeSelection& out, std::string& err,
     bool pcsc_share_specified = false);
 
+/* Like ChooseHostBridge, but keeps polling while no compatible device is
+ * present (board unplugged, resetting, or still enumerating). Fails only on
+ * conflicting options. */
+NERO_NFC_NODISCARD bool WaitForHostBridge(
+    const std::optional<HostBridge>& requested_bridge,
+    const std::string& serial_port_arg, const std::string& pcsc_reader_arg,
+    HostBridgeSelection& out, std::string& err, bool pcsc_share_specified,
+    std::string_view tool);
+
 }  // namespace nero_nfc

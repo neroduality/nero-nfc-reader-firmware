@@ -113,8 +113,8 @@ static inline void nfc_tutorial_t2t_cc(nero_nfc_emit_fn_t emit,
                        NFC_TAG_T2T_PAGE_SIZE_BYTES);
   nfc_tutorial_byte_line(
       emit,
-      nero_nfc_u8_at(cc, (size_t)(NFC_TAG_T2T_PAGE_SIZE_BYTES), (size_t)(0)),
-      (nero_nfc_u8_at(cc, (size_t)(NFC_TAG_T2T_PAGE_SIZE_BYTES), (size_t)(0)) ==
+      nero_nfc_u8_at(cc, (size_t)(NFC_TAG_T2T_PAGE_SIZE_BYTES), (size_t)0),
+      (nero_nfc_u8_at(cc, (size_t)(NFC_TAG_T2T_PAGE_SIZE_BYTES), (size_t)0) ==
        (uint8_t)NFC_FORUM_CC_MAGIC)
           ? "magic E1h: NFC Forum T2T, NDEF present "
             "([T2T-ISO14443-A] Type 2 Tag Op Spec 1.1 §6.1)"
@@ -122,7 +122,7 @@ static inline void nfc_tutorial_t2t_cc(nero_nfc_emit_fn_t emit,
   nero_nfc_emit_write(emit, "      ");
   nero_nfc_emit_hex_u8(
       emit,
-      nero_nfc_u8_at(cc, (size_t)(NFC_TAG_T2T_PAGE_SIZE_BYTES), (size_t)(1)));
+      nero_nfc_u8_at(cc, (size_t)(NFC_TAG_T2T_PAGE_SIZE_BYTES), (size_t)1));
   nero_nfc_emit_write(emit, "  mapping version ");
   nero_nfc_emit_dec_u32(
       emit, (uint32_t)(nero_nfc_u8_at(cc, (size_t)(NFC_TAG_T2T_PAGE_SIZE_BYTES),
@@ -238,78 +238,79 @@ static inline void nfc_tutorial_t5t_cc(nero_nfc_emit_fn_t emit,
     return;
   }
   nfc_tutorial_hex_row(emit, "[T5T CC @ block 0]", cc_block, cc_len);
-  nfc_tutorial_byte_line(
-      emit, nero_nfc_u8_at(cc_block, (size_t)(cc_len), (size_t)(0)),
-      (nero_nfc_u8_at(cc_block, (size_t)(cc_len), (size_t)(0)) ==
-       (uint8_t)NFC_T5T_CC_MAGIC_8BYTE)
-          ? "magic E2h: T5T, 2-byte block address mode "
-            "([T5T-ISO15693] section 4.3.1)"
-          : "magic E1h: T5T, 1-byte block address mode "
-            "([T5T-ISO15693] section 4.3.1)");
+  nfc_tutorial_byte_line(emit,
+                         nero_nfc_u8_at(cc_block, (size_t)cc_len, (size_t)0),
+                         (nero_nfc_u8_at(cc_block, (size_t)cc_len, (size_t)0) ==
+                          (uint8_t)NFC_T5T_CC_MAGIC_8BYTE)
+                             ? "magic E2h: T5T, 2-byte block address mode "
+                               "([T5T-ISO15693] section 4.3.1)"
+                             : "magic E1h: T5T, 1-byte block address mode "
+                               "([T5T-ISO15693] section 4.3.1)");
   {
     nero_nfc_emit_write(emit, "      ");
-    nero_nfc_emit_hex_u8(
-        emit, nero_nfc_u8_at(cc_block, (size_t)(cc_len), (size_t)(1)));
+    nero_nfc_emit_hex_u8(emit,
+                         nero_nfc_u8_at(cc_block, (size_t)cc_len, (size_t)1));
     nero_nfc_emit_write(emit, "  ver ");
     nero_nfc_emit_dec_u32(
-        emit, (uint32_t)(nero_nfc_u8_at(cc_block, (size_t)(cc_len),
+        emit, (uint32_t)(nero_nfc_u8_at(cc_block, (size_t)cc_len,
                                         (size_t)(NFC_TAG_T2T_CC_VER_INDEX)) >>
                          NFC_TAG_T5T_CC_MAPPING_MAJOR_SHIFT));
     emit('.');
-    nero_nfc_emit_dec_u32(
-        emit, (uint32_t)((nero_nfc_u8_at(cc_block, (size_t)(cc_len),
-                                         (size_t)(NFC_TAG_T2T_CC_VER_INDEX)) >>
-                          NFC_TAG_T5T_CC_MAPPING_MINOR_SHIFT) &
-                         NFC_TAG_T5T_CC_MAPPING_MINOR_MASK));
+    nero_nfc_emit_dec_u32(emit,
+                          (uint32_t)(((uint32_t)nero_nfc_u8_at(
+                                          cc_block, (size_t)cc_len,
+                                          (size_t)(NFC_TAG_T2T_CC_VER_INDEX)) >>
+                                      NFC_TAG_T5T_CC_MAPPING_MINOR_SHIFT) &
+                                     NFC_TAG_T5T_CC_MAPPING_MINOR_MASK));
     nero_nfc_emit_write(emit, ", read=");
-    nero_nfc_emit_write(
-        emit, ((nero_nfc_u8_at(cc_block, (size_t)(cc_len), (size_t)(1)) &
-                NFC_TAG_T5T_CC_ACCESS_READ_MASK) == 0u)
-                  ? "open"
-                  : "restricted");
+    nero_nfc_emit_write(emit,
+                        ((nero_nfc_u8_at(cc_block, (size_t)cc_len, (size_t)1) &
+                          NFC_TAG_T5T_CC_ACCESS_READ_MASK) == 0u)
+                            ? "open"
+                            : "restricted");
     nero_nfc_emit_write(emit, " write=");
-    nero_nfc_emit_write(
-        emit, ((nero_nfc_u8_at(cc_block, (size_t)(cc_len), (size_t)(1)) &
-                NFC_TAG_T5T_CC_ACCESS_WRITE_MASK) == 0u)
-                  ? "open"
-                  : "restricted");
+    nero_nfc_emit_write(emit,
+                        ((nero_nfc_u8_at(cc_block, (size_t)cc_len, (size_t)1) &
+                          NFC_TAG_T5T_CC_ACCESS_WRITE_MASK) == 0u)
+                            ? "open"
+                            : "restricted");
     nero_nfc_emit_write(emit, "\r\n");
   }
-  if ((nero_nfc_u8_at(cc_block, (size_t)(cc_len),
+  if ((nero_nfc_u8_at(cc_block, (size_t)cc_len,
                       (size_t)(NFC_TAG_T5T_CC_MLEN_BYTE_INDEX)) != 0u) ||
       (cc_len < NFC_TAG_T5T_CC_LEN_EXTENDED)) {
-    mlen_units = nero_nfc_u8_at(cc_block, (size_t)(cc_len),
+    mlen_units = nero_nfc_u8_at(cc_block, (size_t)cc_len,
                                 (size_t)(NFC_TAG_T5T_CC_MLEN_BYTE_INDEX));
     nero_nfc_emit_write(emit, "      ");
     nero_nfc_emit_hex_u8(
-        emit, nero_nfc_u8_at(cc_block, (size_t)(cc_len),
+        emit, nero_nfc_u8_at(cc_block, (size_t)cc_len,
                              (size_t)(NFC_TAG_T5T_CC_MLEN_BYTE_INDEX)));
     nero_nfc_emit_write(emit, "  MLEN (4-byte CC) -> ");
     nfc_tutorial_print_area_bytes(emit, mlen_units);
     nero_nfc_emit_write(emit, "  ([T5T-ISO15693] section 4.3.1.17)\r\n");
     nfc_tutorial_byte_line(
         emit,
-        nero_nfc_u8_at(cc_block, (size_t)(cc_len),
+        nero_nfc_u8_at(cc_block, (size_t)cc_len,
                        (size_t)(NFC_TAG_T5T_CC_FLAGS_BYTE_INDEX)),
         "feature flags (special frame / lock block / overflow)");
   } else {
     mlen_units =
-        (uint16_t)(((uint16_t)nero_nfc_u8_at(
-                        cc_block, (size_t)(cc_len),
+        (uint16_t)(((uint32_t)nero_nfc_u8_at(
+                        cc_block, (size_t)cc_len,
                         (size_t)(NFC_TUTORIAL_T5T_CC_MLEN_U16_OFF))
                     << NFC_TUTORIAL_UINT8_SHIFT) |
                    nero_nfc_u8_at(
-                       cc_block, (size_t)(cc_len),
+                       cc_block, (size_t)cc_len,
                        (size_t)(NFC_TUTORIAL_T5T_CC_MLEN_U16_OFF + 1u)));
     nfc_tutorial_byte_line(
         emit,
-        nero_nfc_u8_at(cc_block, (size_t)(cc_len),
+        nero_nfc_u8_at(cc_block, (size_t)cc_len,
                        (size_t)(NFC_TAG_T5T_CC_MLEN_BYTE_INDEX)),
         "MLEN=00h -> extended CC: size in bytes 6..7 "
         "([T5T-ISO15693] section 4.3.1.17)");
     nfc_tutorial_byte_line(
         emit,
-        nero_nfc_u8_at(cc_block, (size_t)(cc_len),
+        nero_nfc_u8_at(cc_block, (size_t)cc_len,
                        (size_t)(NFC_TAG_T5T_CC_FLAGS_BYTE_INDEX)),
         "feature flags");
     nfc_tutorial_hex_row(emit, "  bytes 6..7 (16-bit MLEN):",
@@ -451,38 +452,37 @@ static inline void nfc_tutorial_t4t_cc(nero_nfc_emit_fn_t emit,
       !nero_nfc_span_ok(0u, NFC_TAG_T4T_CC_MIN_LEN, cc_len)) {
     return;
   }
-  cclen =
-      (uint16_t)(((uint16_t)nero_nfc_u8_at(cc, (size_t)(cc_len), (size_t)(0))
-                  << NFC_TUTORIAL_UINT8_SHIFT) |
-                 nero_nfc_u8_at(cc, (size_t)(cc_len), (size_t)(1)));
-  mle = (uint16_t)(((uint16_t)nero_nfc_u8_at(
-                        cc, (size_t)(cc_len),
+  cclen = (uint16_t)(((uint32_t)nero_nfc_u8_at(cc, (size_t)cc_len, (size_t)0)
+                      << NFC_TUTORIAL_UINT8_SHIFT) |
+                     nero_nfc_u8_at(cc, (size_t)cc_len, (size_t)1));
+  mle = (uint16_t)(((uint32_t)nero_nfc_u8_at(
+                        cc, (size_t)cc_len,
                         (size_t)(NFC_TAG_T4T_CC_MLE_MSB_INDEX))
                     << NFC_TUTORIAL_UINT8_SHIFT) |
-                   nero_nfc_u8_at(cc, (size_t)(cc_len),
+                   nero_nfc_u8_at(cc, (size_t)cc_len,
                                   (size_t)(NFC_TAG_T4T_CC_MLE_LSB_INDEX)));
-  mlc = (uint16_t)(((uint16_t)nero_nfc_u8_at(
-                        cc, (size_t)(cc_len),
+  mlc = (uint16_t)(((uint32_t)nero_nfc_u8_at(
+                        cc, (size_t)cc_len,
                         (size_t)(NFC_TAG_T4T_CC_MLC_MSB_INDEX))
                     << NFC_TUTORIAL_UINT8_SHIFT) |
-                   nero_nfc_u8_at(cc, (size_t)(cc_len),
+                   nero_nfc_u8_at(cc, (size_t)cc_len,
                                   (size_t)(NFC_TAG_T4T_CC_MLC_LSB_INDEX)));
   maxf =
-      (uint16_t)(((uint16_t)nero_nfc_u8_at(
-                      cc, (size_t)(cc_len),
+      (uint16_t)(((uint32_t)nero_nfc_u8_at(
+                      cc, (size_t)cc_len,
                       (size_t)(NFC_TAG_T4T_CC_NDEF_SIZE_MSB_INDEX))
                   << NFC_TUTORIAL_UINT8_SHIFT) |
-                 nero_nfc_u8_at(cc, (size_t)(cc_len),
+                 nero_nfc_u8_at(cc, (size_t)cc_len,
                                 (size_t)(NFC_TAG_T4T_CC_NDEF_SIZE_LSB_INDEX)));
   nfc_tutorial_hex_row(emit, "[T4T CC file]", cc, NFC_TAG_T4T_CC_MIN_LEN);
-  nfc_tutorial_hex_row(emit, "  bytes 0..1  CCLEN =", (cc + (0)),
+  nfc_tutorial_hex_row(emit, "  bytes 0..1  CCLEN =", (cc + 0),
                        NFC_TUTORIAL_U16_FIELD_LEN);
   nero_nfc_emit_write(emit, "      (");
   nero_nfc_emit_dec_u32(emit, cclen);
   nero_nfc_emit_write(emit, " bytes of CC)\r\n");
   nfc_tutorial_byte_line(
       emit,
-      nero_nfc_u8_at(cc, (size_t)(cc_len),
+      nero_nfc_u8_at(cc, (size_t)cc_len,
                      (size_t)(NFC_TAG_T4T_CC_MAPPING_VER_INDEX)),
       "byte 2  mapping version (hi.lo nibble)");
   nfc_tutorial_hex_row(
@@ -499,12 +499,12 @@ static inline void nfc_tutorial_t4t_cc(nero_nfc_emit_fn_t emit,
   nero_nfc_emit_write(emit, ")\r\n");
   nfc_tutorial_byte_line(
       emit,
-      nero_nfc_u8_at(cc, (size_t)(cc_len),
+      nero_nfc_u8_at(cc, (size_t)cc_len,
                      (size_t)(NFC_TAG_T4T_CC_NDEF_TLV_TAG_INDEX)),
       "byte 7  NDEF File Control TLV T = 04h");
   nfc_tutorial_byte_line(
       emit,
-      nero_nfc_u8_at(cc, (size_t)(cc_len),
+      nero_nfc_u8_at(cc, (size_t)cc_len,
                      (size_t)(NFC_TAG_T4T_CC_NDEF_TLV_LEN_INDEX)),
       "byte 8  TLV L = 06h (6 value bytes)");
   nfc_tutorial_hex_row(emit, "  bytes 9..10 NDEF file ID =",
@@ -518,18 +518,18 @@ static inline void nfc_tutorial_t4t_cc(nero_nfc_emit_fn_t emit,
   nero_nfc_emit_write(emit, " bytes incl. 2-byte NLEN)\r\n");
   nfc_tutorial_byte_line(
       emit,
-      nero_nfc_u8_at(cc, (size_t)(cc_len),
+      nero_nfc_u8_at(cc, (size_t)cc_len,
                      (size_t)(NFC_TAG_T4T_CC_READ_ACCESS_INDEX)),
-      (nero_nfc_u8_at(cc, (size_t)(cc_len),
+      (nero_nfc_u8_at(cc, (size_t)cc_len,
                       (size_t)(NFC_TAG_T4T_CC_READ_ACCESS_INDEX)) ==
        NFC_ISO7816_CLA_ISO)
           ? "byte 13 read access = 00h (open)"
           : "byte 13 read access (restricted/proprietary)");
   nfc_tutorial_byte_line(
       emit,
-      nero_nfc_u8_at(cc, (size_t)(cc_len),
+      nero_nfc_u8_at(cc, (size_t)cc_len,
                      (size_t)(NFC_TAG_T4T_CC_WRITE_ACCESS_INDEX)),
-      (nero_nfc_u8_at(cc, (size_t)(cc_len),
+      (nero_nfc_u8_at(cc, (size_t)cc_len,
                       (size_t)(NFC_TAG_T4T_CC_WRITE_ACCESS_INDEX)) ==
        NFC_ISO7816_CLA_ISO)
           ? "byte 14 write access = 00h (open)"
@@ -638,7 +638,7 @@ static inline void nfc_tutorial_ndef_tlv(nero_nfc_emit_fn_t emit,
     if (len < NFC_TUTORIAL_NDEF_TLV_EXT_MIN_LEN) {
       return;
     }
-    value_len = (uint16_t)(((uint16_t)data[NFC_TUTORIAL_NDEF_TLV_EXT_LEN_MSB]
+    value_len = (uint16_t)(((uint32_t)data[NFC_TUTORIAL_NDEF_TLV_EXT_LEN_MSB]
                             << NFC_TUTORIAL_UINT8_SHIFT) |
                            data[NFC_TUTORIAL_NDEF_TLV_EXT_LEN_LSB]);
     value_off = NFC_TUTORIAL_NDEF_TLV_VALUE_OFF_EXT;
@@ -660,7 +660,8 @@ static inline void nfc_tutorial_ndef_tlv(nero_nfc_emit_fn_t emit,
     nfc_tutorial_hex_row(emit, "  V (NDEF message):", &data[value_off],
                          value_len);
     if (nero_nfc_span_ok((size_t)value_off + (size_t)value_len, 1u, len)) {
-      uint8_t terminator = data[value_off + value_len];
+      uint8_t terminator =
+          nero_nfc_u8_at(data, len, (size_t)value_off + (size_t)value_len);
       if (terminator == NFC_NDEF_TLV_TERMINATOR) {
         nfc_tutorial_byte_line(emit, NFC_NDEF_TLV_TERMINATOR,
                                "Terminator TLV (end of data area)");

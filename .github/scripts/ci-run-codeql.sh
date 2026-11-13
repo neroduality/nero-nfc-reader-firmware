@@ -16,7 +16,7 @@
 # limitations under the License.
 
 # CodeQL job container entry. Mirrors .github/workflows/codeql.yml on debian:sid-slim
-# (same pattern as ci-run-lint.sh / ci-run-test-container.sh):
+# (same pattern as ci-run-lint.sh / ci-run-tests.sh):
 #   root -> install-linux-deps (INSTALL_LINT_DEPS=0) -> drop to HOST_UID -> CodeQL CLI
 #
 # Invoked by run-codeql-locally.sh (make codeql-local).
@@ -29,14 +29,30 @@ if [[ ! -f "${repo_root}/Makefile" ]]; then
 fi
 
 # shellcheck source=helper-container-bind-mount.sh
-# shellcheck disable=SC1091
 source "${repo_root}/.github/scripts/helper-container-bind-mount.sh"
 
 export FIRMWARE_ROOT="${repo_root}"
 SCRIPT_DIR="${repo_root}/.github/scripts"
+# shellcheck source=helper-codeql-pins.sh
+source "${SCRIPT_DIR}/helper-codeql-pins.sh"
+
+install_codeql_container_prereqs() {
+  export DEBIAN_FRONTEND=noninteractive
+  if command -v apt-get >/dev/null 2>&1; then
+    apt-get update -qq
+    apt-get install -y --no-install-recommends ca-certificates curl git jq unzip
+  elif command -v dnf >/dev/null 2>&1; then
+    dnf install -y --setopt=install_weak_deps=False ca-certificates curl git jq unzip
+    dnf clean all
+  else
+    printf 'error: need apt-get or dnf in CodeQL container\n' >&2
+    exit 1
+  fi
+}
 
 if [[ $(id -u) -eq 0 && -n ${HOST_UID:-} && ${NERO_NFC_CI_AS_USER:-0} != 1 ]]; then
   bash "${repo_root}/.github/scripts/ci-bootstrap-container.sh"
+  install_codeql_container_prereqs
   AUTO_INSTALL_LINUX_DEPS=1 INSTALL_DEPS=1 INSTALL_LINT_DEPS=0 \
     bash "${repo_root}/make/install-linux-deps.sh"
   nero_nfc_prepare_bind_mount_paths "${repo_root}"
@@ -113,9 +129,9 @@ while [[ $# -gt 0 ]]; do
   shift
 done
 
-# Must track registry packs: cpp-queries@1.8.1 advertises CLI 2.26.3 and uses
-# OCI manifest fields (e.g. layer digest) that 2.26.0 rejects.
-CODEQL_CLI_VERSION="${CODEQL_CLI_VERSION:-v2.26.3}"
+# Must track registry packs (the pinned cpp-queries pack needs the OCI manifest
+# support of CLI >= 2.26.3; keep in step with the CodeQL action bundle).
+codeql_pins_resolve_cli
 # Sibling of build/codeql (DB/SARIF) and of tests/build-codeql + build/userspace-codeql
 # (traced CMake wipe dirs). Kept under the work tree so make clean removes it —
 # never under a path codeql-build.sh rm -rf's, never outside the repo.
@@ -137,7 +153,7 @@ resolve_codeql() {
     exit 1
   fi
 
-  local os arch asset extract_root zip_path expected_hash actual_hash
+  local os arch asset extract_root zip_path expected_hash actual_hash hash_ok pinned_hash
   os="$(uname -s)"
   arch="$(uname -m)"
   case "${os}:${arch}" in
@@ -160,9 +176,14 @@ resolve_codeql() {
       "https://github.com/github/codeql-cli-binaries/releases/download/${CODEQL_CLI_VERSION}/${asset}.checksum.txt"
     expected_hash="$(awk '{print $1}' "${zip_path}.checksum.txt")"
     actual_hash="$(sha256sum "${zip_path}.part" | awk '{print $1}')"
-    if [[ ${actual_hash} != "${expected_hash}" ]]; then
+    pinned_hash="${CODEQL_CLI_SHA256}"
+    hash_ok=1
+    [[ ${actual_hash} == "${pinned_hash}" ]] || hash_ok=0
+    [[ ${actual_hash} == "${expected_hash}" ]] || hash_ok=0
+    if [[ ${hash_ok} -ne 1 ]]; then
       rm -f "${zip_path}.part" "${zip_path}.checksum.txt"
-      printf 'error: SHA256 mismatch for %s\n' "${asset}" >&2
+      printf 'error: SHA256 mismatch for %s (pinned %s, upstream %s, got %s)\n' \
+        "${asset}" "${pinned_hash}" "${expected_hash}" "${actual_hash}" >&2
       exit 1
     fi
     mv -f "${zip_path}.part" "${zip_path}"
@@ -205,19 +226,10 @@ resolve_query_suite() {
   printf '%s\n' "${hit}"
 }
 
-# Fail closed if OpenOCD deps (incl. patch) were not installed -- same gate as ensure-wba65.
-if [[ " ${CODEQL_FIRMWARE_TARGETS:-arduino_uno_r4wifi nucleo_wba65ri} " == *" nucleo_wba65ri "* ]] &&
-  [[ ${CODEQL_INCLUDE_FIRMWARE:-1} == "1" ]]; then
-  command -v patch >/dev/null 2>&1 || {
-    printf 'error: GNU patch missing (required for WBA65 OpenOCD). install-linux-deps.sh must install it.\n' >&2
-    exit 1
-  }
-fi
-
 rm -rf "${DB_PATH}"
 mkdir -p "$(dirname "${DB_PATH}")" "$(dirname "${SARIF_PATH}")"
 
-build_cmd="env FIRMWARE_ROOT=${FIRMWARE_ROOT} CODEQL_INSTALL_LINUX_DEPS=0 CODEQL_INCLUDE_FIRMWARE=${CODEQL_INCLUDE_FIRMWARE:-1} bash ${SCRIPT_DIR}/codeql-build.sh"
+build_cmd="env FIRMWARE_ROOT=${FIRMWARE_ROOT} CODEQL_INSTALL_LINUX_DEPS=0 bash ${SCRIPT_DIR}/codeql-build.sh"
 
 printf '\n── CodeQL database create -> %s ──\n' "${DB_PATH}"
 "${CODEQL_BIN}" database create "${DB_PATH}" \

@@ -23,11 +23,12 @@
 
 #include <stdint.h>
 
+#define READER_CBOR_AI_MASK 0x1Fu
+#define READER_CBOR_MAJOR_TYPE_SHIFT 5u
+#define READER_CBOR_UINT32_SHIFT_BYTE3 24u
+#define READER_CBOR_UINT32_SHIFT_BYTE2 16u
+
 enum {
-  READER_CBOR_AI_MASK = 0x1Fu,
-  READER_CBOR_MAJOR_TYPE_SHIFT = 5u,
-  READER_CBOR_UINT32_SHIFT_BYTE3 = 24u,
-  READER_CBOR_UINT32_SHIFT_BYTE2 = 16u,
   READER_CBOR_AI_UINT8 = 24u,
   READER_CBOR_AI_UINT16 = 25u,
   READER_CBOR_AI_UINT32 = 26u,
@@ -47,7 +48,7 @@ bool cbor_has_remaining(const cbor_reader_t* c, uint32_t count) {
   if (c == NERO_NFC_NULL) {
     return false;
   }
-  return (c->pos <= c->len) && (((uint32_t)(c->len) - c->pos) >= count);
+  return (c->pos <= c->len) && (((uint32_t)c->len - c->pos) >= count);
 }
 bool cbor_at_end(const cbor_reader_t* c) {
   if (c == NERO_NFC_NULL) {
@@ -94,7 +95,7 @@ bool cbor_read_head(cbor_reader_t* c, uint8_t* major, uint32_t* value) {
       c->pos = start;
       return false;
     }
-    *value = ((uint32_t)(cbor_next(c)) << NFC_BYTE_SHIFT_8) | cbor_next(c);
+    *value = ((uint32_t)cbor_next(c) << NFC_BYTE_SHIFT_8) | cbor_next(c);
     return true;
   }
   if (ai == READER_CBOR_AI_UINT32) {
@@ -102,9 +103,9 @@ bool cbor_read_head(cbor_reader_t* c, uint8_t* major, uint32_t* value) {
       c->pos = start;
       return false;
     }
-    *value = ((uint32_t)(cbor_next(c)) << READER_CBOR_UINT32_SHIFT_BYTE3) |
-             ((uint32_t)(cbor_next(c)) << READER_CBOR_UINT32_SHIFT_BYTE2) |
-             ((uint32_t)(cbor_next(c)) << NFC_BYTE_SHIFT_8) | cbor_next(c);
+    *value = ((uint32_t)cbor_next(c) << READER_CBOR_UINT32_SHIFT_BYTE3) |
+             ((uint32_t)cbor_next(c) << READER_CBOR_UINT32_SHIFT_BYTE2) |
+             ((uint32_t)cbor_next(c) << NFC_BYTE_SHIFT_8) | cbor_next(c);
     return true;
   }
 
@@ -147,19 +148,19 @@ bool cbor_read_text(cbor_reader_t* c, char* buffer, uint16_t buffer_len) {
     return false;
   }
   if ((buffer == NERO_NFC_NULL) || (buffer_len == 0u) ||
-      !cbor_has_remaining(c, str_len) || (str_len >= (uint32_t)(buffer_len))) {
+      !cbor_has_remaining(c, str_len) || (str_len >= (uint32_t)buffer_len)) {
     c->pos = start;
     return false;
   }
   for (uint32_t i = 0u; i < str_len; i++) {
-    if (!nero_nfc_store_u8((uint8_t*)(buffer), (size_t)(buffer_len),
-                           (size_t)(i), cbor_next(c))) {
+    if (!nero_nfc_store_u8((uint8_t*)buffer, (size_t)buffer_len, (size_t)i,
+                           cbor_next(c))) {
       c->pos = start;
       return false;
     }
   }
-  if (!nero_nfc_store_u8((uint8_t*)(buffer), (size_t)(buffer_len),
-                         (size_t)(str_len), 0u)) {
+  if (!nero_nfc_store_u8((uint8_t*)buffer, (size_t)buffer_len, (size_t)str_len,
+                         0u)) {
     c->pos = start;
     return false;
   }
@@ -186,13 +187,13 @@ bool cbor_read_bytes(cbor_reader_t* c, uint8_t* buffer, uint16_t buffer_len,
       ((buffer == NERO_NFC_NULL) && (buffer_len > 0u)) ||
       ((buffer == NERO_NFC_NULL) && (byte_len > 0u)) ||
       (byte_len > (uint32_t)(UINT16_MAX)) ||
-      ((buffer != NERO_NFC_NULL) && (byte_len > (uint32_t)(buffer_len)))) {
+      ((buffer != NERO_NFC_NULL) && (byte_len > (uint32_t)buffer_len))) {
     c->pos = start;
     return false;
   }
-  *out_len = (uint16_t)(byte_len);
+  *out_len = (uint16_t)byte_len;
   for (uint32_t i = 0u; i < byte_len; i++) {
-    if (!nero_nfc_store_u8(buffer, (size_t)(buffer_len), (size_t)(i),
+    if (!nero_nfc_store_u8(buffer, (size_t)buffer_len, (size_t)i,
                            cbor_next(c))) {
       c->pos = start;
       return false;
@@ -218,10 +219,10 @@ bool cbor_read_bytes_indefinite(cbor_reader_t* c, uint8_t* buffer,
     uint32_t chunk_len;
     if (c->data[c->pos] == READER_CBOR_BREAK_BYTE) {
       c->pos = (uint16_t)(c->pos + 1u);
-      if ((buffer != NERO_NFC_NULL) && (total > (uint32_t)(buffer_len))) {
+      if ((buffer != NERO_NFC_NULL) && (total > (uint32_t)buffer_len)) {
         return false;
       }
-      *out_len = (uint16_t)(total);
+      *out_len = (uint16_t)total;
       return true;
     }
     if (!cbor_read_head(c, &chunk_major, &chunk_len) ||
@@ -231,7 +232,7 @@ bool cbor_read_bytes_indefinite(cbor_reader_t* c, uint8_t* buffer,
       return false;
     }
     if ((buffer != NERO_NFC_NULL) &&
-        ((total + chunk_len) > (uint32_t)(buffer_len))) {
+        ((total + chunk_len) > (uint32_t)buffer_len)) {
       return false;
     }
     for (uint32_t i = 0u; i < chunk_len; i++) {
@@ -381,8 +382,8 @@ static bool cbor_skip_depth(cbor_reader_t* c, unsigned depth) {
       return true;
     case NFC_CBOR_MAJOR_BYTES:
     case NFC_CBOR_MAJOR_TEXT: {
-      const uint32_t len32 = (uint32_t)(c->len);
-      const uint32_t pos32 = (uint32_t)(c->pos);
+      const uint32_t len32 = (uint32_t)c->len;
+      const uint32_t pos32 = (uint32_t)c->pos;
       const uint32_t remaining = (len32 >= pos32) ? (len32 - pos32) : 0u;
       if (value > remaining) {
         return false;

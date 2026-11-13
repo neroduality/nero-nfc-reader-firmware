@@ -35,7 +35,8 @@ uint8_t st25_iso14443a_assemble_cascaded_uid(
     return 0u;
   }
   if (levels == 1u) {
-    if ((sak1 < 0) || ((sak1 & K_S_T25_ISO14443_A_SAK_CASCADE_BIT) != 0) ||
+    if ((sak1 < 0) ||
+        (((unsigned)sak1 & K_S_T25_ISO14443_A_SAK_CASCADE_BIT) != 0u) ||
         (uid_out_capacity < K_S_T25_ISO14443_A_UID_LEN_SINGLE)) {
       return 0u;
     }
@@ -47,7 +48,8 @@ uint8_t st25_iso14443a_assemble_cascaded_uid(
     *sak_out = (uint8_t)sak1;
     return K_S_T25_ISO14443_A_UID_LEN_SINGLE;
   }
-  if ((sak1 < 0) || ((sak1 & K_S_T25_ISO14443_A_SAK_CASCADE_BIT) == 0) ||
+  if ((sak1 < 0) ||
+      (((unsigned)sak1 & K_S_T25_ISO14443_A_SAK_CASCADE_BIT) == 0u) ||
       (nero_nfc_u8_at(cl1_uid, K_S_T25_ISO14443_A_SEL_RESP_LEN,
                       K_S_T25_ISO14443_A_ID_X0) !=
        K_S_T25_ISO14443_A_CASCADE_TAG) ||
@@ -55,7 +57,8 @@ uint8_t st25_iso14443a_assemble_cascaded_uid(
     return 0u;
   }
   if (levels == K_S_T25_ISO14443_A_LEVELS_DOUBLE) {
-    if ((sak2 < 0) || ((sak2 & K_S_T25_ISO14443_A_SAK_CASCADE_BIT) != 0) ||
+    if ((sak2 < 0) ||
+        (((unsigned)sak2 & K_S_T25_ISO14443_A_SAK_CASCADE_BIT) != 0u) ||
         (uid_out_capacity < K_S_T25_ISO14443_A_UID_LEN_DOUBLE)) {
       return 0u;
     }
@@ -73,12 +76,13 @@ uint8_t st25_iso14443a_assemble_cascaded_uid(
     return K_S_T25_ISO14443_A_UID_LEN_DOUBLE;
   }
   if (levels == K_S_T25_ISO14443_A_LEVELS_TRIPLE) {
-    if ((sak2 < 0) || ((sak2 & K_S_T25_ISO14443_A_SAK_CASCADE_BIT) == 0) ||
+    if ((sak2 < 0) ||
+        (((unsigned)sak2 & K_S_T25_ISO14443_A_SAK_CASCADE_BIT) == 0u) ||
         (nero_nfc_u8_at(cl2_uid, K_S_T25_ISO14443_A_SEL_RESP_LEN,
                         K_S_T25_ISO14443_A_ID_X0) !=
          K_S_T25_ISO14443_A_CASCADE_TAG) ||
         (cl3_uid == NERO_NFC_NULL) || (sak3 < 0) ||
-        ((sak3 & K_S_T25_ISO14443_A_SAK_CASCADE_BIT) != 0) ||
+        (((unsigned)sak3 & K_S_T25_ISO14443_A_SAK_CASCADE_BIT) != 0u) ||
         (uid_out_capacity < K_S_T25_ISO14443_A_UID_LEN_TRIPLE)) {
       return 0u;
     }

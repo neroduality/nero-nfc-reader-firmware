@@ -60,7 +60,9 @@ static inline uint16_t St25Iso15693Crc16(const uint8_t* data, uint16_t len) {
     crc ^= nero_nfc_u8_at(data, len, i);
     for (unsigned bit = 0u; bit < kSt25Iso15693Crc16BitsPerByte; bit++) {
       if ((crc & 0x0001u) != 0u) {
-        crc = static_cast<uint16_t>((crc >> 1) ^ kSt25Iso15693Crc16Poly);
+        crc = static_cast<uint16_t>(
+            (static_cast<uint32_t>(crc) >> 1) ^
+            static_cast<uint32_t>(kSt25Iso15693Crc16Poly));
       } else {
         crc = static_cast<uint16_t>(crc >> 1);
       }
@@ -151,7 +153,7 @@ static inline uint32_t St25RuntimeTxWaitBudgetUs(uint16_t tx_len) {
       (static_cast<uint32_t>(tx_len) * kSt25RuntimeTxBitsPerByte) +
       kSt25RuntimeTxOverheadBits;
   const uint32_t tx_us =
-      (tx_bits * kSt25RuntimeUsPerSec + kSt25RuntimeIso15693BitRateRound) /
+      ((tx_bits * kSt25RuntimeUsPerSec) + kSt25RuntimeIso15693BitRateRound) /
       kSt25RuntimeIso15693BitRateHz;
   const uint32_t budget = tx_us + kSt25RuntimeTxWaitSlackUs;
 

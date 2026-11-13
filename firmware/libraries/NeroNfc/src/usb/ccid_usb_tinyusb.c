@@ -130,7 +130,12 @@ static bool ccid_usb_context_ready(void) {
 
 static bool ccid_edpt_xfer(uint8_t rhport, uint8_t ep_addr, uint8_t* buffer,
                            uint16_t total_bytes) {
+#if defined(NERO_CCID_STM32_USB_BUILD)
+  /* Vendored TinyUSB (WBA65) takes is_isr; all callers run in task context. */
+  return usbd_edpt_xfer(rhport, ep_addr, buffer, total_bytes, false);
+#else
   return usbd_edpt_xfer(rhport, ep_addr, buffer, total_bytes);
+#endif
 }
 
 /* Service TinyUSB while CCID waits for endpoint claims/completion. STM32WBA

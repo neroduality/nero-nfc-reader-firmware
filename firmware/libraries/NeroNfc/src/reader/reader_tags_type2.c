@@ -75,7 +75,7 @@ int reader_tags_ntag_fast_read(uint8_t first_page, uint8_t last_page,
   if ((expected == 0u) || (expected > buffer_len)) {
     return -1;
   }
-  while (page <= (uint16_t)(last_page)) {
+  while (page <= (uint16_t)last_page) {
     uint16_t remaining_pages =
         (uint16_t)((unsigned)last_page - (unsigned)page + 1u);
     uint16_t chunk_pages = (remaining_pages > chunk_page_limit)
@@ -85,19 +85,19 @@ int reader_tags_ntag_fast_read(uint8_t first_page, uint8_t last_page,
     uint16_t chunk_len = (uint16_t)((unsigned)chunk_pages *
                                     (unsigned)NFC_TAG_T2T_PAGE_SIZE_BYTES);
     const uint8_t fast_read_request[NFC_TAG_T2T_FAST_READ_CMD_LEN] = {
-        NFC_FRONTEND_NTAG_CMD_FAST_READ, (uint8_t)(page), chunk_last};
+        NFC_FRONTEND_NTAG_CMD_FAST_READ, (uint8_t)page, chunk_last};
     int rlen = reader_protocol_transceive14(
         fast_read_request, NFC_TAG_T2T_FAST_READ_CMD_LEN, &buffer[copied],
         chunk_len, true, NFC_TAG_T2T_READ_TIMEOUT_MS, false, false);
 
-    if (rlen < (int)(chunk_len)) {
+    if (rlen < (int)chunk_len) {
       (void)reader_protocol_activate_iso14443a();
       return -1;
     }
     copied = (uint16_t)(copied + chunk_len);
     page = (uint16_t)(page + chunk_pages);
   }
-  return (int)(copied);
+  return (int)copied;
 }
 
 bool reader_tags_ntag_write_page(uint8_t page, const uint8_t* data) {
@@ -149,7 +149,7 @@ static void reader_tags_parse_type2_tlv(const uint8_t* data, uint16_t len) {
   if ((data == NERO_NFC_NULL) || (len < READER_TYPE2_CC_PREFIX_BYTES)) {
     return;
   }
-  if (nero_nfc_u8_at(data, (size_t)(len), (size_t)(0)) != NFC_FORUM_CC_MAGIC) {
+  if (nero_nfc_u8_at(data, (size_t)len, (size_t)0) != NFC_FORUM_CC_MAGIC) {
     return;
   }
   reader_tags_parse_ndef_tlv_area(data, len, READER_TYPE2_CC_PREFIX_BYTES);
@@ -160,8 +160,7 @@ static bool reader_tags_type2_tlv_complete(const uint8_t* data, uint16_t len) {
 
   if ((data == NERO_NFC_NULL) || !nero_nfc_span_ok(0u, 1u, len) ||
       (len <= READER_TYPE2_CC_PREFIX_BYTES) ||
-      (nero_nfc_u8_at(data, (size_t)(len), (size_t)(0)) !=
-       NFC_FORUM_CC_MAGIC)) {
+      (nero_nfc_u8_at(data, (size_t)len, (size_t)0) != NFC_FORUM_CC_MAGIC)) {
     return false;
   }
   if (nfc_ndef_find_message_tlv(data, len, READER_TYPE2_CC_PREFIX_BYTES,
@@ -223,7 +222,7 @@ void reader_tags_read_ntag_tag(void) {
             (reader_tags_ntag_fast_read(
                  NFC_TAG_T2T_CC_PAGE_INDEX,
                  (uint8_t)(NFC_TAG_T2T_CC_PAGE_INDEX + needed_pages - 1u),
-                 tag_data, fast_len) >= (int)(fast_len))) {
+                 tag_data, fast_len) >= (int)fast_len)) {
           total = fast_len;
         }
       }
@@ -234,7 +233,7 @@ void reader_tags_read_ntag_tag(void) {
     for (uint16_t page = NFC_TAG_T2T_CC_PAGE_INDEX; page <= max_page;
          page = (uint16_t)(page + NFC_TAG_T2T_READ_RESP_PAGES)) {
       uint8_t buffer[NFC_TAG_T2T_READ_RESP_BYTES];
-      int rlen = reader_tags_ntag_read_page((uint8_t)(page), buffer);
+      int rlen = reader_tags_ntag_read_page((uint8_t)page, buffer);
       uint8_t pages_to_copy = NFC_TAG_T2T_READ_RESP_PAGES;
 
       if (rlen < (int)(NFC_TAG_T2T_PAGE_SIZE_BYTES)) {
@@ -242,7 +241,7 @@ void reader_tags_read_ntag_tag(void) {
         {
           char ndc[NERO_NFC_FORMAT_SNPRINTF_DEC_CAP];
           (void)nero_nfc_snprintf(ndc, sizeof ndc, "%u",
-                                  (unsigned)((uint32_t)(page)));
+                                  (unsigned)((uint32_t)page));
           nero_nfc_log_write(ndc);
         }
         nero_nfc_log_write("\r\n");

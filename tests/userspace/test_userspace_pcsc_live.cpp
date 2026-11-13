@@ -30,7 +30,7 @@ TEST(UserspacePcscLive, ListReadersOverrideStillWorksWithPcscLinked) {
   ASSERT_TRUE(nero_nfc::ListPcscReaders(readers_out, err)) << err;
   nero_nfc::NeroNfcUtestClearListPcscReadersOverride();
   ASSERT_EQ(readers_out.size(), 1u);
-  EXPECT_EQ(readers_out[0], "Nero NFC Test Reader");
+  EXPECT_EQ(readers_out.at(0), "Nero NFC Test Reader");
 }
 
 #else

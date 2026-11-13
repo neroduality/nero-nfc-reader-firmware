@@ -53,17 +53,17 @@ enum {
 enum { WRITER_TYPE4_ISO_DEP_MAX_RETRIES = 8u };
 
 /* ISO-DEP PCB / ATS wire values used only in this Type 4 write path. */
+#define WRITER_ISO_DEP_PCB_CID_BIT 0x08u
+#define WRITER_ISO_DEP_PCB_NAD_BIT 0x04u
+#define WRITER_ISO_DEP_PCB_I_BLOCK_BASE 0x02u
+#define WRITER_ISO_DEP_PCB_S_WTX_MASK 0xF7u
+#define WRITER_ISO_DEP_WTXM_MASK 0x3Fu
+#define WRITER_ISO_DEP_BLOCK_NUM_MASK 0x01u
+#define WRITER_ISO_DEP_ATS_T0_TC_PRESENT 0x10u
+#define WRITER_ISO_DEP_ATS_T0_TB_PRESENT 0x20u
+#define WRITER_ISO_DEP_ATS_TB_FWI_SHIFT 4u
 enum {
-  WRITER_ISO_DEP_PCB_CID_BIT = 0x08u,
-  WRITER_ISO_DEP_PCB_NAD_BIT = 0x04u,
-  WRITER_ISO_DEP_PCB_I_BLOCK_BASE = 0x02u,
   WRITER_ISO_DEP_PCB_S_WTX = 0xF2u,
-  WRITER_ISO_DEP_PCB_S_WTX_MASK = 0xF7u,
-  WRITER_ISO_DEP_WTXM_MASK = 0x3Fu,
-  WRITER_ISO_DEP_BLOCK_NUM_MASK = 0x01u,
-  WRITER_ISO_DEP_ATS_T0_TC_PRESENT = 0x10u,
-  WRITER_ISO_DEP_ATS_T0_TB_PRESENT = 0x20u,
-  WRITER_ISO_DEP_ATS_TB_FWI_SHIFT = 4u,
   WRITER_ISO_DEP_S_DESEL_REQ = 0xC2u,
   WRITER_ISO_DEP_S_DESEL_CID_REQ = 0xCAu,
   WRITER_ISO_DEP_S_DESEL_PARAM = 0x00u,
@@ -157,7 +157,7 @@ static int writer_iso_dep_transact(const uint8_t* apdu, uint16_t apdu_len,
     return -1;
   }
   if (!nero_nfc_span_ok(WRITER_ISO_DEP_HDR_BASE_LEN,
-                        (size_t)(apdu_len) + WRITER_ISO_DEP_CRC_A_LEN,
+                        (size_t)apdu_len + WRITER_ISO_DEP_CRC_A_LEN,
                         sizeof(tx))) {
     return -1;
   }
@@ -171,7 +171,7 @@ static int writer_iso_dep_transact(const uint8_t* apdu, uint16_t apdu_len,
   uint8_t tx_pos = WRITER_ISO_DEP_HDR_BASE_LEN;
   if (WRITER_TAG_T4_PCB_HAS_CID) {
     tx[0] = (uint8_t)(tx[0] | WRITER_ISO_DEP_PCB_CID_BIT);
-    if (!nero_nfc_span_ok((size_t)(tx_pos), 1u, sizeof(tx))) {
+    if (!nero_nfc_span_ok((size_t)tx_pos, 1u, sizeof(tx))) {
       return -1;
     }
     tx[tx_pos++] = WRITER_TAG_T4_CID;
@@ -225,12 +225,12 @@ static int writer_iso_dep_transact(const uint8_t* apdu, uint16_t apdu_len,
 
   /* Strip ISO-DEP PCB/CID/NAD header and CRC-A; remainder is APDU response. */
   uint8_t hdr_skip = writer_iso_dep_rx_hdr_skip(rx[0]);
-  int data_len = rlen - (int)(hdr_skip)-WRITER_ISO_DEP_CRC_A_LEN;
+  int data_len = rlen - (int)hdr_skip - WRITER_ISO_DEP_CRC_A_LEN;
   if (data_len < 0) {
     return -1;
   }
-  if ((uint16_t)(data_len) > resp_max) {
-    data_len = (int)(resp_max);
+  if ((uint16_t)data_len > resp_max) {
+    data_len = (int)resp_max;
   }
   for (int i = 0; i < data_len; i++) {
     resp[i] = rx[hdr_skip + i];
@@ -271,7 +271,7 @@ static bool writer_iso_dep_select_app(const uint8_t* aid, uint8_t aid_len,
 }
 
 static bool writer_iso_dep_select_ndef_app(void) {
-  for (uint8_t i = 0u; i < (uint8_t)(NFC_PCSC_NDEF_APP_SELECT_VARIANT_COUNT);
+  for (uint8_t i = 0u; i < (uint8_t)NFC_PCSC_NDEF_APP_SELECT_VARIANT_COUNT;
        ++i) {
     nfc_pcsc_ndef_app_select_variant_t variant;
 
@@ -342,7 +342,7 @@ bool writer_tag_write_type4_impl(void) {
   uint8_t ndef_file_hi;
   uint8_t ndef_file_lo;
   uint16_t max_ndef_message_size = 0u;
-  uint16_t mlc = (uint16_t)(NFC_PCSC_T4_UPDATE_BINARY_DATA_MAX);
+  uint16_t mlc = (uint16_t)NFC_PCSC_T4_UPDATE_BINARY_DATA_MAX;
   nfc_tag_type4_info_t type4_info;
   nero_nfc_secure_clear(&type4_info, sizeof(type4_info));
   int rlen;
@@ -378,7 +378,7 @@ bool writer_tag_write_type4_impl(void) {
   {
     uint8_t sel_cc[NFC_PCSC_T4_SELECT_FILE_APDU_LEN];
     uint8_t sel_cc_len = 0u;
-    if (!nfc_pcsc_build_t4_select_file_apdu((uint16_t)(NFC_PCSC_T4_CC_FILE_ID),
+    if (!nfc_pcsc_build_t4_select_file_apdu((uint16_t)NFC_PCSC_T4_CC_FILE_ID,
                                             sel_cc, (uint8_t)(sizeof(sel_cc)),
                                             &sel_cc_len)) {
       writer_iso_dep_deselect();
@@ -405,7 +405,7 @@ bool writer_tag_write_type4_impl(void) {
     uint8_t read_cc_len = 0u;
     uint16_t cc_len;
     if (!nfc_pcsc_build_t4_read_binary_apdu(
-            0u, (uint8_t)(NFC_PCSC_T4_CC_FILE_LEN), read_cc,
+            0u, (uint8_t)NFC_PCSC_T4_CC_FILE_LEN, read_cc,
             (uint8_t)(sizeof(read_cc)), &read_cc_len)) {
       writer_iso_dep_deselect();
       return false;
@@ -417,24 +417,24 @@ bool writer_tag_write_type4_impl(void) {
       writer_iso_dep_deselect();
       return false;
     }
-    cc_len = (uint16_t)(((uint16_t)(resp[NFC_TAG_CC_CCLEN_MSB_INDEX])
+    cc_len = (uint16_t)(((uint32_t)resp[NFC_TAG_CC_CCLEN_MSB_INDEX]
                          << NFC_ISO7816_U16_HIGH_BYTE_SHIFT) |
                         resp[NFC_TAG_CC_CCLEN_LSB_INDEX]);
-    if (cc_len < (uint16_t)(NFC_PCSC_T4_CC_FILE_LEN) ||
+    if (cc_len < (uint16_t)NFC_PCSC_T4_CC_FILE_LEN ||
         cc_len > (uint16_t)(sizeof(resp) - NFC_ISO7816_SW_LEN)) {
       nero_nfc_log_write("  [T4] CC parse failed (CCLEN=");
       {
         char ndc[NERO_NFC_FORMAT_SNPRINTF_DEC_CAP];
         (void)nero_nfc_snprintf(ndc, sizeof ndc, "%u",
-                                (unsigned)((uint32_t)(cc_len)));
+                                (unsigned)((uint32_t)cc_len));
         nero_nfc_log_write(ndc);
       }
       nero_nfc_log_line(")");
       writer_iso_dep_deselect();
       return false;
     }
-    if (cc_len > (uint16_t)(NFC_PCSC_T4_CC_FILE_LEN)) {
-      if (!nfc_pcsc_build_t4_read_binary_apdu(0u, (uint8_t)(cc_len), read_cc,
+    if (cc_len > (uint16_t)NFC_PCSC_T4_CC_FILE_LEN) {
+      if (!nfc_pcsc_build_t4_read_binary_apdu(0u, (uint8_t)cc_len, read_cc,
                                               (uint8_t)(sizeof(read_cc)),
                                               &read_cc_len)) {
         writer_iso_dep_deselect();
@@ -449,12 +449,12 @@ bool writer_tag_write_type4_impl(void) {
       }
     }
     {
-      if (!nfc_tag_type4_apply_cc(&type4_info, resp, (uint8_t)(cc_len))) {
+      if (!nfc_tag_type4_apply_cc(&type4_info, resp, (uint8_t)cc_len)) {
         nero_nfc_log_write("  [T4] CC parse failed (CCLEN=");
         {
           char ndc[NERO_NFC_FORMAT_SNPRINTF_DEC_CAP];
           (void)nero_nfc_snprintf(ndc, sizeof ndc, "%u",
-                                  (unsigned)((uint32_t)(cc_len)));
+                                  (unsigned)((uint32_t)cc_len));
           nero_nfc_log_write(ndc);
         }
         nero_nfc_log_line(")");
@@ -467,7 +467,7 @@ bool writer_tag_write_type4_impl(void) {
         {
           char nhx[NERO_NFC_FORMAT_SNPRINTF_HEX_BYTE_CAP];
           (void)nero_nfc_snprintf(nhx, sizeof nhx, "%02X",
-                                  (unsigned)(type4_info.write_access));
+                                  (unsigned)type4_info.write_access);
           nero_nfc_log_write(nhx);
         }
         nero_nfc_log_line(")");
@@ -485,9 +485,8 @@ bool writer_tag_write_type4_impl(void) {
             "  [T4] NDEF payload exceeds CC Max NDEF message size (");
         {
           char ndc[NERO_NFC_FORMAT_SNPRINTF_DEC_CAP];
-          (void)nero_nfc_snprintf(
-              ndc, sizeof ndc, "%u",
-              (unsigned)((uint32_t)(max_ndef_message_size)));
+          (void)nero_nfc_snprintf(ndc, sizeof ndc, "%u",
+                                  (unsigned)((uint32_t)max_ndef_message_size));
           nero_nfc_log_write(ndc);
         }
         nero_nfc_log_line(" bytes)");
@@ -511,7 +510,7 @@ bool writer_tag_write_type4_impl(void) {
     uint8_t sel_ndef[NFC_PCSC_T4_SELECT_FILE_APDU_LEN];
     uint8_t sel_ndef_len = 0u;
     if (!nfc_pcsc_build_t4_select_file_apdu(
-            (uint16_t)(((uint16_t)(ndef_file_hi)
+            (uint16_t)(((uint32_t)ndef_file_hi
                         << NFC_ISO7816_U16_HIGH_BYTE_SHIFT) |
                        ndef_file_lo),
             sel_ndef, (uint8_t)(sizeof(sel_ndef)), &sel_ndef_len)) {
@@ -531,7 +530,7 @@ bool writer_tag_write_type4_impl(void) {
   {
     char ndc[NERO_NFC_FORMAT_SNPRINTF_DEC_CAP];
     (void)nero_nfc_snprintf(ndc, sizeof ndc, "%u",
-                            (unsigned)((uint32_t)(ndef_len)));
+                            (unsigned)((uint32_t)ndef_len));
     nero_nfc_log_write(ndc);
   }
   nero_nfc_log_write("): ");
@@ -547,16 +546,13 @@ bool writer_tag_write_type4_impl(void) {
 
   /* Clear NLEN=0x0000 -- marks the NDEF file invalid during write. */
   {
-    const uint8_t
-        clear_nlen[NFC_ISO7816_SHORT_APDU_HDR_LEN + NFC_PCSC_T4_NLEN_LEN] = {
-            (uint8_t)(NFC_ISO7816_CLA_ISO),
-            (uint8_t)(NFC_ISO7816_INS_UPDATE_BINARY),
-            (uint8_t)(NFC_ISO7816_CLA_ISO),
-            (uint8_t)(NFC_ISO7816_CLA_ISO),
-            (uint8_t)(NFC_PCSC_T4_NLEN_LEN),
-            (uint8_t)(NFC_ISO7816_CLA_ISO),
-            (uint8_t)(NFC_ISO7816_CLA_ISO),
-        };
+    const uint8_t clear_nlen[NFC_ISO7816_SHORT_APDU_HDR_LEN +
+                             NFC_PCSC_T4_NLEN_LEN] = {
+        (uint8_t)NFC_ISO7816_CLA_ISO,  (uint8_t)NFC_ISO7816_INS_UPDATE_BINARY,
+        (uint8_t)NFC_ISO7816_CLA_ISO,  (uint8_t)NFC_ISO7816_CLA_ISO,
+        (uint8_t)NFC_PCSC_T4_NLEN_LEN, (uint8_t)NFC_ISO7816_CLA_ISO,
+        (uint8_t)NFC_ISO7816_CLA_ISO,
+    };
     rlen = writer_iso_dep_transact(clear_nlen, sizeof(clear_nlen), resp,
                                    sizeof(resp));
     if ((rlen < NFC_ISO7816_SW_LEN) ||
@@ -569,12 +565,12 @@ bool writer_tag_write_type4_impl(void) {
           nero_nfc_log_write(" (SW=0x");
           {
             char nhx[NERO_NFC_FORMAT_SNPRINTF_HEX_BYTE_CAP];
-            (void)nero_nfc_snprintf(nhx, sizeof nhx, "%02X", (unsigned)(sw1));
+            (void)nero_nfc_snprintf(nhx, sizeof nhx, "%02X", (unsigned)sw1);
             nero_nfc_log_write(nhx);
           }
           {
             char nhx[NERO_NFC_FORMAT_SNPRINTF_HEX_BYTE_CAP];
-            (void)nero_nfc_snprintf(nhx, sizeof nhx, "%02X", (unsigned)(sw2));
+            (void)nero_nfc_snprintf(nhx, sizeof nhx, "%02X", (unsigned)sw2);
             nero_nfc_log_write(nhx);
           }
           nero_nfc_log_putc(')');
@@ -595,8 +591,8 @@ bool writer_tag_write_type4_impl(void) {
       uint16_t offset = (uint16_t)(NFC_PCSC_T4_NLEN_LEN + written);
       uint16_t remaining = (uint16_t)(ndef_len - written);
       uint8_t chunk = (uint8_t)((remaining > mlc) ? mlc : remaining);
-      write_cmd[0] = (uint8_t)(NFC_ISO7816_CLA_ISO);
-      write_cmd[1] = (uint8_t)(NFC_ISO7816_INS_UPDATE_BINARY);
+      write_cmd[0] = (uint8_t)NFC_ISO7816_CLA_ISO;
+      write_cmd[1] = (uint8_t)NFC_ISO7816_INS_UPDATE_BINARY;
       write_cmd[NFC_ISO7816_APDU_IDX_P1] =
           (uint8_t)(offset >> NFC_ISO7816_U16_HIGH_BYTE_SHIFT);
       write_cmd[NFC_ISO7816_APDU_IDX_P2] =
@@ -619,7 +615,7 @@ bool writer_tag_write_type4_impl(void) {
         {
           char ndc[NERO_NFC_FORMAT_SNPRINTF_DEC_CAP];
           (void)nero_nfc_snprintf(ndc, sizeof ndc, "%u",
-                                  (unsigned)((uint32_t)(offset)));
+                                  (unsigned)((uint32_t)offset));
           nero_nfc_log_write(ndc);
         }
         {
@@ -629,12 +625,12 @@ bool writer_tag_write_type4_impl(void) {
             nero_nfc_log_write(" (SW=0x");
             {
               char nhx[NERO_NFC_FORMAT_SNPRINTF_HEX_BYTE_CAP];
-              (void)nero_nfc_snprintf(nhx, sizeof nhx, "%02X", (unsigned)(sw1));
+              (void)nero_nfc_snprintf(nhx, sizeof nhx, "%02X", (unsigned)sw1);
               nero_nfc_log_write(nhx);
             }
             {
               char nhx[NERO_NFC_FORMAT_SNPRINTF_HEX_BYTE_CAP];
-              (void)nero_nfc_snprintf(nhx, sizeof nhx, "%02X", (unsigned)(sw2));
+              (void)nero_nfc_snprintf(nhx, sizeof nhx, "%02X", (unsigned)sw2);
               nero_nfc_log_write(nhx);
             }
             nero_nfc_log_putc(')');
@@ -652,11 +648,11 @@ bool writer_tag_write_type4_impl(void) {
   /* Finalise -- set NLEN to the actual NDEF message length. */
   {
     uint8_t set_nlen[NFC_ISO7816_SHORT_APDU_HDR_LEN + NFC_PCSC_T4_NLEN_LEN] = {
-        (uint8_t)(NFC_ISO7816_CLA_ISO),
-        (uint8_t)(NFC_ISO7816_INS_UPDATE_BINARY),
-        (uint8_t)(NFC_ISO7816_CLA_ISO),
-        (uint8_t)(NFC_ISO7816_CLA_ISO),
-        (uint8_t)(NFC_PCSC_T4_NLEN_LEN),
+        (uint8_t)NFC_ISO7816_CLA_ISO,
+        (uint8_t)NFC_ISO7816_INS_UPDATE_BINARY,
+        (uint8_t)NFC_ISO7816_CLA_ISO,
+        (uint8_t)NFC_ISO7816_CLA_ISO,
+        (uint8_t)NFC_PCSC_T4_NLEN_LEN,
         (uint8_t)(ndef_len >> NFC_ISO7816_U16_HIGH_BYTE_SHIFT),
         (uint8_t)(ndef_len & NFC_ISO7816_LOW_BYTE_MASK),
     };
@@ -673,12 +669,12 @@ bool writer_tag_write_type4_impl(void) {
           nero_nfc_log_write(" (SW=0x");
           {
             char nhx[NERO_NFC_FORMAT_SNPRINTF_HEX_BYTE_CAP];
-            (void)nero_nfc_snprintf(nhx, sizeof nhx, "%02X", (unsigned)(sw1));
+            (void)nero_nfc_snprintf(nhx, sizeof nhx, "%02X", (unsigned)sw1);
             nero_nfc_log_write(nhx);
           }
           {
             char nhx[NERO_NFC_FORMAT_SNPRINTF_HEX_BYTE_CAP];
-            (void)nero_nfc_snprintf(nhx, sizeof nhx, "%02X", (unsigned)(sw2));
+            (void)nero_nfc_snprintf(nhx, sizeof nhx, "%02X", (unsigned)sw2);
             nero_nfc_log_write(nhx);
           }
           nero_nfc_log_putc(')');

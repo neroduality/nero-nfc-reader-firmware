@@ -41,7 +41,7 @@ NFCRFAL_SHA256      := $(shell cat "$(NFCRFAL_SHA256_FILE)" 2>/dev/null | tr -cd
 NFCRFAL_URL         := https://github.com/stm32duino/NFC-RFAL/archive/refs/tags/$(NFCRFAL_VERSION).zip
 
 # ── ST25R3916 ─────────────────────────────────────────────────────────────────
-ST25R3916_VERSION     := 2.0.2
+ST25R3916_VERSION     := 2.1.0
 ST25R3916_DIR         := $(_EXTST_ROOT)/third-party/ST25R3916
 ST25R3916_STAMP       := $(_EXTST_ROOT)/third-party/.st25r3916-version
 ST25R3916_SHA256_FILE := $(_EXTST_MDIR)/st25r3916-$(ST25R3916_VERSION).sha256

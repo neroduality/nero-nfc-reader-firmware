@@ -429,7 +429,7 @@ static bool reader_tags_type2_write_unit(uint16_t unit, const uint8_t* data,
       (unit > UINT8_MAX)) {
     return false;
   }
-  return reader_tags_type2_write_page((uint8_t)(unit), data);
+  return reader_tags_type2_write_page((uint8_t)unit, data);
 }
 
 static bool reader_tags_type5_write_unit(uint16_t unit, const uint8_t* data,
@@ -458,7 +458,7 @@ int reader_tags_load_type2_ndef_message(uint8_t* dst, uint16_t dst_cap) {
   if (raw_len > sizeof(raw)) {
     raw_len = (uint16_t)sizeof(raw);
   }
-  raw_len = ((raw_len) < (raw_cap) ? (raw_len) : (raw_cap));
+  raw_len = (raw_len < raw_cap ? raw_len : raw_cap);
   got = reader_tags_type2_read_binary(NFC_TAG_T2T_CC_PAGE_INDEX, raw, raw_len);
   if (got < (int)NFC_TAG_T2T_PAGE_SIZE_BYTES) {
     return -1;
@@ -616,7 +616,7 @@ int reader_tags_type2_transceive(const uint8_t* tx, uint16_t tx_len,
   }
   rlen = reader_protocol_transceive14(
       tx, tx_len, rx, rx_max, true, NFC_TAG_T2T_READ_TIMEOUT_MS, false, false);
-  if ((nero_nfc_u8_at(tx, (size_t)(tx_len), (size_t)(0)) ==
+  if ((nero_nfc_u8_at(tx, (size_t)tx_len, (size_t)0) ==
        NFC_FRONTEND_NTAG_CMD_GET_VERSION) &&
       (rlen < (int)NFC_TAG_NTAG_VER_REPLY_LEN)) {
     (void)reader_protocol_activate_iso14443a();

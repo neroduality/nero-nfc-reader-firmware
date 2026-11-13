@@ -23,6 +23,8 @@
 
 #include <gtest/gtest.h>
 
+namespace {
+
 class UserspaceBrowserTest : public ::testing::Test {
  protected:
   void TearDown() override {
@@ -30,6 +32,8 @@ class UserspaceBrowserTest : public ::testing::Test {
     unsetenv("NERO_NFC_UTEST_BROWSER_EXEC");
   }
 };
+
+}  // namespace
 
 TEST_F(UserspaceBrowserTest, OpenUrlForkPathWithTestHelper) {
   nero_nfc::NeroNfcUtestClearOpenUrlHook();

@@ -74,15 +74,15 @@ TEST(UserspaceWriterPayload, BuildsVcardRecordWithOptionalFields) {
       nero_nfc::BuildWriterVcardRecord("Ada Lovelace|+44123|ada@example.test"));
 
   ASSERT_EQ(records.size(), 1u);
-  EXPECT_EQ(records[0].tnf_, 2u);
-  EXPECT_EQ(records[0].type_, "text/vcard");
-  ASSERT_TRUE(records[0].decoded_.has_value());
+  EXPECT_EQ(records.at(0).tnf_, 2u);
+  EXPECT_EQ(records.at(0).type_, "text/vcard");
+  ASSERT_TRUE(records.at(0).decoded_.has_value());
   EXPECT_EQ(
-      records[0].decoded_,
+      records.at(0).decoded_,
       std::optional<std::string>(
           "Contact: name=Ada Lovelace tel=+44123 email=ada@example.test"));
-  std::string const body(records[0].payload_.begin(),
-                         records[0].payload_.end());
+  const std::string body(records.at(0).payload_.begin(),
+                         records.at(0).payload_.end());
   EXPECT_NE(body.find("VERSION:4.0"), std::string::npos);
   EXPECT_NE(body.find("FN:Ada Lovelace"), std::string::npos);
   EXPECT_NE(body.find("TEL:+44123"), std::string::npos);
@@ -103,15 +103,15 @@ TEST(UserspaceWriterPayload, BuildsMailAndSmsUriRecords) {
   auto mail = ParseOne(
       nero_nfc::BuildWriterMailRecord("dev@example.test|Hello NFC|body text"));
   ASSERT_EQ(mail.size(), 1u);
-  ASSERT_TRUE(mail[0].decoded_.has_value());
+  ASSERT_TRUE(mail.at(0).decoded_.has_value());
   EXPECT_EQ(
-      mail[0].decoded_,
+      mail.at(0).decoded_,
       std::optional<std::string>(
           "mailto:dev@example.test?subject=Hello%20NFC&body=body%20text"));
   auto sms = ParseOne(nero_nfc::BuildWriterSmsRecord("+15551234567|tap me"));
   ASSERT_EQ(sms.size(), 1u);
-  ASSERT_TRUE(sms[0].decoded_.has_value());
-  EXPECT_EQ(sms[0].decoded_,
+  ASSERT_TRUE(sms.at(0).decoded_.has_value());
+  EXPECT_EQ(sms.at(0).decoded_,
             std::optional<std::string>("sms:+15551234567?body=tap%20me"));
 }
 
@@ -125,17 +125,17 @@ TEST(UserspaceWriterPayload, BuildsBluetoothRecordAndRejectsMalformedMac) {
       ParseOne(nero_nfc::BuildWriterBluetoothRecord("01:23:45:67:89:AB"));
 
   ASSERT_EQ(records.size(), 1u);
-  EXPECT_EQ(records[0].type_, "application/vnd.bluetooth.ep.oob");
-  ASSERT_TRUE(records[0].decoded_.has_value());
+  EXPECT_EQ(records.at(0).type_, "application/vnd.bluetooth.ep.oob");
+  ASSERT_TRUE(records.at(0).decoded_.has_value());
   EXPECT_EQ(
-      records[0].decoded_,
+      records.at(0).decoded_,
       std::optional<std::string>("Bluetooth OOB: address=01:23:45:67:89:AB"));
-  ASSERT_GE(records[0].payload_.size(), 8u);
+  ASSERT_GE(records.at(0).payload_.size(), 8u);
   /* [BT-OOB] 2-byte OOB Data Length (LSB first) then BD_ADDR LSB first. */
-  EXPECT_EQ(records[0].payload_[0], 0x08u);
-  EXPECT_EQ(records[0].payload_[1], 0x00u);
-  EXPECT_EQ(records[0].payload_[2], 0xABu);
-  EXPECT_EQ(records[0].payload_[7], 0x01u);
+  EXPECT_EQ(records.at(0).payload_.at(0), 0x08u);
+  EXPECT_EQ(records.at(0).payload_.at(1), 0x00u);
+  EXPECT_EQ(records.at(0).payload_.at(2), 0xABu);
+  EXPECT_EQ(records.at(0).payload_.at(7), 0x01u);
   EXPECT_TRUE(nero_nfc::BuildWriterBluetoothRecord("01:23:bad").empty());
   EXPECT_TRUE(
       nero_nfc::BuildWriterBluetoothRecord("01:23:45:67:89:AZ").empty());
@@ -146,14 +146,14 @@ TEST(UserspaceWriterPayload, BuildsWifiWpsRecordAndRejectsInvalidSpecs) {
       ParseOne(nero_nfc::BuildWriterWifiRecord("LabSSID|supersecret"));
 
   ASSERT_EQ(records.size(), 1u);
-  EXPECT_EQ(records[0].type_, "application/vnd.wfa.wsc");
-  ASSERT_TRUE(records[0].decoded_.has_value());
-  EXPECT_EQ(records[0].decoded_,
+  EXPECT_EQ(records.at(0).type_, "application/vnd.wfa.wsc");
+  ASSERT_TRUE(records.at(0).decoded_.has_value());
+  EXPECT_EQ(records.at(0).decoded_,
             std::optional<std::string>("Wi-Fi: ssid=LabSSID auth=WPA2-Personal "
                                        "encryption=AES key=supersecret"));
-  ASSERT_GE(records[0].payload_.size(), 16u);
-  EXPECT_EQ(records[0].payload_[0], 0x10u);
-  EXPECT_EQ(records[0].payload_[1], 0x4Au);
+  ASSERT_GE(records.at(0).payload_.size(), 16u);
+  EXPECT_EQ(records.at(0).payload_.at(0), 0x10u);
+  EXPECT_EQ(records.at(0).payload_.at(1), 0x4Au);
   EXPECT_TRUE(nero_nfc::BuildWriterWifiRecord("LabSSID|short").empty());
   EXPECT_TRUE(nero_nfc::BuildWriterWifiRecord("|supersecret").empty());
 }
@@ -183,6 +183,6 @@ TEST(UserspaceWriterPayload,
   nero_nfc::NormalizeWriterNdefHexPayload(tlv);
 
   ASSERT_EQ(tlv.size(), 17u);
-  EXPECT_EQ(tlv[0], 0xD1u);
-  EXPECT_EQ(tlv[3], 0x55u);
+  EXPECT_EQ(tlv.at(0), 0xD1u);
+  EXPECT_EQ(tlv.at(3), 0x55u);
 }

@@ -27,6 +27,7 @@
 #   <prefix>/bin/nero_nfc_uart
 #   <prefix>/bin/reader
 #   <prefix>/bin/writer
+#   <prefix>/bin/fido_token
 #   /etc/udev/rules.d/70-nero-nfc-arduino.rules  (via sudo; optional)
 #
 # Tip: Prefer `make && make install-userspace` from the firmware repo root for the normal
@@ -81,9 +82,11 @@ mkdir -p "$install_bin"
 cp "$bin_dir/nero_nfc_uart" "$install_bin/nero_nfc_uart"
 cp "$bin_dir/reader" "$install_bin/reader"
 cp "$bin_dir/writer" "$install_bin/writer"
-chmod 755 "$install_bin/nero_nfc_uart" "$install_bin/reader" "$install_bin/writer"
+cp "$bin_dir/fido_token" "$install_bin/fido_token"
+chmod 755 "$install_bin/nero_nfc_uart" "$install_bin/reader" "$install_bin/writer" \
+  "$install_bin/fido_token"
 
-printf 'Installed: nero_nfc_uart reader writer -> %s\n' "$install_bin"
+printf 'Installed: nero_nfc_uart reader writer fido_token -> %s\n' "$install_bin"
 
 printf '\n== udev rules ==\n'
 if command -v sudo >/dev/null 2>&1; then

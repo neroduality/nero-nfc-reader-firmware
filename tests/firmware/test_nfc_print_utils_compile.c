@@ -22,6 +22,7 @@
 #include <stdint.h>
 
 #include "nfc_print_utils.h"
+#include "test_nfc_print_utils_compile.h"
 
 static void touch_putc(char c) { (void)c; }
 

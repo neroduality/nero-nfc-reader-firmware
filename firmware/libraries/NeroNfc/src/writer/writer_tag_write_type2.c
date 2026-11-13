@@ -206,7 +206,7 @@ static bool writer_type2_write_unit(uint16_t unit, const uint8_t* data,
       (unit > UINT8_MAX)) {
     return false;
   }
-  return writer_type2_write_page((uint8_t)(unit), data);
+  return writer_type2_write_page((uint8_t)unit, data);
 }
 
 /*
@@ -237,7 +237,7 @@ static bool ntag_try_get_version(void) {
   }
   nero_nfc_log_write("\r\n");
   nero_nfc_zero_bytes(&version_info, sizeof(version_info));
-  nfc_tag_type2_apply_version(&version_info, rx, (uint8_t)(len));
+  nfc_tag_type2_apply_version(&version_info, rx, (uint8_t)len);
   if (version_info.family != NFC_TAG_TYPE2_FAMILY_NTAG21X) {
     return false;
   }
@@ -246,7 +246,7 @@ static bool ntag_try_get_version(void) {
     {
       char nhx[NERO_NFC_FORMAT_SNPRINTF_HEX_BYTE_CAP];
       (void)nero_nfc_snprintf(nhx, sizeof nhx, "%02X",
-                              (unsigned)(version_info.vendor_id));
+                              (unsigned)version_info.vendor_id);
       nero_nfc_log_write(nhx);
     }
     nero_nfc_log_line(" != 04h -- accepting NTAG fingerprint)");
@@ -270,7 +270,7 @@ static bool ntag_try_get_version(void) {
       {
         char nhx[NERO_NFC_FORMAT_SNPRINTF_HEX_BYTE_CAP];
         (void)nero_nfc_snprintf(nhx, sizeof nhx, "%02X",
-                                (unsigned)(version_info.size_id));
+                                (unsigned)version_info.size_id);
         nero_nfc_log_write(nhx);
       }
       nero_nfc_log_write("\r\n");
@@ -291,7 +291,7 @@ static void serial_ntag21x_tier_hint_from_cc_mlen(uint8_t mlen) {
   nero_nfc_log_write("  Tier from CC MLEN 0x");
   {
     char nhx[NERO_NFC_FORMAT_SNPRINTF_HEX_BYTE_CAP];
-    (void)nero_nfc_snprintf(nhx, sizeof nhx, "%02X", (unsigned)(mlen));
+    (void)nero_nfc_snprintf(nhx, sizeof nhx, "%02X", (unsigned)mlen);
     nero_nfc_log_write(nhx);
   }
   if (mlen <= NFC_TAG_NTAG213_CC_MLEN) {
@@ -386,8 +386,7 @@ bool writer_tag_write_type2_impl(writer_type2_family_t fam) {
   nero_nfc_log_write("\r\n  ── Writing NDEF (Type 2) ──\r\n  Bytes (");
   {
     char ndc[NERO_NFC_FORMAT_SNPRINTF_DEC_CAP];
-    (void)nero_nfc_snprintf(ndc, sizeof ndc, "%u",
-                            (unsigned)((uint32_t)(total)));
+    (void)nero_nfc_snprintf(ndc, sizeof ndc, "%u", (unsigned)((uint32_t)total));
     nero_nfc_log_write(ndc);
   }
   nero_nfc_log_write("): ");
@@ -420,8 +419,8 @@ bool writer_tag_write_type2_impl(writer_type2_family_t fam) {
   pages_needed = (uint16_t)((total + NFC_TAG_T2T_PAGE_SIZE_BYTES - 1u) /
                             NFC_TAG_T2T_PAGE_SIZE_BYTES);
   if (!nero_nfc_try_add_size(NFC_STORAGE_TYPE2_FIRST_DATA_PAGE,
-                             (size_t)(pages_needed)-1u, &last_page_needed) ||
-      (last_page_needed > (size_t)(max_pg))) {
+                             (size_t)pages_needed - 1u, &last_page_needed) ||
+      (last_page_needed > (size_t)max_pg)) {
     nero_nfc_log_line("  ERROR: Message too big for tag");
     return false;
   }
@@ -486,27 +485,27 @@ writer_type2_family_t writer_tag_write_identify_type2_family(void) {
       nero_nfc_log_write("  CC page 3: ");
       {
         char nhx[NERO_NFC_FORMAT_SNPRINTF_HEX_BYTE_CAP];
-        (void)nero_nfc_snprintf(nhx, sizeof nhx, "%02X", (unsigned)(rb[0]));
+        (void)nero_nfc_snprintf(nhx, sizeof nhx, "%02X", (unsigned)rb[0]);
         nero_nfc_log_write(nhx);
       }
       nero_nfc_log_putc(' ');
       {
         char nhx[NERO_NFC_FORMAT_SNPRINTF_HEX_BYTE_CAP];
-        (void)nero_nfc_snprintf(nhx, sizeof nhx, "%02X", (unsigned)(rb[1]));
-        nero_nfc_log_write(nhx);
-      }
-      nero_nfc_log_putc(' ');
-      {
-        char nhx[NERO_NFC_FORMAT_SNPRINTF_HEX_BYTE_CAP];
-        (void)nero_nfc_snprintf(nhx, sizeof nhx, "%02X",
-                                (unsigned)(rb[NFC_TAG_T2T_CC_MLEN_INDEX]));
+        (void)nero_nfc_snprintf(nhx, sizeof nhx, "%02X", (unsigned)rb[1]);
         nero_nfc_log_write(nhx);
       }
       nero_nfc_log_putc(' ');
       {
         char nhx[NERO_NFC_FORMAT_SNPRINTF_HEX_BYTE_CAP];
         (void)nero_nfc_snprintf(nhx, sizeof nhx, "%02X",
-                                (unsigned)(rb[NFC_TAG_T2T_CC_ACCESS_INDEX]));
+                                (unsigned)rb[NFC_TAG_T2T_CC_MLEN_INDEX]);
+        nero_nfc_log_write(nhx);
+      }
+      nero_nfc_log_putc(' ');
+      {
+        char nhx[NERO_NFC_FORMAT_SNPRINTF_HEX_BYTE_CAP];
+        (void)nero_nfc_snprintf(nhx, sizeof nhx, "%02X",
+                                (unsigned)rb[NFC_TAG_T2T_CC_ACCESS_INDEX]);
         nero_nfc_log_write(nhx);
       }
       nero_nfc_log_write("\r\n");
@@ -542,7 +541,7 @@ writer_type2_family_t writer_tag_write_identify_type2_family(void) {
       nero_nfc_log_write("  Non-NDEF ST tag (CC magic 0x");
       {
         char nhx[NERO_NFC_FORMAT_SNPRINTF_HEX_BYTE_CAP];
-        (void)nero_nfc_snprintf(nhx, sizeof nhx, "%02X", (unsigned)(cc[0]));
+        (void)nero_nfc_snprintf(nhx, sizeof nhx, "%02X", (unsigned)cc[0]);
         nero_nfc_log_write(nhx);
       }
       nero_nfc_log_line(") -- skipping");

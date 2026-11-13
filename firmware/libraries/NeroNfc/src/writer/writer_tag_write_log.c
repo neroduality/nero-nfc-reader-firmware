@@ -23,6 +23,7 @@
 
 #include "nero_nfc_null.h"
 #include "writer_context.h"
+#include "writer_tag_write.h"
 
 void writer_tag_write_reset_type4_session(void) {
   writer_context_t* ctx = writer_context_active();

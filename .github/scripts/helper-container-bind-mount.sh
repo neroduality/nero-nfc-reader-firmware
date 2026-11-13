@@ -272,6 +272,6 @@ nero_nfc_ci_platform_docker_args() {
 # Populate the PLATFORM_ARGS bash array for docker/podman run.
 nero_nfc_load_ci_platform_args() {
   PLATFORM_ARGS=()
-  # shellcheck disable=SC2034 # caller consumes PLATFORM_ARGS after sourcing this helper
   mapfile -t PLATFORM_ARGS < <(nero_nfc_ci_platform_docker_args)
+  PLATFORM_ARGS=("${PLATFORM_ARGS[@]}")
 }

@@ -27,12 +27,16 @@ using nero_nfc::NeroNfcUtestSetFindSerialPortsOverride;
 using nero_nfc::ResolveSerialPortChoice;
 using nero_nfc::SelectBestPort;
 
+namespace {
+
 class UserspaceDetectTest : public ::testing::Test {
  protected:
   void TearDown() override {
     nero_nfc::NeroNfcUtestClearFindSerialPortsOverride();
   }
 };
+
+}  // namespace
 
 TEST(SelectBestPort, EmptyListReturnsEmpty) {
   EXPECT_EQ(SelectBestPort({}), "");
@@ -43,7 +47,7 @@ TEST(SelectBestPort, SingleEntryReturned) {
 }
 
 TEST(SelectBestPort, PrefersTtyACMOverTtyUSB) {
-  std::vector<std::string> const ports = {"/dev/ttyUSB0", "/dev/ttyACM1"};
+  const std::vector<std::string> ports = {"/dev/ttyUSB0", "/dev/ttyACM1"};
   EXPECT_EQ(SelectBestPort(ports), "/dev/ttyACM1");
 }
 
@@ -62,16 +66,16 @@ TEST(SelectBestPort, OnlyUSBPortsPicksFirst) {
 }
 
 TEST_F(UserspaceDetectTest, FindSerialPortsUsesOverrideList) {
-  std::vector<std::string> const fake = {"/dev/ttyUSB2", "/dev/ttyACM0"};
+  const std::vector<std::string> fake = {"/dev/ttyUSB2", "/dev/ttyACM0"};
   NeroNfcUtestSetFindSerialPortsOverride(&fake);
   auto found = FindSerialPorts();
   ASSERT_EQ(found.size(), 2u);
-  EXPECT_EQ(found[0], "/dev/ttyACM0");
-  EXPECT_EQ(found[1], "/dev/ttyUSB2");
+  EXPECT_EQ(found.at(0), "/dev/ttyACM0");
+  EXPECT_EQ(found.at(1), "/dev/ttyUSB2");
 }
 
 TEST(ResolveSerialPortChoice, ExplicitWinsOverDiscovery) {
-  std::vector<std::string> const discovered = {"/dev/ttyACM0"};
+  const std::vector<std::string> discovered = {"/dev/ttyACM0"};
   EXPECT_EQ(ResolveSerialPortChoice("/dev/custom", discovered), "/dev/custom");
 }
 

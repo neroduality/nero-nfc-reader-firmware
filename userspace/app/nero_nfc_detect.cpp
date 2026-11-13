@@ -24,10 +24,10 @@
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
-#include <iterator>
 #include <optional>
 #include <string>
 #include <string_view>
+#include <system_error>
 #include <vector>
 
 #include "nero_nfc_io.hpp"
@@ -53,8 +53,13 @@ std::optional<std::string> SerialPortUsbVendorId(const std::string& port) {
     return std::nullopt;
   }
   const std::string tty_name = port.substr(kDevPathPrefix.size());
-  std::filesystem::path node =
-      std::filesystem::path("/sys/class/tty") / tty_name / "device";
+  std::error_code ec;
+  // `device` is a symlink; walk parents of its target, not of the link path.
+  std::filesystem::path node = std::filesystem::canonical(
+      std::filesystem::path("/sys/class/tty") / tty_name / "device", ec);
+  if (ec) {
+    return std::nullopt;
+  }
   for (int depth = 0; depth < kSysfsDeviceParentSearchMaxDepth; ++depth) {
     std::string vendor;
     if (ReadSysfsToken((node / "idVendor").string(), vendor)) {
@@ -73,14 +78,15 @@ bool IsStlinkVirtualSerialPort(const std::string& port) {
   return vendor.has_value() && *vendor == kStlinkUsbVendorId;
 }
 
-std::vector<std::string> FilterNeroCdcSerialPorts(
+// ST-Link VCPs rank last rather than being dropped: NUCLEO-WBA65RI CDC
+// firmware talks over USART1, which is the ST-Link VCP.
+std::vector<std::string> OrderNeroCdcSerialPorts(
     const std::vector<std::string>& ports) {
-  std::vector<std::string> filtered;
-  filtered.reserve(ports.size());
-  std::ranges::copy_if(
-      ports, std::back_inserter(filtered),
-      [](const std::string& port) { return !IsStlinkVirtualSerialPort(port); });
-  return filtered;
+  std::vector<std::string> ordered = ports;
+  std::ranges::stable_partition(ordered, [](const std::string& port) {
+    return !IsStlinkVirtualSerialPort(port);
+  });
+  return ordered;
 }
 
 }  // namespace
@@ -123,7 +129,7 @@ std::vector<std::string> FindSerialPorts() {
     }
   }
   std::ranges::sort(result);
-  return FilterNeroCdcSerialPorts(result);
+  return OrderNeroCdcSerialPorts(result);
 }
 
 std::string SelectBestPort(const std::vector<std::string>& ports) {
@@ -149,7 +155,23 @@ std::string SerialPortFromEnv() {
          (std::isspace(static_cast<unsigned char>(sv.front())) != 0)) {
     sv.remove_prefix(1u);
   }
-  return sv.empty() ? std::string{} : std::string{sv};
+  if (sv.empty()) {
+    return {};
+  }
+  // Map PORT onto a discovered serial port so open() never receives the raw
+  // environment string; symlinks (e.g. /dev/serial/by-id/...) still resolve.
+  std::error_code ec;
+  const auto wanted = std::filesystem::canonical(std::string{sv}, ec);
+  if (ec) {
+    return {};
+  }
+  for (const auto& port : FindSerialPorts()) {
+    std::error_code port_ec;
+    if (std::filesystem::canonical(port, port_ec) == wanted && !port_ec) {
+      return port;
+    }
+  }
+  return {};
 }
 
 std::string DetectSerialPortCandidate(const std::string& explicit_port) {

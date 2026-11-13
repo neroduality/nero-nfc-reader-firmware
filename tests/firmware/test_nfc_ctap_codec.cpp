@@ -237,8 +237,8 @@ TEST(NfcCtapCodec, PacksShortCtapApdu) {
   EXPECT_EQ(apdu[1], 0x10u);
   EXPECT_EQ(apdu[4], 0x05u); /* LC = cbor + cmd */
   EXPECT_EQ(apdu[5], NFC_CTAP_CMD_GET_ASSERTION);
-  EXPECT_EQ(std::span{apdu}[6], 0xA1u);
-  EXPECT_EQ(std::span{apdu}[apdu_len - 1u], 0x00u);
+  EXPECT_EQ(nero_nfc_test::At(apdu, 6), 0xA1u);
+  EXPECT_EQ(nero_nfc_test::At(apdu, apdu_len - 1u), 0x00u);
 }
 
 TEST(NfcCtapCodec, PacksCommandOnlyCtapApdu) {
@@ -283,9 +283,9 @@ TEST(NfcCtapCodec, PacksExtendedCtapApduWhenForced) {
   EXPECT_EQ(apdu[4], 0x00u);
   EXPECT_EQ(apdu[5], 0x01u);
   EXPECT_EQ(apdu[6], 0x05u); /* 260 + 1 */
-  EXPECT_EQ(std::span{apdu}[7], NFC_CTAP_CMD_MAKE_CREDENTIAL);
-  EXPECT_EQ(std::span{apdu}[apdu_len - 2u], 0x00u);
-  EXPECT_EQ(std::span{apdu}[apdu_len - 1u], 0x00u);
+  EXPECT_EQ(nero_nfc_test::At(apdu, 7), NFC_CTAP_CMD_MAKE_CREDENTIAL);
+  EXPECT_EQ(nero_nfc_test::At(apdu, apdu_len - 2u), 0x00u);
+  EXPECT_EQ(nero_nfc_test::At(apdu, apdu_len - 1u), 0x00u);
 }
 
 TEST(NfcCtapCodec, PacksSelectFidoApduWithOptionalLe) {
@@ -305,7 +305,7 @@ TEST(NfcCtapCodec, PacksSelectFidoApduWithOptionalLe) {
   ASSERT_TRUE(
       nfc_ctap_pack_select_fido_apdu(true, &apdu[0], sizeof(apdu), &apdu_len));
   EXPECT_EQ(apdu_len, 14u);
-  EXPECT_EQ(std::span{apdu}[apdu_len - 1u], 0x00u);
+  EXPECT_EQ(nero_nfc_test::At(apdu, apdu_len - 1u), 0x00u);
   ASSERT_TRUE(nfc_ctap_apdu_is_select_fido_aid(&apdu[0], apdu_len, &add_le_00));
   EXPECT_TRUE(add_le_00);
 }
@@ -560,6 +560,11 @@ TEST(NfcCtapCodec, MarksOnlyLongRunningFidoApdusForCcidTimeExtension) {
   ASSERT_TRUE(nfc_ctap_pack_cbor_apdu(NFC_CTAP_CMD_CLIENT_PIN, &cbor[0],
                                       sizeof(cbor), false, &apdu[0],
                                       sizeof(apdu), &apdu_len));
+  EXPECT_TRUE(nfc_ctap_apdu_needs_ccid_time_extension(&apdu[0], apdu_len));
+
+  ASSERT_TRUE(nfc_ctap_pack_cbor_apdu(NFC_CTAP_CMD_RESET, NERO_NFC_NULL, 0u,
+                                      false, &apdu[0], sizeof(apdu),
+                                      &apdu_len));
   EXPECT_TRUE(nfc_ctap_apdu_needs_ccid_time_extension(&apdu[0], apdu_len));
 
   const uint8_t getresponse[] = {0x80u, NFC_CTAP_INS_GETRESPONSE, 0x00u, 0x00u};

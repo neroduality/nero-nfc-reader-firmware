@@ -19,7 +19,7 @@
 #
 # Same order as .github/workflows/main-ci.yml:
 #   1. Debian slim lint container + make lint (spec-traceability gate, cppcheck/clang-tidy mins, ...)
-#   2. Debian trixie + Fedora 43 via ci-run-tests.sh (linux/amd64, fresh CMake)
+#   2. Debian trixie + Fedora 45 via ci-run-tests.sh (linux/amd64, fresh CMake)
 #
 # Requirements: docker or podman, bash
 #
@@ -63,7 +63,7 @@ Lint container (same as GitHub lint job):
   debian:sid-slim, lint kit at .lint-kit-org/lint-c-cpp, ci-run-lint.sh
 
 Test matrix (same as GitHub test job):
-  debian:sid-slim + fedora:43, ci-run-test-container.sh
+  debian:sid-slim + fedora:45, ci-run-tests.sh
 
 Usage:
   bash .github/scripts/run-ci-locally.sh [options]
@@ -76,7 +76,7 @@ Presets:
 Matrix:
   --all               Debian then Fedora (default when containers run)
   --debian-only       debian:sid-slim only
-  --fedora-only       fedora:43 only
+  --fedora-only       fedora:45 only
 
 Skip flags:
   --skip-lint         Skip lint container
@@ -120,7 +120,6 @@ FIRMWARE_ROOT="${FIRMWARE_ROOT:-$(cd -- "${SCRIPT_DIR}/../.." && pwd)}"
 SOURCE_ROOT="${FIRMWARE_ROOT}"
 
 # shellcheck source=helper-container-bind-mount.sh
-# shellcheck disable=SC1091
 source "${SCRIPT_DIR}/helper-container-bind-mount.sh"
 
 resolve_lint_kit_root() {
@@ -133,7 +132,6 @@ resolve_lint_kit_root() {
     return 0
   fi
   # shellcheck source=lint-kit-config.sh
-  # shellcheck disable=SC1091
   source "${SCRIPT_DIR}/lint-kit-config.sh"
   lint_kit_ensure_cloned "${SOURCE_ROOT}"
   lint_kit_root "${SOURCE_ROOT}"
@@ -249,7 +247,7 @@ run_lint_container() {
     printf 'error: lint kit missing lint-c-cpp.sh: %s\n' "${lint_kit}" >&2
     exit 1
   fi
-  lint_image="${LINT_IMAGE:-debian:sid-slim@sha256:54f7a23f03be1e9fe2849c61a7455588ea29b84c1659440f8ece2aea4c9871af}"
+  lint_image="${LINT_IMAGE:-debian:sid-slim@sha256:07a3205e8583fdff12d2b05bd030f50437e9fd340ee616df0c05dc77af75767b}"
   default_kit="${FIRMWARE_ROOT}/.lint-kit-org/lint-c-cpp"
   container_lint_kit="/src/.lint-kit-org/lint-c-cpp"
   # External LINT_KIT (host path): mount at /opt/lint-kit inside the container.
@@ -260,7 +258,6 @@ run_lint_container() {
   printf '\n── Main CI: lint container (%s) ──\n' "${lint_image}"
   printf '── lint kit: %s -> %s ──\n' "${lint_kit}" "${container_lint_kit}"
   # Bind-mount isolated FIRMWARE_ROOT at /src (never the live make lint workspace).
-  # shellcheck disable=SC2016
   nero_nfc_run_bind_mount_container \
     -- \
     "${PLATFORM_ARGS[@]}" \
@@ -318,7 +315,6 @@ run_in_image() {
   local label="$2"
   printf '\n── Main CI: test matrix %s (%s) ──\n' "${label}" "${image}"
   # Bind-mount isolated FIRMWARE_ROOT at /src (never the live make lint workspace).
-  # shellcheck disable=SC2016
   nero_nfc_run_bind_mount_container \
     -- \
     "${PLATFORM_ARGS[@]}" \
@@ -332,18 +328,22 @@ run_in_image() {
     -e "INSTALL_DEPS=1" \
     -e "INSTALL_LINT_DEPS=0" \
     "${image}" \
-    bash -ceu 'bash /src/.github/scripts/ci-run-test-container.sh'
+    bash -ceu '
+      bash /src/.github/scripts/ci-bootstrap-container.sh
+      cd /src
+      bash .github/scripts/ci-run-tests.sh
+    '
 }
 
 if [[ ${RUN_DEBIAN} -eq 1 ]]; then
   run_in_image \
-    debian:sid-slim@sha256:54f7a23f03be1e9fe2849c61a7455588ea29b84c1659440f8ece2aea4c9871af \
+    debian:sid-slim@sha256:07a3205e8583fdff12d2b05bd030f50437e9fd340ee616df0c05dc77af75767b \
     "Debian sid"
 fi
 if [[ ${RUN_FEDORA} -eq 1 ]]; then
   run_in_image \
-    fedora:43@sha256:762d73ba1c455232b0272c5d445a34f36c4b9f421cbc05ce8102552325b6a222 \
-    "Fedora 43"
+    fedora:45@sha256:a7d72ba2745b100a3351087472e5ee7b2450af7cf331e7673007e3817612839c \
+    "Fedora 45"
 fi
 
 printf '\n── local Main CI completed successfully ──\n'

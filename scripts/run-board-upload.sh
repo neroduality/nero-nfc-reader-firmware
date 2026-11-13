@@ -232,9 +232,10 @@ run_upload_with_spinner() {
     upload_args+=(-p "${upload_port}")
   fi
 
+  local rc=0
   # Upload tools that draw \r spinners on stderr need a real TTY.
   if [[ -z ${READY_MARKER} ]]; then
-    timeout 120 "${ARDUINO_CLI}" "${upload_args[@]}"
+    timeout 120 "${ARDUINO_CLI}" "${upload_args[@]}" || rc=$?
   else
     timeout 120 "${ARDUINO_CLI}" "${upload_args[@]}" 2> >(
       while IFS= read -r line || [[ -n ${line} ]]; do
@@ -244,12 +245,13 @@ run_upload_with_spinner() {
         fi
         printf '%s\n' "${line}" >&2
       done
-    )
+    ) || rc=$?
   fi
 
   if [[ ${spinner_active} -eq 1 ]]; then
     cli_spinner_finish
   fi
+  return "${rc}"
 }
 
 remember_port() {

@@ -28,10 +28,10 @@
 
 enum {
   CCID_APDU_RSP_BUF_MAX = NERO_NFC_CCID_APDU_RSP_BUF_MAX,
-  CCID_APDU_RSP_BYTES = (unsigned)(CCID_APDU_RSP_BUF_MAX) +
-                        (unsigned)(NFC_ISO7816_SW_STATUS_WORD_LEN),
-  CCID_RSP_FRAME_BYTES =
-      (unsigned)(NFC_CCID_RSP_DATA_CAP) + (unsigned)(NFC_CCID_BULK_HEADER_LEN),
+  CCID_APDU_RSP_BYTES = (unsigned)CCID_APDU_RSP_BUF_MAX +
+      (unsigned)NFC_ISO7816_SW_STATUS_WORD_LEN,
+  CCID_RSP_FRAME_BYTES = (unsigned)NFC_CCID_RSP_DATA_CAP +
+      (unsigned)NFC_CCID_BULK_HEADER_LEN,
 };
 
 typedef struct reader_ccid_context {

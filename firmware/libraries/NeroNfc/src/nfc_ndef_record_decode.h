@@ -30,15 +30,15 @@
  * [NDEF] section 3.2 (record header) and RTD 1.0. Shared by the firmware
  * decode path and the firmware/host encode paths so the wire layout never
  * drifts. */
+#define NFC_NDEF_HDR_MB 0x80u       /* Message Begin */
+#define NFC_NDEF_HDR_ME 0x40u       /* Message End */
+#define NFC_NDEF_HDR_SR 0x10u       /* Short Record */
+#define NFC_NDEF_HDR_TNF_MASK 0x07u /* Type Name Format mask */
+
+#define NFC_NDEF_TNF_WELL_KNOWN 0x01u /* NFC Forum well-known type (RTD) */
+#define NFC_NDEF_TNF_MIME 0x02u       /* Media type (RFC 2046) */
+
 enum {
-  NFC_NDEF_HDR_MB = 0x80u,       /* Message Begin */
-  NFC_NDEF_HDR_ME = 0x40u,       /* Message End */
-  NFC_NDEF_HDR_SR = 0x10u,       /* Short Record */
-  NFC_NDEF_HDR_TNF_MASK = 0x07u, /* Type Name Format mask */
-
-  NFC_NDEF_TNF_WELL_KNOWN = 0x01u, /* NFC Forum well-known type (RTD) */
-  NFC_NDEF_TNF_MIME = 0x02u,       /* Media type (RFC 2046) */
-
   NFC_NDEF_RTD_TYPE_TEXT = 0x54u, /* RTD 'T' text record */
   NFC_NDEF_RTD_TYPE_URI = 0x55u,  /* RTD 'U' URI record */
 

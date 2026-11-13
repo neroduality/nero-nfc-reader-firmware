@@ -47,7 +47,7 @@ else
 fi
 
 CORE_PACKAGE="${WBA65_STM32_CORE_PACKAGE:-STMicroelectronics:stm32}"
-CORE_VERSION="${WBA65_STM32_CORE_VERSION:-2.12.0}"
+CORE_VERSION="${WBA65_STM32_CORE_VERSION:-3.1.0}"
 BOARD_MANAGER_URLS="${WBA65_STM32_BOARD_MANAGER_URLS:-https://github.com/stm32duino/BoardManagerFiles/raw/main/package_stmicroelectronics_index.json}"
 
 patch_signature() {

@@ -24,23 +24,19 @@ NfcArduinoPort* AsPort(void* context) {
   return static_cast<NfcArduinoPort*>(context);
 }
 
-uint32_t TrampolineMillis(void* context) {
-  (void)context;
+uint32_t TrampolineMillis(void* /*context*/) {
   return NfcArduinoPort::MillisImpl();
 }
 
-uint32_t TrampolineMicros(void* context) {
-  (void)context;
+uint32_t TrampolineMicros(void* /*context*/) {
   return NfcArduinoPort::MicrosImpl();
 }
 
-void TrampolineDelayMs(void* context, uint32_t ms) {
-  (void)context;
+void TrampolineDelayMs(void* /*context*/, uint32_t ms) {
   NfcArduinoPort::DelayMsImpl(ms);
 }
 
-void TrampolineDelayUs(void* context, uint32_t us) {
-  (void)context;
+void TrampolineDelayUs(void* /*context*/, uint32_t us) {
   NfcArduinoPort::DelayUsImpl(us);
 }
 
@@ -64,18 +60,15 @@ int TrampolineSerialReadByte(void* context) {
   return AsPort(context)->SerialReadByteImpl();
 }
 
-void TrampolinePinMode(void* context, uint8_t pin, uint8_t mode) {
-  (void)context;
+void TrampolinePinMode(void* /*context*/, uint8_t pin, uint8_t mode) {
   NfcArduinoPort::PinModeImpl(pin, mode);
 }
 
-void TrampolineDigitalWrite(void* context, uint8_t pin, uint8_t value) {
-  (void)context;
+void TrampolineDigitalWrite(void* /*context*/, uint8_t pin, uint8_t value) {
   NfcArduinoPort::DigitalWriteImpl(pin, value);
 }
 
-int TrampolineDigitalRead(void* context, uint8_t pin) {
-  (void)context;
+int TrampolineDigitalRead(void* /*context*/, uint8_t pin) {
   return NfcArduinoPort::DigitalReadImpl(pin);
 }
 

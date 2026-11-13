@@ -22,7 +22,7 @@ _ENSURE_WBA65OCD := $(_WBA65OCD_MKDIR)/ensure-wba65-openocd.sh
 
 WBA65_OPENOCD_STAMP := $(_WBA65OCD_ROOT)/third-party/.wba65-openocd-version
 
-$(WBA65_OPENOCD_STAMP): $(_ENSURE_WBA65OCD) $(wildcard $(CURDIR)/patches/openocd/*.patch)
+$(WBA65_OPENOCD_STAMP): $(_ENSURE_WBA65OCD)
 	@INSTALL_DEPS="$(INSTALL_DEPS)" bash "$(_ENSURE_WBA65OCD)" "$(_WBA65OCD_ROOT)" "$(WBA65_OPENOCD_STAMP)" "$(FORCE_EXTERNAL)"
 
 .PHONY: third-party-wba65-openocd

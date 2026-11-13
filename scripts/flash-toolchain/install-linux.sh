@@ -36,7 +36,7 @@ else
   REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 fi
 
-: "${ARDUINO_MIN_CLI_VERSION:=${MIN_ARDUINO_CLI:-1.5.1}}"
+: "${ARDUINO_MIN_CLI_VERSION:=${MIN_ARDUINO_CLI:-1.6.0}}"
 : "${ARDUINO_CLI_VERSION:=${ARDUINO_MIN_CLI_VERSION}}"
 : "${ARDUINO_MIN_RENESAS_CORE:=${MIN_RENESAS_CORE:-1.6.0}}"
 eval "$(bash "${REPO_ROOT}/make/export-arduino-isolated-env.sh" "${REPO_ROOT}")"
